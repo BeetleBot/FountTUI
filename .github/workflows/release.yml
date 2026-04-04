@@ -21,49 +21,32 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-  build-binaries:
-    name: Build Binaries (${{ matrix.target }})
+  build-portable-linux:
+    name: Build Fount Portable (Linux MUSL)
     needs: publish-crates-io
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-          - target: x86_64-apple-darwin
-            os: macos-latest
-          - target: aarch64-apple-darwin
-            os: macos-latest
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Rust
+      - name: Install MUSL Tools
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+        
+      - name: Install Rust MUSL Target
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: x86_64-unknown-linux-musl
           
-      - name: Build Binary
-        run: cargo build --release --target ${{ matrix.target }}
+      - name: Build Portable Binary
+        run: cargo build --release --target x86_64-unknown-linux-musl
         
-      - name: Archive Binary (Unix)
-        if: runner.os != 'Windows'
+      - name: Package Binary
         run: |
-          cd target/${{ matrix.target }}/release
-          tar -czf ../../../fount-${{ matrix.target }}.tar.gz fount
+          cd target/x86_64-unknown-linux-musl/release
+          tar -czf ../../../fount-portable-linux-x86_64.tar.gz fount
           
-      - name: Archive Binary (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          cd target/${{ matrix.target }}/release
-          7z a ../../../fount-${{ matrix.target }}.zip fount.exe
-          
-      - name: Upload to Release
+      - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            fount-${{ matrix.target }}.tar.gz
-            fount-${{ matrix.target }}.zip
+          files: fount-portable-linux-x86_64.tar.gz
           generate_release_notes: true
+          name: Fount Portable v${{ github.ref_name }}
