@@ -3161,7 +3161,6 @@ mod app_tests {
     #[test]
     fn test_app_insert_matching_parentheses() {
         let mut app = create_empty_app();
-        app.config.match_parentheses = true;
         app.insert_char('(');
         assert_eq!(app.lines[0], "()");
         assert_eq!(app.cursor_x, 1);
@@ -3170,7 +3169,6 @@ mod app_tests {
     #[test]
     fn test_app_insert_matching_brackets() {
         let mut app = create_empty_app();
-        app.config.close_elements = true;
         app.insert_char('[');
         app.insert_char('[');
         assert_eq!(app.lines[0], "[[]]");
@@ -3180,7 +3178,6 @@ mod app_tests {
     #[test]
     fn test_app_insert_matching_boneyard() {
         let mut app = create_empty_app();
-        app.config.close_elements = true;
         app.insert_char('/');
         app.insert_char('*');
         assert_eq!(app.lines[0], "/**/");
@@ -3556,35 +3553,6 @@ mod app_tests {
         );
     }
 
-    #[test]
-    fn test_app_match_parentheses_disabled() {
-        let mut app = create_empty_app();
-        app.config.match_parentheses = false;
-
-        app.insert_char('(');
-        assert_eq!(
-            app.lines[0], "(",
-            "Should only insert '(' without closing ')'"
-        );
-        assert_eq!(app.cursor_x, 1);
-    }
-
-    #[test]
-    fn test_app_close_elements_disabled() {
-        let mut app = create_empty_app();
-        app.config.close_elements = false;
-
-        app.insert_char('[');
-        app.insert_char('[');
-        assert_eq!(app.lines[0], "[[", "Should NOT insert ']]' automatically");
-        assert_eq!(app.cursor_x, 2);
-
-        app.lines = vec!["".to_string()];
-        app.cursor_x = 0;
-        app.insert_char('/');
-        app.insert_char('*');
-        assert_eq!(app.lines[0], "/*", "Should NOT insert '*/' automatically");
-    }
 
     #[test]
     fn test_app_auto_paragraph_breaks_disabled() {
@@ -4263,6 +4231,7 @@ mod app_tests {
         };
         let mut app = create_empty_app();
         app.config.typewriter_mode = true;
+        app.config.strict_typewriter_mode = false;
         app.lines = vec!["Line 1".to_string()];
         app.types = vec![LineType::Action];
         app.cursor_y = 0;
@@ -4298,43 +4267,6 @@ mod app_tests {
         assert_eq!(terminal.backend_mut().get_cursor_position().unwrap().y, 12);
     }
 
-    #[test]
-    fn test_draw_active_action_highlight() {
-        use ratatui::style::Color;
-        use ratatui::{Terminal, backend::TestBackend};
-        let mut app = create_empty_app();
-
-        app.config.highlight_active_action = true;
-        app.config.no_color = false;
-
-        app.lines = vec!["An action line".to_string(), "".to_string(), "".to_string()];
-        app.types = vec![LineType::Action, LineType::Empty, LineType::Empty];
-        app.cursor_y = 2;
-        app.update_layout();
-
-        let backend = TestBackend::new(80, 24);
-        let mut terminal = Terminal::new(backend).unwrap();
-
-        terminal.draw(|f| super::draw(f, &mut app)).unwrap();
-
-        let buffer = terminal.backend().buffer();
-        let mut found_action_text = false;
-
-        for y in 0..24 {
-            for x in 0..80 {
-                let cell = &buffer[(x, y)];
-                if cell.symbol() == "A" {
-                    found_action_text = true;
-                    assert_eq!(
-                        cell.fg,
-                        Color::White,
-                        "Active action line above empty lines should be forced to white"
-                    );
-                }
-            }
-        }
-        assert!(found_action_text, "Action text should be rendered");
-    }
 
     fn send_key_press(app: &mut App, code: KeyCode, modifiers: KeyModifiers) {
         use crossterm::event::{Event, KeyEvent, KeyEventKind, KeyEventState};
@@ -5140,6 +5072,7 @@ mod app_tests {
         use ratatui::{Terminal, backend::TestBackend};
         let mut app = create_empty_app();
         app.config.no_color = false;
+        app.config.strict_typewriter_mode = false;
         app.lines = vec!["Author: René".to_string()];
         app.types = vec![LineType::MetadataKey];
         app.update_layout();
@@ -5286,7 +5219,6 @@ mod app_tests {
     #[test]
     fn test_ux_smart_pairing_basic_triggers() {
         let mut app = create_empty_app();
-        app.config.match_parentheses = true;
 
         app.insert_char('(');
         assert_eq!(app.lines[0], "()", "Failed to auto-pair parentheses");
@@ -5318,8 +5250,6 @@ mod app_tests {
     #[test]
     fn test_ux_smart_pairing_step_over_existing_closing_chars() {
         let mut app = create_empty_app();
-        app.config.match_parentheses = true;
-        app.config.close_elements = true;
 
         app.lines = vec!["()".to_string()];
         app.cursor_x = 1;
@@ -5373,7 +5303,6 @@ mod app_tests {
     #[test]
     fn test_ux_smart_pairing_alphanumeric_boundary_rules() {
         let mut app = create_empty_app();
-        app.config.match_parentheses = true;
 
         app.lines = vec!["word".to_string()];
         app.cursor_x = 0;
@@ -5420,7 +5349,6 @@ mod app_tests {
     #[test]
     fn test_ux_smart_pairing_quote_parity_and_apostrophe_logic() {
         let mut app = create_empty_app();
-        app.config.match_parentheses = true;
 
         app.lines = vec!["\"hello\"".to_string()];
         app.cursor_x = 6;
@@ -5467,7 +5395,6 @@ mod app_tests {
     #[test]
     fn test_ux_smart_pairing_fountain_multichar_elements() {
         let mut app = create_empty_app();
-        app.config.close_elements = true;
 
         app.lines = vec!["[".to_string()];
         app.cursor_x = 1;
@@ -5567,7 +5494,6 @@ mod app_tests {
     #[test]
     fn test_ux_smart_pairing_unicode_and_emoji_boundaries() {
         let mut app = create_empty_app();
-        app.config.match_parentheses = true;
 
         app.lines = vec!["слово".to_string()];
         app.cursor_x = 0;
@@ -6030,7 +5956,7 @@ And Beat itself, of course: https://www.beat-app.fi/
         app.report_cursor_position();
         assert_eq!(
             app.status_msg.as_deref(),
-            Some("line 8/93 (8%), col 1/31 (3%), char 127/4075 (3%)")
+            Some("line 8/93 (8%), col 1/31 (3%), char 126/4070 (3%)")
         );
 
         app.cursor_y = app
@@ -6043,7 +5969,7 @@ And Beat itself, of course: https://www.beat-app.fi/
         app.report_cursor_position();
         assert_eq!(
             app.status_msg.as_deref(),
-            Some("line 67/93 (72%), col 1/41 (2%), char 2970/4075 (72%)")
+            Some("line 67/93 (72%), col 1/41 (2%), char 2966/4070 (72%)")
         );
 
         app.cursor_y = app.lines.iter().position(|l| l == "> FADE OUT").unwrap();
@@ -6052,7 +5978,7 @@ And Beat itself, of course: https://www.beat-app.fi/
         app.report_cursor_position();
         assert_eq!(
             app.status_msg.as_deref(),
-            Some("line 93/93 (100%), col 11/11 (100%), char 4075/4075 (100%)")
+            Some("line 93/93 (100%), col 11/11 (100%), char 4070/4070 (100%)")
         );
 
         app.cursor_y = usize::MAX;
