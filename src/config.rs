@@ -103,6 +103,10 @@ unset force_ansi
 # break lines). Useful for older terminals. Fount will try to detect
 # Unicode support automatically.
 unset force_ascii
+
+# Enable high contrast mode for improved visibility on light terminal
+# backgrounds (shifts white/gray text to black/dark-gray).
+unset high_contrast
 "#;
 
 
@@ -227,6 +231,10 @@ pub struct Cli {
     
     #[arg(long, default_value = "plain", value_name = "FORMAT")]
     pub format: String,
+
+    /// Enable high contrast mode (replaces white/gray with black/dark-gray)
+    #[arg(long)]
+    pub high_contrast: bool,
 }
 
 
@@ -320,6 +328,9 @@ pub struct Config {
 
     
     pub auto_save_interval: u64,
+
+    /// High contrast mode for light backgrounds.
+    pub high_contrast: bool,
 }
 
 impl Default for Config {
@@ -352,6 +363,7 @@ impl Default for Config {
             force_ascii: false,
             force_ansi: false,
 
+            high_contrast: false,
             mirror_scene_numbers: MirrorOption::ExportOnly,
         }
     }
@@ -419,6 +431,7 @@ impl Config {
                         "no_formatting" => self.no_formatting = true,
                         "force_ascii" => self.force_ascii = true,
                         "force_ansi" => self.force_ansi = true,
+                        "high_contrast" => self.high_contrast = true,
                         _ => {}
                     }
                 } else if cmd == "unset" {
@@ -441,6 +454,7 @@ impl Config {
                         "no_formatting" => self.no_formatting = false,
                         "force_ascii" => self.force_ascii = false,
                         "force_ansi" => self.force_ansi = false,
+                        "high_contrast" => self.high_contrast = false,
                         _ => {}
                     }
                 }
@@ -522,6 +536,7 @@ impl Config {
         config.force_ascii |= cli.force_ascii;
         config.force_ansi |= cli.force_ansi;
         config.goto_end |= cli.goto_end;
+        config.high_contrast |= cli.high_contrast;
 
         if let Some(ref mode) = cli.mirror_scene_numbers {
             config.mirror_scene_numbers = match mode.as_str() {

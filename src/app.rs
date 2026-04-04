@@ -153,11 +153,6 @@ pub struct App {
     pub has_multiple_buffers: bool,
 
     
-    
-    
-    pub escape_pressed: bool,
-
-    
     pub lines: Vec<String>,
 
     
@@ -345,7 +340,6 @@ impl App {
             buffers,
             current_buf_idx: 0,
             has_multiple_buffers,
-            escape_pressed: false,
 
             lines: Vec::new(),
             types: Vec::new(),
@@ -641,6 +635,66 @@ impl App {
             char_pct
         );
         self.set_status(&msg);
+    }
+
+    pub fn open_scene_navigator(&mut self) {
+        self.scenes.clear();
+        let mut current_scene: Option<(usize, String, Option<String>, Vec<String>, Option<Color>)> = None;
+        let mut last_color: Option<Color> = None;
+
+        for row in &self.layout {
+            if row.line_type == LineType::Note {
+                last_color = row.override_color;
+            }
+
+            if row.line_type == LineType::SceneHeading {
+                if let Some(s) = current_scene.take() {
+                    self.scenes.push(s);
+                }
+                let heading = strip_sigils(&row.raw_text, row.line_type).to_uppercase_1to1();
+                let color = row.override_color.or(last_color);
+                current_scene = Some((row.line_idx, heading, row.scene_num.clone(), Vec::new(), color));
+                last_color = None;
+            } else if row.line_type == LineType::Synopsis {
+                if let Some(ref mut s) = current_scene {
+                    let note_text = strip_sigils(&row.raw_text, row.line_type).to_string();
+                    if !note_text.is_empty() {
+                        s.3.push(note_text);
+                    }
+                }
+                last_color = None;
+            } else if row.line_type != LineType::Empty {
+                last_color = None;
+            }
+
+            if let Some(ref mut s) = current_scene {
+                if s.4.is_none() {
+                    if let Some(c) = row.override_color {
+                        s.4 = Some(c);
+                    } else if let Some(c) = row.fmt.note_color.values().next() {
+                        s.4 = Some(*c);
+                    }
+                }
+            }
+        }
+        if let Some(s) = current_scene {
+            self.scenes.push(s);
+        }
+
+        if self.scenes.is_empty() {
+            self.set_status("No scenes found");
+        } else {
+            self.mode = AppMode::SceneNavigator;
+            self.selected_scene = 0;
+            for (idx, (line_idx, _, _, _, _)) in self.scenes.iter().enumerate() {
+                if *line_idx <= self.cursor_y {
+                    self.selected_scene = idx;
+                } else {
+                    break;
+                }
+            }
+            self.navigator_state.select(Some(self.selected_scene));
+        }
     }
 
     
@@ -1892,6 +1946,7 @@ impl App {
                                         6 => "Automatically append (CONT'D) to character names.",
                                         7 => "Insert paragraph breaks after screenplay elements.",
                                         8 => "Hide the UI bars for a distraction-free view.",
+                                        9 => "Improve text visibility on light terminal backgrounds.",
                                         _ => "",
                                     };
                                     if !desc.is_empty() {
@@ -1909,6 +1964,7 @@ impl App {
                                         6 => self.config.auto_contd = !self.config.auto_contd,
                                         7 => self.config.auto_paragraph_breaks = !self.config.auto_paragraph_breaks,
                                         8 => self.config.focus_mode = !self.config.focus_mode,
+                                        9 => self.config.high_contrast = !self.config.high_contrast,
                                         _ => {}
                                     }
                                     *text_changed = true;
@@ -1978,7 +2034,7 @@ impl App {
                             self.search_query.pop();
                             self.update_search_regex();
                         }
-                        KeyCode::Char(c) if !ctrl && !key.modifiers.contains(KeyModifiers::ALT) => {
+                        KeyCode::Char(c) if !ctrl => {
                             self.search_query.push(c);
                             self.update_search_regex();
                         }
@@ -2054,7 +2110,7 @@ impl App {
                         KeyCode::Backspace => {
                             self.filename_input.pop();
                         }
-                        KeyCode::Char(c) if !ctrl && !key.modifiers.contains(KeyModifiers::ALT) => {
+                        KeyCode::Char(c) if !ctrl => {
                             self.filename_input.push(c);
                         }
                         _ => {}
@@ -2062,18 +2118,15 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::SceneNavigator => {
-                    let alt = key.modifiers.contains(KeyModifiers::ALT) || self.escape_pressed;
-                    self.escape_pressed = false;
-
                     match key.code {
                         KeyCode::Esc => {
                             self.mode = AppMode::Normal;
                             self.set_status("Cancelled");
                         }
-                        KeyCode::Char('s') if alt => {
+                        KeyCode::Char(h) if ctrl && h == 'h' => {
                             self.mode = AppMode::Normal;
                         }
-                        KeyCode::Char('p') if alt => {
+                        KeyCode::Char('p') if ctrl => {
                             self.mode = AppMode::SettingsPane;
                             self.selected_setting = 0;
                         }
@@ -2105,77 +2158,16 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::SettingsPane => {
-                    let alt = key.modifiers.contains(KeyModifiers::ALT) || self.escape_pressed;
-                    self.escape_pressed = false;
-
-                    let settings_count = 9; 
-
+                    let settings_count = 10; 
                     match key.code {
                         KeyCode::Esc => {
                             self.mode = AppMode::Normal;
                         }
-                        KeyCode::Char('p') if alt => {
+                        KeyCode::Char('p') if ctrl => {
                             self.mode = AppMode::Normal;
                         }
-                        KeyCode::Char('s') if alt => {
-                            self.scenes.clear();
-                            let mut current_scene: Option<(usize, String, Option<String>, Vec<String>, Option<Color>)> = None;
-                            let mut last_color: Option<Color> = None;
-
-                            for row in &self.layout {
-                                if row.line_type == LineType::Note {
-                                    last_color = row.override_color;
-                                }
-
-                                if row.line_type == LineType::SceneHeading {
-                                    if let Some(s) = current_scene.take() {
-                                        self.scenes.push(s);
-                                    }
-                                    let heading = strip_sigils(&row.raw_text, row.line_type).to_uppercase_1to1();
-                                    let color = row.override_color.or(last_color);
-                                    current_scene = Some((row.line_idx, heading, row.scene_num.clone(), Vec::new(), color));
-                                    last_color = None;
-                                } else if row.line_type == LineType::Synopsis {
-                                    if let Some(ref mut s) = current_scene {
-                                        let note_text = strip_sigils(&row.raw_text, row.line_type).to_string();
-                                        if !note_text.is_empty() {
-                                            s.3.push(note_text);
-                                        }
-                                    }
-                                    last_color = None;
-                                } else if row.line_type != LineType::Empty {
-                                    last_color = None;
-                                }
-
-                                if let Some(ref mut s) = current_scene {
-                                    if s.4.is_none() {
-                                        if let Some(c) = row.override_color {
-                                            s.4 = Some(c);
-                                        } else if let Some(c) = row.fmt.note_color.values().next() {
-                                            s.4 = Some(*c);
-                                        }
-                                    }
-                                }
-                            }
-                            if let Some(s) = current_scene {
-                                self.scenes.push(s);
-                            }
-
-                            if self.scenes.is_empty() {
-                                self.set_status("No scenes found");
-                                self.mode = AppMode::Normal;
-                            } else {
-                                self.mode = AppMode::SceneNavigator;
-                                self.selected_scene = 0;
-                                for (idx, (line_idx, _, _, _, _)) in self.scenes.iter().enumerate() {
-                                    if *line_idx <= self.cursor_y {
-                                        self.selected_scene = idx;
-                                    } else {
-                                        break;
-                                    }
-                                }
-                                self.navigator_state.select(Some(self.selected_scene));
-                            }
+                        KeyCode::Char('h') if ctrl => {
+                            self.open_scene_navigator();
                         }
                         KeyCode::Up => {
                             if self.selected_setting > 0 {
@@ -2204,6 +2196,7 @@ impl App {
                                         !self.config.auto_paragraph_breaks
                                 }
                                 8 => self.config.focus_mode = !self.config.focus_mode,
+                                9 => self.config.high_contrast = !self.config.high_contrast,
                                 _ => {}
                             }
                             *text_changed = true; 
@@ -2219,6 +2212,7 @@ impl App {
                                 6 => "Automatically append (CONT'D) to character names.",
                                 7 => "Insert paragraph breaks after screenplay elements.",
                                 8 => "Hide the UI bars for a distraction-free view.",
+                                9 => "Improve text visibility on light terminal backgrounds.",
                                 _ => "",
                             };
                             if !desc.is_empty() {
@@ -2243,12 +2237,8 @@ impl App {
                         }
                     }
 
-                    let alt = key.modifiers.contains(KeyModifiers::ALT) || self.escape_pressed;
-                    self.escape_pressed = false;
-
                     match key.code {
                         KeyCode::Esc => {
-                            self.escape_pressed = true;
                         }
                         KeyCode::Char('x') if ctrl => {
                             if self.dirty {
@@ -2259,14 +2249,14 @@ impl App {
                             }
                         }
 
-                        KeyCode::Left | KeyCode::Char('<') | KeyCode::Char(',') if alt => {
-                            self.switch_prev_buffer();
+                        KeyCode::Char('>') | KeyCode::Char('.') if ctrl => {
+                            self.switch_next_buffer();
                             *update_target_x = true;
                             *text_changed = true;
                             *cursor_moved = true;
                         }
-                        KeyCode::Right | KeyCode::Char('>') | KeyCode::Char('.') if alt => {
-                            self.switch_next_buffer();
+                        KeyCode::Char('<') | KeyCode::Char(',') if ctrl => {
+                            self.switch_prev_buffer();
                             *update_target_x = true;
                             *text_changed = true;
                             *cursor_moved = true;
@@ -2283,13 +2273,13 @@ impl App {
                             *cursor_moved = true;
                         }
 
-                        KeyCode::Backspace if ctrl || alt => {
+                        KeyCode::Backspace if ctrl => {
                             self.delete_word_back();
                             *update_target_x = true;
                             *text_changed = true;
                             *cursor_moved = true;
                         }
-                        KeyCode::Delete if ctrl || alt => {
+                        KeyCode::Delete if ctrl => {
                             self.delete_word_forward();
                             *update_target_x = true;
                             *text_changed = true;
@@ -2305,84 +2295,12 @@ impl App {
                                 self.exit_after_save = false;
                             }
                         }
-                        KeyCode::Char('s') if alt => {
-                            if self.mode == AppMode::SceneNavigator {
-                                self.mode = AppMode::Normal;
-                            } else {
-                                self.scenes.clear();
-                                let mut current_scene: Option<(usize, String, Option<String>, Vec<String>, Option<Color>)> = None;
-                                let mut last_color: Option<Color> = None;
-
-                                for row in &self.layout {
-                                    
-                                    if row.line_type == LineType::Note {
-                                        last_color = row.override_color;
-                                    }
-
-                                    
-                                    if row.line_type == LineType::SceneHeading {
-                                        if let Some(s) = current_scene.take() {
-                                            self.scenes.push(s);
-                                        }
-                                        let heading = strip_sigils(&row.raw_text, row.line_type).to_uppercase_1to1();
-                                        
-                                        let color = row.override_color.or(last_color);
-                                        current_scene = Some((row.line_idx, heading, row.scene_num.clone(), Vec::new(), color));
-                                        last_color = None; 
-                                    } 
-                                    
-                                    else if row.line_type == LineType::Synopsis {
-                                        if let Some(ref mut s) = current_scene {
-                                            let note_text = strip_sigils(&row.raw_text, row.line_type).to_string();
-                                            if !note_text.is_empty() {
-                                                s.3.push(note_text);
-                                            }
-                                        }
-                                        last_color = None;
-                                    } 
-                                    
-                                    else if row.line_type != LineType::Empty {
-                                        last_color = None;
-                                    }
-
-                                    
-                                    if let Some(ref mut s) = current_scene {
-                                        if s.4.is_none() {
-                                            if let Some(c) = row.override_color {
-                                                s.4 = Some(c);
-                                            } else if let Some(c) = row.fmt.note_color.values().next() {
-                                                s.4 = Some(*c);
-                                            }
-                                        }
-                                    }
-                                }
-                                if let Some(s) = current_scene {
-                                    self.scenes.push(s);
-                                }
-
-                                if self.scenes.is_empty() {
-                                    self.set_status("No scenes found");
-                                } else {
-                                    self.mode = AppMode::SceneNavigator;
-                                    self.selected_scene = 0;
-                                    for (idx, (line_idx, _, _, _, _)) in self.scenes.iter().enumerate() {
-                                        if *line_idx <= self.cursor_y {
-                                            self.selected_scene = idx;
-                                        } else {
-                                            break;
-                                        }
-                                    }
-                                    self.navigator_state.select(Some(self.selected_scene));
-                                }
-                            }
+                        KeyCode::Char('h') if ctrl => {
+                            self.open_scene_navigator();
                         }
-                        KeyCode::Char('p') if alt => {
-                            if self.mode == AppMode::SettingsPane {
-                                self.mode = AppMode::Normal;
-                            } else {
-                                self.mode = AppMode::SettingsPane;
-                                self.selected_setting = 0;
-                            }
+                        KeyCode::Char('p') if ctrl => {
+                            self.mode = AppMode::SettingsPane;
+                            self.selected_setting = 0;
                         }
                         KeyCode::Char('z') if ctrl => {
                             if self.undo() {
@@ -2464,7 +2382,7 @@ impl App {
 
                         KeyCode::Enter => {
                             self.suggestion = None;
-                            self.insert_newline(shift || alt);
+                            self.insert_newline(shift);
                             *update_target_x = true;
                             *text_changed = true;
                             *cursor_moved = true;
@@ -2487,7 +2405,7 @@ impl App {
                             *text_changed = true;
                             *cursor_moved = true;
                         }
-                        KeyCode::Char(c) if !ctrl && !alt => {
+                        KeyCode::Char(c) if !ctrl => {
                             self.insert_char(c);
                             *update_target_x = true;
                             *text_changed = true;
@@ -2591,7 +2509,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     let mut dark_gray_style = Style::default();
     if !app.config.no_color {
-        dark_gray_style.fg = Some(Color::DarkGray);
+        dark_gray_style.fg = Some(if app.config.high_contrast { Color::DarkGray } else { Color::DarkGray }); 
     }
 
     let mut sug_style = Style::default();
@@ -2599,12 +2517,12 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         sug_style = sug_style.add_modifier(Modifier::DIM | Modifier::BOLD);
     }
     if !app.config.no_color {
-        sug_style.fg = Some(Color::DarkGray);
+        sug_style.fg = Some(if app.config.high_contrast { Color::Black } else { Color::DarkGray });
     }
 
     let mut page_num_style = Style::default();
     if !app.config.no_color {
-        page_num_style.fg = Some(Color::DarkGray);
+        page_num_style.fg = Some(if app.config.high_contrast { Color::DarkGray } else { Color::DarkGray });
     }
 
     let panel_style = Style::default().add_modifier(Modifier::REVERSED);
@@ -2830,6 +2748,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             ("Auto (CONT'D)", app.config.auto_contd),
             ("Auto Paragraphs", app.config.auto_paragraph_breaks),
             ("Focus Mode", app.config.focus_mode),
+            ("Contrast Text", app.config.high_contrast),
         ];
 
         let items: Vec<ListItem> = settings
@@ -2936,7 +2855,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             AppMode::SceneNavigator => {
                 let status_padded = format!(
                     "{:<width$}",
-                    "Scene Navigator (Alt+S to Close, Enter to Jump)",
+                    "Scene Navigator (Ctrl+H to Close, Enter to Jump)",
                     width = status_area.width as usize
                 );
                 f.render_widget(
@@ -2947,7 +2866,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             AppMode::SettingsPane => {
                 let status_padded = format!(
                     "{:<width$}",
-                    "Settings (Alt+P to Close, Enter/Space to Toggle, ? for Help)",
+                    "Settings (Ctrl+P to Close, Enter/Space to Toggle, ? for Help)",
                     width = status_area.width as usize
                 );
                 f.render_widget(
@@ -2981,13 +2900,13 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     ("^S", "Save"),
                     ("^K", "Cut"),
                     ("^Z", "Undo"),
-                    ("^W", "Where Is"),
+                    ("^H", "Scene Nav"),
                 ],
                 vec![
                     ("^X", "Exit"),
                     ("^U", "Paste"),
                     ("^R", "Redo"),
-                    ("^C", "Cur Pos"),
+                    ("^P", "Settings"),
                 ],
             ),
         };
@@ -4296,8 +4215,8 @@ mod app_tests {
         app.has_multiple_buffers = true;
         app.current_buf_idx = 0;
 
-        send_key_press(&mut app, KeyCode::Char('>'), KeyModifiers::ALT);
-        assert_eq!(app.current_buf_idx, 1, "Failed to switch buffer via Alt+>");
+        send_key_press(&mut app, KeyCode::Char('>'), KeyModifiers::CONTROL);
+        assert_eq!(app.current_buf_idx, 1, "Failed to switch buffer via Ctrl+>");
 
         let mut dummy1 = false;
         let mut dummy2 = false;
@@ -4380,23 +4299,6 @@ mod app_tests {
         assert!(app.dirty);
     }
 
-    #[test]
-    fn test_escape_state_machine_simulates_alt() {
-        let mut app = create_empty_app();
-        app.lines = vec!["word1 word2".to_string()];
-        app.cursor_x = 11;
-
-        send_key_press(&mut app, KeyCode::Esc, KeyModifiers::empty());
-        assert!(app.escape_pressed, "Esc state must be captured");
-
-        send_key_press(&mut app, KeyCode::Backspace, KeyModifiers::empty());
-
-        assert_eq!(
-            app.lines[0], "word1 ",
-            "Esc + Backspace should delete whole word"
-        );
-        assert!(!app.escape_pressed, "Esc state must be consumed and reset");
-    }
 
     #[test]
     fn test_nano_navigation_and_deletion_shortcuts() {
@@ -4419,22 +4321,22 @@ mod app_tests {
         send_key_press(&mut app, KeyCode::Right, KeyModifiers::CONTROL);
         assert_eq!(app.cursor_x, 7, "Ctrl+Right should trigger move_word_right");
 
-        send_key_press(&mut app, KeyCode::Backspace, KeyModifiers::ALT);
+        send_key_press(&mut app, KeyCode::Backspace, KeyModifiers::CONTROL);
         assert_eq!(
             app.cursor_x, 4,
-            "Alt+Backspace should delete word backwards"
+            "Ctrl+Backspace should delete word backwards"
         );
 
-        send_key_press(&mut app, KeyCode::Char('>'), KeyModifiers::ALT);
+        send_key_press(&mut app, KeyCode::Char('>'), KeyModifiers::CONTROL);
         assert_eq!(
             app.current_buf_idx, 1,
-            "Alt+> should trigger switch_next_buffer"
+            "Ctrl+> should trigger switch_next_buffer"
         );
 
-        send_key_press(&mut app, KeyCode::Char('<'), KeyModifiers::ALT);
+        send_key_press(&mut app, KeyCode::Char('<'), KeyModifiers::CONTROL);
         assert_eq!(
             app.current_buf_idx, 0,
-            "Alt+< should trigger switch_prev_buffer"
+            "Ctrl+< should trigger switch_prev_buffer"
         );
     }
 

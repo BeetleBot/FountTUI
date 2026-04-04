@@ -193,7 +193,8 @@ impl LineType {
 pub fn base_style(lt: LineType, config: &Config) -> Style {
     let mut style = match lt {
         LineType::SceneHeading => {
-            let mut s = Style::default().fg(Color::White);
+            let fg = if config.high_contrast { Color::Black } else { Color::White };
+            let mut s = Style::default().fg(fg);
             if config.heading_style.contains("bold") {
                 s = s.add_modifier(Modifier::BOLD);
             }
@@ -203,7 +204,8 @@ pub fn base_style(lt: LineType, config: &Config) -> Style {
             s
         }
         LineType::Shot => {
-            let mut s = Style::default().fg(Color::White);
+            let fg = if config.high_contrast { Color::Black } else { Color::White };
+            let mut s = Style::default().fg(fg);
             if config.shot_style.contains("bold") {
                 s = s.add_modifier(Modifier::BOLD);
             }
@@ -212,11 +214,20 @@ pub fn base_style(lt: LineType, config: &Config) -> Style {
             }
             s
         }
-        LineType::Character | LineType::DualDialogueCharacter => Style::default()
-            .fg(Color::White)
-            .add_modifier(Modifier::BOLD),
-        LineType::Parenthetical => Style::default().fg(Color::Gray),
-        LineType::Dialogue => Style::default().fg(Color::White),
+        LineType::Character | LineType::DualDialogueCharacter => {
+            let fg = if config.high_contrast { Color::Black } else { Color::White };
+            Style::default()
+                .fg(fg)
+                .add_modifier(Modifier::BOLD)
+        }
+        LineType::Parenthetical => {
+            let fg = if config.high_contrast { Color::DarkGray } else { Color::Gray };
+            Style::default().fg(fg)
+        }
+        LineType::Dialogue => {
+            let fg = if config.high_contrast { Color::Black } else { Color::White };
+            Style::default().fg(fg)
+        }
         LineType::Transition => Style::default().fg(Color::Reset),
         LineType::Centered => Style::default().fg(Color::Reset),
         LineType::Lyrics => Style::default().add_modifier(Modifier::ITALIC),
@@ -225,7 +236,8 @@ pub fn base_style(lt: LineType, config: &Config) -> Style {
             .fg(Color::Green)
             .add_modifier(Modifier::ITALIC),
         LineType::MetadataTitle | LineType::MetadataKey | LineType::MetadataValue => {
-            Style::default().fg(Color::White)
+            let fg = if config.high_contrast { Color::Black } else { Color::White };
+            Style::default().fg(fg)
         }
         LineType::PageBreak => Style::default().fg(Color::DarkGray),
         LineType::Action | LineType::Empty => Style::default().fg(Color::Reset),
