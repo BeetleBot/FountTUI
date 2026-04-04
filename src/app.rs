@@ -22,232 +22,145 @@ use crate::{
 #[derive(Clone)]
 
 pub struct HistoryState {
-    
     pub lines: Vec<String>,
 
-    
     pub cursor_y: usize,
 
-    
     pub cursor_x: usize,
 }
 
 #[derive(PartialEq, Clone, Default)]
 
-
 pub enum LastEdit {
     #[default]
-    
     None,
 
-    
     Insert,
 
-    
     Delete,
 
-    
     Cut,
 
-    
-    
     Other,
 }
 
-
 #[derive(PartialEq, Debug)]
 pub enum AppMode {
-    
-    
     Normal,
 
-    
     Search,
 
-    
     PromptSave,
 
-    
     PromptFilename,
 
-    
     SceneNavigator,
 
-    
     SettingsPane,
+
+    Shortcuts,
 }
-
-
-
-
-
 
 #[derive(Clone, Default)]
 pub struct BufferState {
-    
     pub lines: Vec<String>,
 
-    
     pub types: Vec<LineType>,
 
-    
     pub layout: Vec<VisualRow>,
 
-    
     pub file: Option<PathBuf>,
 
-    
     pub dirty: bool,
 
-    
     pub cursor_y: usize,
 
-    
     pub cursor_x: usize,
 
-    
-    
-    
-    
     pub target_visual_x: u16,
 
-    
     pub scroll: usize,
 
-    
     pub characters: HashSet<String>,
 
-    
     pub locations: HashSet<String>,
 
-    
     pub undo_stack: Vec<HistoryState>,
 
-    
     pub redo_stack: Vec<HistoryState>,
 
-    
     pub last_edit: LastEdit,
 }
 
-
-
-
-
-
-
-
 pub struct App {
-    
     pub config: Config,
 
-    
-    
     pub buffers: Vec<BufferState>,
 
-    
     pub current_buf_idx: usize,
 
-    
-    
     pub has_multiple_buffers: bool,
 
-    
     pub lines: Vec<String>,
 
-    
     pub types: Vec<LineType>,
 
-    
     pub layout: Vec<VisualRow>,
 
-    
     pub file: Option<PathBuf>,
 
-    
     pub dirty: bool,
 
-    
     pub cursor_y: usize,
 
-    
     pub cursor_x: usize,
 
-    
     pub target_visual_x: u16,
 
-    
     pub visible_height: usize,
 
-    
     pub scroll: usize,
 
-    
     pub characters: HashSet<String>,
 
-    
     pub locations: HashSet<String>,
 
-    
     pub suggestion: Option<String>,
 
-    
     pub undo_stack: Vec<HistoryState>,
 
-    
     pub redo_stack: Vec<HistoryState>,
 
-    
     pub last_edit: LastEdit,
 
-    
     pub mode: AppMode,
 
-    
-    
     pub exit_after_save: bool,
 
-    
     pub filename_input: String,
 
-    
     pub status_msg: Option<String>,
 
-    
-    
     pub cut_buffer: Option<String>,
 
-    
     pub search_query: String,
 
-    
-    
     pub last_search: String,
 
-    
     pub show_search_highlight: bool,
 
-    
-    
     pub compiled_search_regex: Option<regex::Regex>,
 
-    
-    
     pub scenes: Vec<(usize, String, Option<String>, Vec<String>, Option<Color>)>,
 
-    
     pub selected_scene: usize,
 
-    
     pub selected_setting: usize,
 
-    
     pub sidebar_area: Rect,
 
-    
     pub settings_area: Rect,
 
-    
     pub navigator_state: ListState,
 }
 
@@ -261,11 +174,6 @@ impl Drop for App {
 }
 
 impl App {
-    
-    
-    
-    
-    
     pub fn new(cli: Cli) -> Self {
         let config = Config::load(&cli);
 
@@ -386,10 +294,6 @@ impl App {
         app
     }
 
-    
-    
-    
-    
     pub fn swap_buffer(&mut self, other: &mut BufferState) {
         std::mem::swap(&mut self.lines, &mut other.lines);
         std::mem::swap(&mut self.types, &mut other.types);
@@ -407,11 +311,6 @@ impl App {
         std::mem::swap(&mut self.last_edit, &mut other.last_edit);
     }
 
-    
-    
-    
-    
-    
     pub fn switch_buffer(&mut self, next_idx: usize) {
         if self.buffers.len() <= 1 || next_idx == self.current_buf_idx {
             return;
@@ -445,13 +344,11 @@ impl App {
         self.set_status(&format!("{} -- {} {}", file_name, line_count, line_word));
     }
 
-    
     pub fn switch_next_buffer(&mut self) {
         let next = (self.current_buf_idx + 1) % self.buffers.len();
         self.switch_buffer(next);
     }
 
-    
     pub fn switch_prev_buffer(&mut self) {
         let prev = if self.current_buf_idx == 0 {
             self.buffers.len() - 1
@@ -461,10 +358,6 @@ impl App {
         self.switch_buffer(prev);
     }
 
-    
-    
-    
-    
     pub fn close_current_buffer(&mut self) -> bool {
         if self.buffers.len() <= 1 {
             return true;
@@ -499,11 +392,6 @@ impl App {
         false
     }
 
-    
-    
-    
-    
-    
     #[allow(dead_code)]
     pub fn emergency_save(&mut self) {
         let mut to_save = Vec::new();
@@ -550,21 +438,14 @@ impl App {
         }
     }
 
-    
     pub fn set_status(&mut self, msg: &str) {
         self.status_msg = Some(msg.to_string());
     }
 
-    
     pub fn clear_status(&mut self) {
         self.status_msg = None;
     }
 
-    
-    
-    
-    
-    
     pub fn update_search_regex(&mut self) {
         let active_query = if self.search_query.is_empty() {
             &self.last_search
@@ -582,11 +463,6 @@ impl App {
         }
     }
 
-    
-    
-    
-    
-    
     pub fn report_cursor_position(&mut self) {
         if self.lines.is_empty() {
             self.set_status("line 1/1 (100%), col 1/1 (100%), char 1/1 (100%)");
@@ -637,9 +513,35 @@ impl App {
         self.set_status(&msg);
     }
 
+    pub fn total_word_count(&self) -> usize {
+        self.lines
+            .iter()
+            .map(|l| l.split_whitespace().count())
+            .sum()
+    }
+
+    pub fn total_page_count(&self) -> usize {
+        self.layout
+            .iter()
+            .filter_map(|r| r.page_num)
+            .last()
+            .unwrap_or(1)
+    }
+
+    pub fn current_page_number(&self) -> usize {
+        let (vis_row_idx, _) = find_visual_cursor(&self.layout, self.cursor_y, self.cursor_x);
+        for i in (0..=vis_row_idx).rev() {
+            if let Some(p) = self.layout[i].page_num {
+                return p;
+            }
+        }
+        1
+    }
+
     pub fn open_scene_navigator(&mut self) {
         self.scenes.clear();
-        let mut current_scene: Option<(usize, String, Option<String>, Vec<String>, Option<Color>)> = None;
+        let mut current_scene: Option<(usize, String, Option<String>, Vec<String>, Option<Color>)> =
+            None;
         let mut last_color: Option<Color> = None;
 
         for row in &self.layout {
@@ -653,7 +555,13 @@ impl App {
                 }
                 let heading = strip_sigils(&row.raw_text, row.line_type).to_uppercase_1to1();
                 let color = row.override_color.or(last_color);
-                current_scene = Some((row.line_idx, heading, row.scene_num.clone(), Vec::new(), color));
+                current_scene = Some((
+                    row.line_idx,
+                    heading,
+                    row.scene_num.clone(),
+                    Vec::new(),
+                    color,
+                ));
                 last_color = None;
             } else if row.line_type == LineType::Synopsis {
                 if let Some(ref mut s) = current_scene {
@@ -697,10 +605,6 @@ impl App {
         }
     }
 
-    
-    
-    
-    
     pub fn cut_line(&mut self) {
         if self.last_edit != LastEdit::Cut {
             self.save_state(true);
@@ -732,10 +636,6 @@ impl App {
         }
     }
 
-    
-    
-    
-    
     pub fn paste_line(&mut self) {
         if let Some(cut_buf) = self.cut_buffer.clone() {
             self.save_state(true);
@@ -751,11 +651,6 @@ impl App {
         }
     }
 
-    
-    
-    
-    
-    
     pub fn execute_search(&mut self) {
         if self.search_query.is_empty() {
             self.search_query = self.last_search.clone();
@@ -823,11 +718,6 @@ impl App {
         self.search_query.clear();
     }
 
-    
-    
-    
-    
-    
     pub fn save_state(&mut self, force: bool) {
         let state = HistoryState {
             lines: self.lines.clone(),
@@ -842,16 +732,12 @@ impl App {
         {
             self.undo_stack.push(state);
             if self.undo_stack.len() > 640 {
-                
                 self.undo_stack.remove(0);
             }
             self.redo_stack.clear();
         }
     }
 
-    
-    
-    
     pub fn undo(&mut self) -> bool {
         if let Some(state) = self.undo_stack.pop() {
             self.redo_stack.push(HistoryState {
@@ -870,9 +756,6 @@ impl App {
         }
     }
 
-    
-    
-    
     pub fn redo(&mut self) -> bool {
         if let Some(state) = self.redo_stack.pop() {
             self.undo_stack.push(HistoryState {
@@ -891,10 +774,6 @@ impl App {
         }
     }
 
-    
-    
-    
-    
     pub fn parse_document(&mut self) {
         self.types = Parser::parse(&self.lines);
         self.characters.clear();
@@ -966,26 +845,15 @@ impl App {
         }
     }
 
-    
-    
-    
     pub fn update_layout(&mut self) {
         self.layout = build_layout(&self.lines, &self.types, self.cursor_y, &self.config);
     }
 
-    
-    
     pub fn current_visual_x(&self) -> u16 {
         let (_, vis_x) = find_visual_cursor(&self.layout, self.cursor_y, self.cursor_x);
         vis_x
     }
 
-    
-    
-    
-    
-    
-    
     pub fn update_autocomplete(&mut self) {
         let pending_tab_suggestion = self.suggestion.take();
         let mut matched = false;
@@ -1097,12 +965,6 @@ impl App {
         }
     }
 
-    
-    
-    
-    
-    
-    
     pub fn save(&mut self) -> io::Result<()> {
         if let Some(ref p) = self.file {
             let mut content = self.lines.join("\n");
@@ -1116,13 +978,10 @@ impl App {
         Ok(())
     }
 
-    
     pub fn line_len(&self, y: usize) -> usize {
         self.lines.get(y).map(|l| l.chars().count()).unwrap_or(0)
     }
 
-    
-    
     pub fn move_up(&mut self) {
         self.last_edit = LastEdit::Other;
         let (vis_row, _) = find_visual_cursor(&self.layout, self.cursor_y, self.cursor_x);
@@ -1138,8 +997,6 @@ impl App {
         }
     }
 
-    
-    
     pub fn move_down(&mut self) {
         self.last_edit = LastEdit::Other;
         let (vis_row, _) = find_visual_cursor(&self.layout, self.cursor_y, self.cursor_x);
@@ -1155,8 +1012,6 @@ impl App {
         }
     }
 
-    
-    
     pub fn move_left(&mut self) {
         self.last_edit = LastEdit::Other;
         if self.cursor_x > 0 {
@@ -1167,8 +1022,6 @@ impl App {
         }
     }
 
-    
-    
     pub fn move_right(&mut self) {
         self.last_edit = LastEdit::Other;
         let max = self.line_len(self.cursor_y);
@@ -1180,7 +1033,6 @@ impl App {
         }
     }
 
-    
     pub fn move_word_left(&mut self) {
         self.last_edit = LastEdit::Other;
         if self.cursor_x == 0 {
@@ -1196,7 +1048,6 @@ impl App {
         }
     }
 
-    
     pub fn move_word_right(&mut self) {
         self.last_edit = LastEdit::Other;
         let chars: Vec<char> = self.lines[self.cursor_y].chars().collect();
@@ -1213,19 +1064,16 @@ impl App {
         }
     }
 
-    
     pub fn move_home(&mut self) {
         self.last_edit = LastEdit::Other;
         self.cursor_x = 0;
     }
 
-    
     pub fn move_end(&mut self) {
         self.last_edit = LastEdit::Other;
         self.cursor_x = self.line_len(self.cursor_y);
     }
 
-    
     pub fn move_page_up(&mut self) {
         self.last_edit = LastEdit::Other;
         let height = self.visible_height.max(1);
@@ -1242,7 +1090,6 @@ impl App {
         }
     }
 
-    
     pub fn move_page_down(&mut self) {
         self.last_edit = LastEdit::Other;
         let height = self.visible_height.max(1);
@@ -1308,10 +1155,6 @@ impl App {
         }
     }
 
-    
-    
-    
-    
     pub fn byte_of(&self, y: usize, cx: usize) -> usize {
         self.lines[y]
             .char_indices()
@@ -1320,11 +1163,6 @@ impl App {
             .unwrap_or(self.lines[y].len())
     }
 
-    
-    
-    
-    
-    
     pub fn insert_char(&mut self, c: char) {
         if self.last_edit != LastEdit::Insert || c.is_whitespace() || ".,;?!()[]*\"'".contains(c) {
             self.save_state(true);
@@ -1402,7 +1240,6 @@ impl App {
         self.dirty = true;
     }
 
-    
     pub fn insert_str(&mut self, text: &str) {
         if text.is_empty() {
             return;
@@ -1432,29 +1269,20 @@ impl App {
             let mut insert_idx = self.cursor_y + 1;
             for i in 1..lines.len() - 1 {
                 self.lines.insert(insert_idx, lines[i].clone());
-                self.types.insert(insert_idx, LineType::Action); 
+                self.types.insert(insert_idx, LineType::Action);
                 insert_idx += 1;
             }
             let last_line_content = lines.last().unwrap();
-            self.lines.insert(insert_idx, format!("{}{}", last_line_content, suffix));
+            self.lines
+                .insert(insert_idx, format!("{}{}", last_line_content, suffix));
             self.types.insert(insert_idx, LineType::Action);
-            
+
             self.cursor_y = insert_idx;
             self.cursor_x = last_line_content.chars().count();
         }
         self.dirty = true;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn insert_newline(&mut self, is_shift: bool) {
         self.save_state(true);
         self.last_edit = LastEdit::Other;
@@ -1535,15 +1363,6 @@ impl App {
         self.dirty = true;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn handle_tab(&mut self) {
         if let Some(sug) = self.suggestion.take() {
             self.save_state(true);
@@ -1712,12 +1531,6 @@ impl App {
         self.dirty = true;
     }
 
-    
-    
-    
-    
-    
-    
     pub fn backspace(&mut self) {
         if self.last_edit != LastEdit::Delete {
             self.save_state(true);
@@ -1780,10 +1593,6 @@ impl App {
         }
     }
 
-    
-    
-    
-    
     pub fn delete_forward(&mut self) {
         if self.last_edit != LastEdit::Delete {
             self.save_state(true);
@@ -1838,8 +1647,6 @@ impl App {
         }
     }
 
-    
-    
     pub fn delete_word_back(&mut self) {
         let max = self.line_len(self.cursor_y);
         if self.cursor_x > max {
@@ -1866,8 +1673,6 @@ impl App {
         self.dirty = true;
     }
 
-    
-    
     pub fn delete_word_forward(&mut self) {
         let max = self.line_len(self.cursor_y);
         if self.cursor_x > max {
@@ -1892,14 +1697,6 @@ impl App {
         self.dirty = true;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn handle_event(
         &mut self,
         ev: Event,
@@ -1926,18 +1723,21 @@ impl App {
                     if self.mode == AppMode::SettingsPane {
                         let x = mouse_event.column;
                         let y = mouse_event.row;
-                        if x >= self.settings_area.x && x < self.settings_area.x + self.settings_area.width
-                            && y >= self.settings_area.y && y < self.settings_area.y + self.settings_area.height
+                        if x >= self.settings_area.x
+                            && x < self.settings_area.x + self.settings_area.width
+                            && y >= self.settings_area.y
+                            && y < self.settings_area.y + self.settings_area.height
                         {
                             let rel_y = (y - self.settings_area.y) as usize;
-                            if rel_y > 0 && rel_y <= 10 { 
+                            if rel_y > 0 && rel_y <= 10 {
                                 let setting_idx = rel_y - 1;
                                 self.selected_setting = setting_idx;
-                                
-                                
+
                                 if x >= self.settings_area.x + self.settings_area.width - 5 {
-                                     let desc = match self.selected_setting {
-                                        0 => "Always center the cursor, even at the start of the file.",
+                                    let desc = match self.selected_setting {
+                                        0 => {
+                                            "Always center the cursor, even at the start of the file."
+                                        }
                                         1 => "Periodically save the current buffer to disk.",
                                         2 => "Display scene numbers in the left margin.",
                                         3 => "Display page numbers in the right margin.",
@@ -1946,23 +1746,36 @@ impl App {
                                         6 => "Automatically append (CONT'D) to character names.",
                                         7 => "Insert paragraph breaks after screenplay elements.",
                                         8 => "Hide the UI bars for a distraction-free view.",
-                                        9 => "Improve text visibility on light terminal backgrounds.",
+                                        9 => {
+                                            "Improve text visibility on light terminal backgrounds."
+                                        }
                                         _ => "",
                                     };
                                     if !desc.is_empty() {
                                         self.set_status(desc);
                                     }
                                 } else {
-                                    
                                     match self.selected_setting {
-                                        0 => self.config.strict_typewriter_mode = !self.config.strict_typewriter_mode,
+                                        0 => {
+                                            self.config.strict_typewriter_mode =
+                                                !self.config.strict_typewriter_mode
+                                        }
                                         1 => self.config.auto_save = !self.config.auto_save,
-                                        2 => self.config.show_scene_numbers = !self.config.show_scene_numbers,
-                                        3 => self.config.show_page_numbers = !self.config.show_page_numbers,
+                                        2 => {
+                                            self.config.show_scene_numbers =
+                                                !self.config.show_scene_numbers
+                                        }
+                                        3 => {
+                                            self.config.show_page_numbers =
+                                                !self.config.show_page_numbers
+                                        }
                                         4 => self.config.hide_markup = !self.config.hide_markup,
                                         5 => self.config.autocomplete = !self.config.autocomplete,
                                         6 => self.config.auto_contd = !self.config.auto_contd,
-                                        7 => self.config.auto_paragraph_breaks = !self.config.auto_paragraph_breaks,
+                                        7 => {
+                                            self.config.auto_paragraph_breaks =
+                                                !self.config.auto_paragraph_breaks
+                                        }
                                         8 => self.config.focus_mode = !self.config.focus_mode,
                                         9 => self.config.high_contrast = !self.config.high_contrast,
                                         _ => {}
@@ -1972,19 +1785,14 @@ impl App {
                             }
                         }
                     } else if self.mode == AppMode::SceneNavigator {
-                         let x = mouse_event.column;
-                         let y = mouse_event.row;
-                         if x >= self.sidebar_area.x && x < self.sidebar_area.x + self.sidebar_area.width
-                            && y >= self.sidebar_area.y && y < self.sidebar_area.y + self.sidebar_area.height
-                         {
-                             
-                             
-                             
-                             
-                             
-                             
-                             
-                         }
+                        let x = mouse_event.column;
+                        let y = mouse_event.row;
+                        if x >= self.sidebar_area.x
+                            && x < self.sidebar_area.x + self.sidebar_area.width
+                            && y >= self.sidebar_area.y
+                            && y < self.sidebar_area.y + self.sidebar_area.height
+                        {
+                        }
                     }
                 }
                 _ => {}
@@ -2158,7 +1966,7 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::SettingsPane => {
-                    let settings_count = 10; 
+                    let settings_count = 10;
                     match key.code {
                         KeyCode::Esc => {
                             self.mode = AppMode::Normal;
@@ -2186,7 +1994,9 @@ impl App {
                                         !self.config.strict_typewriter_mode
                                 }
                                 1 => self.config.auto_save = !self.config.auto_save,
-                                2 => self.config.show_scene_numbers = !self.config.show_scene_numbers,
+                                2 => {
+                                    self.config.show_scene_numbers = !self.config.show_scene_numbers
+                                }
                                 3 => self.config.show_page_numbers = !self.config.show_page_numbers,
                                 4 => self.config.hide_markup = !self.config.hide_markup,
                                 5 => self.config.autocomplete = !self.config.autocomplete,
@@ -2199,7 +2009,7 @@ impl App {
                                 9 => self.config.high_contrast = !self.config.high_contrast,
                                 _ => {}
                             }
-                            *text_changed = true; 
+                            *text_changed = true;
                         }
                         KeyCode::Char('?') | KeyCode::Char('h') => {
                             let desc = match self.selected_setting {
@@ -2223,6 +2033,22 @@ impl App {
                     }
                     return Ok(false);
                 }
+                AppMode::Shortcuts => {
+                    match key.code {
+                        KeyCode::Esc | KeyCode::F(1) => {
+                            self.mode = AppMode::Normal;
+                        }
+                        KeyCode::Char('h') if ctrl => {
+                            self.open_scene_navigator();
+                        }
+                        KeyCode::Char('p') if ctrl => {
+                            self.mode = AppMode::SettingsPane;
+                            self.selected_setting = 0;
+                        }
+                        _ => {}
+                    }
+                    return Ok(false);
+                }
                 AppMode::Normal => {
                     self.clear_status();
 
@@ -2238,8 +2064,7 @@ impl App {
                     }
 
                     match key.code {
-                        KeyCode::Esc => {
-                        }
+                        KeyCode::Esc => {}
                         KeyCode::Char('x') if ctrl => {
                             if self.dirty {
                                 self.exit_after_save = true;
@@ -2343,6 +2168,9 @@ impl App {
                         KeyCode::Char('c') if ctrl => {
                             self.report_cursor_position();
                         }
+                        KeyCode::F(1) => {
+                            self.mode = AppMode::Shortcuts;
+                        }
                         KeyCode::Up => {
                             self.move_up();
                             *cursor_moved = true;
@@ -2420,16 +2248,6 @@ impl App {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
 pub fn draw(f: &mut Frame, app: &mut App) {
     let area = f.area();
 
@@ -2442,21 +2260,18 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     let show_bottom = !app.config.focus_mode || is_prompt || has_status;
 
     let title_height = if show_top { 1 } else { 0 };
-    let status_height = if show_bottom { 1 } else { 0 };
-    let shortcut_height = if show_bottom { 2 } else { 0 };
+    let footer_height = if show_bottom { 1 } else { 0 };
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(title_height),
             Constraint::Min(0),
-            Constraint::Length(status_height),
-            Constraint::Length(shortcut_height),
+            Constraint::Length(footer_height),
         ])
         .split(area);
 
-    let (title_area, mut text_area, status_area, shortcut_area) =
-        (chunks[0], chunks[1], chunks[2], chunks[3]);
+    let (_title_area, mut text_area, footer_area) = (chunks[0], chunks[1], chunks[2]);
 
     app.sidebar_area = Rect::default();
     if app.mode == AppMode::SceneNavigator {
@@ -2469,13 +2284,13 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     app.settings_area = Rect::default();
-    if app.mode == AppMode::SettingsPane {
+    if app.mode == AppMode::SettingsPane || app.mode == AppMode::Shortcuts {
         let side_chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Min(0), Constraint::Length(35)])
             .split(text_area);
         text_area = side_chunks[0];
-        app.settings_area = side_chunks[1];
+        app.settings_area = side_chunks[1]; // We reuse settings_area for the shortcuts sidebar too
     }
 
     let height = text_area.height as usize;
@@ -2509,7 +2324,11 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     let mut dark_gray_style = Style::default();
     if !app.config.no_color {
-        dark_gray_style.fg = Some(if app.config.high_contrast { Color::DarkGray } else { Color::DarkGray }); 
+        dark_gray_style.fg = Some(if app.config.high_contrast {
+            Color::DarkGray
+        } else {
+            Color::DarkGray
+        });
     }
 
     let mut sug_style = Style::default();
@@ -2517,12 +2336,20 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         sug_style = sug_style.add_modifier(Modifier::DIM | Modifier::BOLD);
     }
     if !app.config.no_color {
-        sug_style.fg = Some(if app.config.high_contrast { Color::Black } else { Color::DarkGray });
+        sug_style.fg = Some(if app.config.high_contrast {
+            Color::Black
+        } else {
+            Color::DarkGray
+        });
     }
 
     let mut page_num_style = Style::default();
     if !app.config.no_color {
-        page_num_style.fg = Some(if app.config.high_contrast { Color::DarkGray } else { Color::DarkGray });
+        page_num_style.fg = Some(if app.config.high_contrast {
+            Color::DarkGray
+        } else {
+            Color::DarkGray
+        });
     }
 
     let panel_style = Style::default().add_modifier(Modifier::REVERSED);
@@ -2575,8 +2402,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     strip_sigils(&row.raw_text, row.line_type).to_string()
                 };
 
-                let reveal_markup = !app.config.hide_markup
-                    || row.is_active;
+                let reveal_markup = !app.config.hide_markup || row.is_active;
                 let skip_md = row.line_type == LineType::Boneyard;
 
                 if matches!(
@@ -2701,15 +2527,20 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 } else {
                     heading.clone()
                 };
-                lines.push(Line::from(Span::styled(format!(" {}", heading_text), heading_style)));
+                lines.push(Line::from(Span::styled(
+                    format!(" {}", heading_text),
+                    heading_style,
+                )));
 
                 for syn in synopses {
-                    
                     let max_w = 40;
                     let mut current_line = String::new();
                     for word in syn.split_whitespace() {
                         if current_line.len() + word.len() + 1 > max_w {
-                            lines.push(Line::from(Span::styled(format!("   {}", current_line), base_style)));
+                            lines.push(Line::from(Span::styled(
+                                format!("   {}", current_line),
+                                base_style,
+                            )));
                             current_line.clear();
                         }
                         if !current_line.is_empty() {
@@ -2718,13 +2549,13 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                         current_line.push_str(word);
                     }
                     if !current_line.is_empty() {
-                        lines.push(Line::from(Span::styled(format!("   {}", current_line), base_style)));
+                        lines.push(Line::from(Span::styled(
+                            format!("   {}", current_line),
+                            base_style,
+                        )));
                     }
                 }
-
-                
                 lines.push(Line::from(""));
-
                 ListItem::new(lines)
             })
             .collect();
@@ -2735,6 +2566,48 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 .border_style(panel_style),
         );
         f.render_stateful_widget(list, app.sidebar_area, &mut app.navigator_state);
+    }
+
+    if _title_area.height > 0 {
+        let left_text = match app.mode {
+            AppMode::SceneNavigator => "  SCENE NAVIGATOR".to_string(),
+            AppMode::SettingsPane => "  SETTINGS".to_string(),
+            AppMode::Shortcuts => "  SHORTCUTS".to_string(),
+            _ => {
+                if app.has_multiple_buffers {
+                    format!("  [{}/{}]", app.current_buf_idx + 1, app.buffers.len())
+                } else {
+                    "  ".to_string()
+                }
+            }
+        };
+
+        let right_text = if app.dirty { "Modified  " } else { "  " };
+        let center_text = app
+            .file
+            .as_ref()
+            .and_then(|p| p.file_name())
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "New Script".to_string());
+
+        let width = _title_area.width as usize;
+        let left_len = left_text.chars().count();
+        let right_len = right_text.chars().count();
+        let center_len = center_text.chars().count();
+
+        let center_start = (width.saturating_sub(center_len)) / 2;
+        let pad1 = center_start.saturating_sub(left_len);
+        let pad2 = width.saturating_sub(left_len + pad1 + center_len + right_len);
+
+        let title_line = format!(
+            "{}{}{}{}{}",
+            left_text,
+            " ".repeat(pad1),
+            center_text,
+            " ".repeat(pad2),
+            right_text
+        );
+        f.render_widget(Paragraph::new(title_line).style(panel_style), _title_area);
     }
 
     if app.mode == AppMode::SettingsPane {
@@ -2774,165 +2647,96 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         f.render_widget(list, app.settings_area);
     }
 
-    if title_area.height > 0 {
-        let left_text = match app.mode {
-            AppMode::SceneNavigator => "  SCENE NAVIGATOR".to_string(),
-            AppMode::SettingsPane => "  SETTINGS".to_string(),
-            _ => {
-                if app.has_multiple_buffers {
-                    format!("  [{}/{}]", app.current_buf_idx + 1, app.buffers.len())
-                } else {
-                    "  ".to_string()
+    if app.mode == AppMode::Shortcuts {
+        let shortcuts = vec![
+            ("^S", "Save Script"),
+            ("^X", "Exit Buffer"),
+            ("^K", "Cut Line"),
+            ("^U", "Paste Line"),
+            ("^Z", "Undo Change"),
+            ("^R", "Redo Change"),
+            ("^H", "Scene Navigator"),
+            ("^P", "Settings Pane"),
+            ("^W", "Search Text"),
+            ("^C", "Cursor Position"),
+            ("F1", "Toggle Legend"),
+        ];
+
+        let items: Vec<ListItem> = shortcuts
+            .iter()
+            .map(|(key, desc)| {
+                let lines = vec![Line::from(vec![
+                    Span::styled(
+                        format!(" {:<3}", key),
+                        Style::default().add_modifier(Modifier::BOLD),
+                    ),
+                    Span::raw(format!("  {}", desc)),
+                ])];
+                ListItem::new(lines)
+            })
+            .collect();
+
+        let list = List::new(items).block(
+            Block::default()
+                .title(" Shortcuts ")
+                .borders(Borders::LEFT)
+                .border_style(panel_style),
+        );
+        f.render_widget(list, app.settings_area);
+    }
+
+    if footer_area.height > 0 {
+        let left_text = "  [F1] Shortcuts".to_string();
+
+        let cur_page = app.current_page_number();
+        let total_pages = app.total_page_count();
+        let word_count = app.total_word_count();
+
+        let right_text = format!("Page {}/{} | {} words  ", cur_page, total_pages, word_count);
+
+        let mut center_text = String::new();
+        if let Some(msg) = &app.status_msg {
+            center_text = format!(" [ {} ] ", msg);
+        } else {
+            match app.mode {
+                AppMode::Search => {
+                    let prompt_base = if app.last_search.is_empty() {
+                        "Search: ".to_string()
+                    } else {
+                        format!("Search [{}]: ", app.last_search)
+                    };
+                    center_text = format!("{}{}", prompt_base, app.search_query);
                 }
+                AppMode::PromptSave => center_text = "Save modified script? (Y/N/C)".to_string(),
+                AppMode::PromptFilename => {
+                    center_text = format!("File Name to Write: {}", app.filename_input)
+                }
+                _ => {}
             }
-        };
+        }
 
-        let right_text = if app.dirty { "Modified  " } else { "  " };
-        let center_text = app
-            .file
-            .as_ref()
-            .and_then(|p| p.file_name())
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_else(|| "New Script".to_string());
-
-        let width = title_area.width as usize;
+        let width = footer_area.width as usize;
         let left_len = left_text.chars().count();
         let right_len = right_text.chars().count();
         let center_len = center_text.chars().count();
 
         let center_start = (width.saturating_sub(center_len)) / 2;
-        let pad1 = center_start.saturating_sub(left_len);
-        let pad2 = width.saturating_sub(left_len + pad1 + center_len + right_len);
+        let pad_left = center_start.saturating_sub(left_len);
+        let pad_right = width.saturating_sub(left_len + pad_left + center_len + right_len);
 
-        let title_line = format!(
+        let footer_line = format!(
             "{}{}{}{}{}",
             left_text,
-            " ".repeat(pad1),
+            " ".repeat(pad_left),
             center_text,
-            " ".repeat(pad2),
+            " ".repeat(pad_right),
             right_text
         );
-        f.render_widget(Paragraph::new(title_line).style(panel_style), title_area);
-    }
-
-    if status_area.height > 0 {
-        match app.mode {
-            AppMode::Search => {
-                let prompt_base = if app.last_search.is_empty() {
-                    "Search: ".to_string()
-                } else {
-                    format!("Search [{}]: ", app.last_search)
-                };
-                let prompt_str = format!("{}{}", prompt_base, app.search_query);
-                let status_padded =
-                    format!("{:<width$}", prompt_str, width = status_area.width as usize);
-                f.render_widget(
-                    Paragraph::new(status_padded).style(panel_style),
-                    status_area,
-                );
-            }
-            AppMode::PromptSave => {
-                let prompt_str = "Save modified script?";
-                let status_padded =
-                    format!("{:<width$}", prompt_str, width = status_area.width as usize);
-                f.render_widget(
-                    Paragraph::new(status_padded).style(panel_style),
-                    status_area,
-                );
-            }
-            AppMode::PromptFilename => {
-                let prompt_base = format!("File Name to Write: {}", app.filename_input);
-                let status_padded = format!(
-                    "{:<width$}",
-                    prompt_base,
-                    width = status_area.width as usize
-                );
-                f.render_widget(
-                    Paragraph::new(status_padded).style(panel_style),
-                    status_area,
-                );
-            }
-            AppMode::SceneNavigator => {
-                let status_padded = format!(
-                    "{:<width$}",
-                    "Scene Navigator (Ctrl+H to Close, Enter to Jump)",
-                    width = status_area.width as usize
-                );
-                f.render_widget(
-                    Paragraph::new(status_padded).style(panel_style),
-                    status_area,
-                );
-            }
-            AppMode::SettingsPane => {
-                let status_padded = format!(
-                    "{:<width$}",
-                    "Settings (Ctrl+P to Close, Enter/Space to Toggle, ? for Help)",
-                    width = status_area.width as usize
-                );
-                f.render_widget(
-                    Paragraph::new(status_padded).style(panel_style),
-                    status_area,
-                );
-            }
-            AppMode::Normal => {
-                if let Some(msg) = &app.status_msg {
-                    let bracketed = format!("[ {} ]", msg);
-                    let msg_len = bracketed.chars().count();
-                    let pad_left = (status_area.width as usize).saturating_sub(msg_len) / 2;
-
-                    let spans = vec![
-                        Span::raw(" ".repeat(pad_left)),
-                        Span::styled(bracketed, panel_style),
-                    ];
-                    f.render_widget(Paragraph::new(Line::from(spans)), status_area);
-                } else {
-                    f.render_widget(Paragraph::new(""), status_area);
-                }
-            }
-        }
-    }
-
-    if shortcut_area.height > 0 {
-        let (sc1, sc2) = match app.mode {
-            AppMode::PromptSave => (vec![(" Y", "Yes")], vec![(" N", "No"), ("^C", "Cancel")]),
-            _ => (
-                vec![
-                    ("^S", "Save"),
-                    ("^K", "Cut"),
-                    ("^Z", "Undo"),
-                    ("^H", "Scene Nav"),
-                ],
-                vec![
-                    ("^X", "Exit"),
-                    ("^U", "Paste"),
-                    ("^R", "Redo"),
-                    ("^P", "Settings"),
-                ],
-            ),
-        };
-
-        let col_width = (shortcut_area.width / 4) as usize;
-
-        let render_shortcut_row = |shortcuts: &[(&str, &str)]| -> Line<'static> {
-            let mut spans = Vec::new();
-            for (key, desc) in shortcuts.iter() {
-                spans.push(Span::styled(key.to_string(), panel_style));
-                let text = format!(
-                    " {:<width$}",
-                    desc,
-                    width = col_width.saturating_sub(key.chars().count() + 1)
-                );
-                spans.push(Span::raw(text));
-            }
-            Line::from(spans)
-        };
-
-        let shortcuts_lines = vec![render_shortcut_row(&sc1), render_shortcut_row(&sc2)];
-        f.render_widget(Paragraph::new(shortcuts_lines), shortcut_area);
+        f.render_widget(Paragraph::new(footer_line).style(panel_style), footer_area);
     }
 
     match app.mode {
-        AppMode::Search if status_area.height > 0 => {
+        AppMode::Search if footer_area.height > 0 => {
             let prompt_base = if app.last_search.is_empty() {
                 "Search: ".to_string()
             } else {
@@ -2940,21 +2744,21 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             };
             let query_w = UnicodeWidthStr::width(prompt_base.as_str())
                 + UnicodeWidthStr::width(app.search_query.as_str());
-            let cur_screen_x = status_area.x + query_w as u16;
-            f.set_cursor_position((cur_screen_x, status_area.y));
+
+            let center_start = (footer_area.width as usize).saturating_sub(query_w) / 2;
+            let cur_screen_x = footer_area.x
+                + center_start as u16
+                + UnicodeWidthStr::width(prompt_base.as_str()) as u16;
+            f.set_cursor_position((cur_screen_x, footer_area.y));
         }
-        AppMode::PromptFilename if status_area.height > 0 => {
+        AppMode::PromptFilename if footer_area.height > 0 => {
             let prompt_base = "File Name to Write: ";
             let query_w = UnicodeWidthStr::width(prompt_base)
                 + UnicodeWidthStr::width(app.filename_input.as_str());
-            let cur_screen_x = status_area.x + query_w as u16;
-            f.set_cursor_position((cur_screen_x, status_area.y));
-        }
-        AppMode::PromptSave if status_area.height > 0 => {
-            let query_w = UnicodeWidthStr::width("Save modified script?");
-            let cur_screen_x = (status_area.x + query_w as u16 + 1)
-                .min(status_area.x + status_area.width.saturating_sub(1));
-            f.set_cursor_position((cur_screen_x, status_area.y));
+            let center_start = (footer_area.width as usize).saturating_sub(query_w) / 2;
+            let cur_screen_x =
+                footer_area.x + center_start as u16 + UnicodeWidthStr::width(prompt_base) as u16;
+            f.set_cursor_position((cur_screen_x, footer_area.y));
         }
         AppMode::Normal => {
             let cur_screen_y =
@@ -3471,7 +3275,6 @@ mod app_tests {
             "Suggestion should be None when disabled"
         );
     }
-
 
     #[test]
     fn test_app_auto_paragraph_breaks_disabled() {
@@ -4186,7 +3989,6 @@ mod app_tests {
         assert_eq!(terminal.backend_mut().get_cursor_position().unwrap().y, 12);
     }
 
-
     fn send_key_press(app: &mut App, code: KeyCode, modifiers: KeyModifiers) {
         use crossterm::event::{Event, KeyEvent, KeyEventKind, KeyEventState};
         let mut update_target_x = false;
@@ -4298,7 +4100,6 @@ mod app_tests {
         assert_eq!(app.cursor_x, 1);
         assert!(app.dirty);
     }
-
 
     #[test]
     fn test_nano_navigation_and_deletion_shortcuts() {
