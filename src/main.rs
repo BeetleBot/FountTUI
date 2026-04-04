@@ -10,7 +10,7 @@ use crossterm::{
 use ratatui::{Terminal, backend::CrosstermBackend};
 use std::{io, panic, time::Duration};
 
-use fount::app::{App, draw};
+use fount::app::{App, ui::draw};
 use fount::config::Cli;
 use fount::export;
 
