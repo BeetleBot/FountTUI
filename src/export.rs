@@ -213,6 +213,7 @@ pub fn export_document(
                 no_formatting: config.no_formatting || !with_ansi,
             },
             &empty_highlights,
+            &empty_highlights,
         );
 
         for span in spans {
@@ -308,7 +309,7 @@ mod export_tests {
             is_phantom: false,
         }];
         let config = Config::default();
-        let exported = export_document(&layout_empty, &["".to_string()], &config, true);
+        let exported = export_document(&layout_empty, vec!["".to_string()].as_slice(), &config, true);
         assert_eq!(exported, "\n");
 
         let colors = vec![
@@ -337,7 +338,7 @@ mod export_tests {
                 fmt: Rc::new(LineFormatting::default()),
                 is_phantom: false,
             }];
-            let out = export_document(&layout, &["Test".to_string()], &config, true);
+            let out = export_document(&layout, vec!["Test".to_string()].as_slice(), &config, true);
             assert!(out.contains("\x1b[3"));
         }
     }

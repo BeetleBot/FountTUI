@@ -58,8 +58,6 @@ pub enum AppMode {
 
     ExportPane,
 
-    FormatPane,
-
     PromptExportFilename,
     Command,
 }
@@ -161,8 +159,6 @@ pub struct App {
     pub selected_setting: usize,
 
     pub selected_export_option: usize,
-    
-    pub selected_format_option: usize,
 
     pub sidebar_area: Rect,
 
@@ -173,6 +169,8 @@ pub struct App {
     pub command_input: String,
 
     pub command_error: bool,
+
+    pub selection_anchor: Option<(usize, usize)>,
 }
 
 impl Drop for App {
@@ -291,12 +289,12 @@ impl App {
             selected_scene: 0,
             selected_setting: 0,
             selected_export_option: 0,
-            selected_format_option: 0,
             sidebar_area: Rect::default(),
             settings_area: Rect::default(),
             navigator_state: ListState::default(),
             command_input: String::new(),
             command_error: false,
+            selection_anchor: None,
         };
 
         let mut first_buf = std::mem::take(&mut app.buffers[0]);
@@ -1034,6 +1032,148 @@ impl App {
         self.layout = build_layout(&self.lines, &self.types, self.cursor_y, &self.config);
     }
 
+    // ── Selection Helpers ────────────────────────────────────────────────────
+
+    pub fn clear_selection(&mut self) {
+        self.selection_anchor = None;
+    }
+
+    /// Returns (start, end) in document order, where each is (line, char).
+    pub fn selection_range(&self) -> Option<((usize, usize), (usize, usize))> {
+        let anchor = self.selection_anchor?;
+        let cursor = (self.cursor_y, self.cursor_x);
+        if anchor <= cursor {
+            Some((anchor, cursor))
+        } else {
+            Some((cursor, anchor))
+        }
+    }
+
+    pub fn selected_text(&self) -> String {
+        let Some(((sl, sc), (el, ec))) = self.selection_range() else {
+            return String::new();
+        };
+        if sl == el {
+            // Single line
+            let line = &self.lines[sl];
+            let chars: Vec<char> = line.chars().collect();
+            let sc = sc.min(chars.len());
+            let ec = ec.min(chars.len());
+            chars[sc..ec].iter().collect()
+        } else {
+            let mut result = String::new();
+            // First partial line
+            let first: Vec<char> = self.lines[sl].chars().collect();
+            let sc = sc.min(first.len());
+            result.push_str(&first[sc..].iter().collect::<String>());
+            result.push('\n');
+            // Middle lines
+            for li in (sl + 1)..el {
+                result.push_str(&self.lines[li]);
+                result.push('\n');
+            }
+            // Last partial line
+            let last: Vec<char> = self.lines[el].chars().collect();
+            let ec = ec.min(last.len());
+            result.push_str(&last[..ec].iter().collect::<String>());
+            result
+        }
+    }
+
+    /// Delete the selected region and place cursor at selection start.
+    /// Returns true if anything was deleted.
+    pub fn delete_selection(&mut self) -> bool {
+        let Some(((sl, sc), (el, ec))) = self.selection_range() else {
+            return false;
+        };
+        self.selection_anchor = None;
+
+        if sl == el {
+            let chars: Vec<char> = self.lines[sl].chars().collect();
+            let sc = sc.min(chars.len());
+            let ec = ec.min(chars.len());
+            let new_line: String = chars[..sc].iter().chain(chars[ec..].iter()).collect();
+            self.lines[sl] = new_line;
+        } else {
+            let prefix: String = self.lines[sl].chars().take(sc).collect();
+            let suffix: String = self.lines[el].chars().skip(ec).collect();
+            self.lines[sl] = format!("{}{}", prefix, suffix);
+            self.lines.drain((sl + 1)..=el);
+            self.types.drain((sl + 1)..=el);
+        }
+
+        self.cursor_y = sl;
+        self.cursor_x = sc;
+        true
+    }
+
+    /// Select entire document.
+    pub fn select_all(&mut self) {
+        self.selection_anchor = Some((0, 0));
+        let last_line = self.lines.len().saturating_sub(1);
+        self.cursor_y = last_line;
+        self.cursor_x = self.lines[last_line].chars().count();
+    }
+
+    pub fn copy_to_clipboard(&mut self) {
+        let text = self.selected_text();
+        if text.is_empty() {
+            return;
+        }
+        match arboard::Clipboard::new() {
+            Ok(mut cb) => {
+                if let Err(e) = cb.set_text(text) {
+                    self.set_status(&format!("Clipboard error: {}", e));
+                } else {
+                    self.set_status("Copied to clipboard");
+                }
+            }
+            Err(e) => self.set_status(&format!("Clipboard unavailable: {}", e)),
+        }
+    }
+
+    pub fn cut_to_clipboard(&mut self) -> bool {
+        let text = self.selected_text();
+        if text.is_empty() {
+            return false;
+        }
+        match arboard::Clipboard::new() {
+            Ok(mut cb) => {
+                let _ = cb.set_text(text);
+            }
+            Err(_) => {}
+        }
+        self.delete_selection()
+    }
+
+    pub fn paste_from_clipboard(&mut self) {
+        match arboard::Clipboard::new() {
+            Ok(mut cb) => {
+                match cb.get_text() {
+                    Ok(text) => {
+                        // If selection active, replace it first
+                        if self.selection_anchor.is_some() {
+                            self.delete_selection();
+                        }
+                        // Insert text at cursor, handling multi-line paste
+                        let mut first = true;
+                        for part in text.split('\n') {
+                            if !first {
+                                self.insert_newline(false);
+                            }
+                            for ch in part.chars() {
+                                self.insert_char(ch);
+                            }
+                            first = false;
+                        }
+                    }
+                    Err(e) => self.set_status(&format!("Paste error: {}", e)),
+                }
+            }
+            Err(e) => self.set_status(&format!("Clipboard unavailable: {}", e)),
+        }
+    }
+
     /// Helper to save the current buffer to a new path.
     pub fn save_as(&mut self, path: PathBuf) -> io::Result<()> {
         let content = self.lines.join("\n");
@@ -1111,58 +1251,42 @@ impl App {
                     self.set_error("No filename");
                 }
             }
-            "renum" => {
-                self.renumber_all_scenes();
-                self.set_status("All scenes renumbered");
-                *text_changed = true;
-            }
-            "clearnum" => {
-                self.strip_all_scene_numbers();
-                *text_changed = true;
-            }
-            "locknum" => {
-                self.config.production_lock = true;
-                self.set_status("Production Lock ON");
-            }
-            "unlocknum" => {
-                self.config.production_lock = false;
-                self.set_status("Production Lock OFF");
-            }
             "set" => {
                 if args.len() >= 2 {
                     let opt = args[0];
                     let val_str = args[1].to_lowercase();
                     let val = val_str == "on" || val_str == "true";
                     match opt {
-                        "markup" => self.config.hide_markup = !val, // hide_markup=true means markup is OFF
-                        "pagenums" => self.config.show_page_numbers = val,
-                        "scenenums" => self.config.show_scene_numbers = val,
-                        "contd" => self.config.auto_contd = val,
+                        "markup"       => self.config.hide_markup = !val,
+                        "pagenums"     => self.config.show_page_numbers = val,
+                        "scenenums"    => self.config.show_scene_numbers = val,
+                        "contd"        => self.config.auto_contd = val,
+                        "typewriter"   => self.config.strict_typewriter_mode = val,
+                        "autosave"     => self.config.auto_save = val,
+                        "autocomplete" => self.config.autocomplete = val,
+                        "autobreaks"   => self.config.auto_paragraph_breaks = val,
+                        "focus"        => self.config.focus_mode = val,
+                        _ => self.set_error(&format!("Unknown option: {}", opt)),
+                    }
+                    *text_changed = true;
+                } else if args.len() == 1 {
+                    // Toggle syntax: :set focus
+                    let opt = args[0];
+                    match opt {
+                        "markup"       => self.config.hide_markup = !self.config.hide_markup,
+                        "pagenums"     => self.config.show_page_numbers = !self.config.show_page_numbers,
+                        "scenenums"    => self.config.show_scene_numbers = !self.config.show_scene_numbers,
+                        "contd"        => self.config.auto_contd = !self.config.auto_contd,
+                        "typewriter"   => self.config.strict_typewriter_mode = !self.config.strict_typewriter_mode,
+                        "autosave"     => self.config.auto_save = !self.config.auto_save,
+                        "autocomplete" => self.config.autocomplete = !self.config.autocomplete,
+                        "autobreaks"   => self.config.auto_paragraph_breaks = !self.config.auto_paragraph_breaks,
+                        "focus"        => self.config.focus_mode = !self.config.focus_mode,
                         _ => self.set_error(&format!("Unknown option: {}", opt)),
                     }
                     *text_changed = true;
                 } else {
-                    self.set_error("Usage: :set <option> <on/off>");
-                }
-            }
-            // Scene jump :s50 or :s14B
-            s if s.starts_with('s') && s.len() > 1 && !s[1..].chars().next().map(|c| c == 'e').unwrap_or(false) => {
-                let target = &s[1..];
-                let mut found = false;
-                for (line_idx, _, scene_num, _, _) in &self.scenes {
-                    if let Some(num) = scene_num {
-                        if num == target {
-                            self.cursor_y = *line_idx;
-                            self.cursor_x = 0;
-                            *update_target_x = true;
-                            *cursor_moved = true;
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if !found {
-                    self.set_error(&format!("Scene #{} not found", target));
+                    self.set_error("Usage: /set <option> [on/off]");
                 }
             }
             "u" | "undo" => {
@@ -1185,20 +1309,6 @@ impl App {
                     self.set_error("Nothing to redo");
                 }
             }
-            "cut" => {
-                self.cut_line();
-                self.set_status("Line cut");
-                *update_target_x = true;
-                *text_changed = true;
-                *cursor_moved = true;
-            }
-            "paste" => {
-                self.paste_line();
-                self.set_status("Line pasted");
-                *update_target_x = true;
-                *text_changed = true;
-                *cursor_moved = true;
-            }
             "pos" => {
                 self.report_cursor_position();
             }
@@ -1211,6 +1321,52 @@ impl App {
                     self.inject_scene_number_tag(Some(tag_part));
                 }
                 *text_changed = true;
+            }
+            // Jump to line number: /123
+            s if s.chars().all(|c| c.is_ascii_digit()) => {
+                if let Ok(line_num) = s.parse::<usize>() {
+                    let target = line_num.saturating_sub(1);
+                    self.cursor_y = target.min(self.lines.len().saturating_sub(1));
+                    self.cursor_x = 0;
+                    *cursor_moved = true;
+                    *update_target_x = true;
+                }
+            }
+            // Jump to scene number: /s50
+            s if s.starts_with('s') && s[1..].chars().all(|c| c.is_ascii_digit()) => {
+                let scene_num_str = &s[1..];
+                if let Ok(num) = scene_num_str.parse::<usize>() {
+                    if let Some(pos) = self.scenes.iter().position(|(_, _, s_num, _, _)| {
+                        s_num.as_ref().map(|n: &String| n.trim_matches('#').parse::<usize>().unwrap_or(0)) == Some(num)
+                    }) {
+                        let line_idx = self.scenes[pos].0;
+                        self.cursor_y = line_idx;
+                        self.cursor_x = 0;
+                        *cursor_moved = true;
+                        *update_target_x = true;
+                        self.set_status(&format!("Jumped to scene {}", num));
+                    } else {
+                        self.set_error(&format!("Scene {} not found", num));
+                    }
+                }
+            }
+            "renum" => {
+                self.renumber_all_scenes();
+                self.set_status("Scenes renumbered");
+                *text_changed = true;
+            }
+            "clearnum" => {
+                self.strip_all_scene_numbers();
+                self.set_status("Scene numbers cleared");
+                *text_changed = true;
+            }
+            "locknum" => {
+                self.config.production_lock = true;
+                self.set_status("Production lock ENABLED");
+            }
+            "unlocknum" => {
+                self.config.production_lock = false;
+                self.set_status("Production lock DISABLED");
             }
             "search" => {
                 if let Some(query) = args.get(0) {
@@ -1227,8 +1383,32 @@ impl App {
                     self.mode = AppMode::Search;
                 }
             }
+            "copy" => {
+                self.copy_to_clipboard();
+            }
+            "cut" => {
+                if self.selection_anchor.is_some() {
+                    self.cut_to_clipboard();
+                } else {
+                    self.cut_line();
+                    self.set_status("Line cut");
+                }
+                *update_target_x = true;
+                *text_changed = true;
+                *cursor_moved = true;
+            }
+            "paste" => {
+                self.paste_from_clipboard();
+                *update_target_x = true;
+                *text_changed = true;
+                *cursor_moved = true;
+            }
+            "selectall" => {
+                self.select_all();
+                *cursor_moved = true;
+            }
             _ => {
-                self.set_error(&format!("Unknown command: :{}", cmd));
+                self.set_error(&format!("Unknown command: /{}", cmd));
             }
         }
 

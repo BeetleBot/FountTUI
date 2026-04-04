@@ -23,9 +23,8 @@ path = "src/lib.rs"
 name = "fount"
 path = "src/main.rs"
 
-[target.'cfg(windows)'.dependencies]
-clipboard-win = "5.4.0"
 [dependencies]
+arboard = { version = "3", features = ["wayland-data-control"] }
 ratatui = "0.29.0"
 crossterm = { version = "0.28.1", features = ["event-stream"] }
 unicode-width = "0.2.0"

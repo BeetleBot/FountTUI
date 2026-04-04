@@ -5,6 +5,29 @@ use crate::app::{App, AppMode};
 
 impl App {
 
+    fn handle_mouse_cursor(
+        &mut self,
+        mouse_y: u16,
+        mouse_x: u16,
+        cursor_moved: &mut bool,
+        update_target_x: &mut bool,
+    ) {
+        // Adjust for title bar (fixed at 1 line if not focus mode)
+        let title_height = if !self.config.focus_mode { 1 } else { 0 };
+        let vis_y = (mouse_y as usize).saturating_sub(title_height) + self.scroll;
+        
+        if let Some(row) = self.layout.get(vis_y) {
+            self.cursor_y = row.line_idx;
+            
+            // Need to know if this is the last visual row for the logical line
+            let is_last = self.layout.get(vis_y + 1).map(|next| next.line_idx != row.line_idx).unwrap_or(true);
+            
+            self.cursor_x = row.visual_to_logical_x(mouse_x, is_last);
+            *cursor_moved = true;
+            *update_target_x = true;
+        }
+    }
+
     pub fn handle_event(
         &mut self,
         ev: Event,
@@ -46,7 +69,16 @@ impl App {
                     }
                 }
                 MouseEventKind::Down(MouseButton::Left) => {
-                    if self.mode == AppMode::SettingsPane {
+                    if self.mode == AppMode::Normal {
+                        self.clear_selection();
+                        self.handle_mouse_cursor(
+                            mouse_event.row,
+                            mouse_event.column,
+                            cursor_moved,
+                            update_target_x,
+                        );
+                        self.selection_anchor = Some((self.cursor_y, self.cursor_x));
+                    } else if self.mode == AppMode::SettingsPane {
                         let x = mouse_event.column;
                         let y = mouse_event.row;
                         if x >= self.settings_area.x
@@ -135,6 +167,17 @@ impl App {
                                 }
                             }
                         }
+                    }
+                }
+                MouseEventKind::Drag(MouseButton::Left) => {
+                    if self.mode == AppMode::Normal {
+                        self.handle_mouse_cursor(
+                            mouse_event.row,
+                            mouse_event.column,
+                            cursor_moved,
+                            update_target_x,
+                        );
+                        *cursor_moved = true;
                     }
                 }
                 _ => {}
@@ -418,10 +461,7 @@ impl App {
                         KeyCode::Char('p') if ctrl => {
                             self.mode = AppMode::Normal;
                         }
-                        KeyCode::Char('f') if ctrl => {
-                            self.mode = AppMode::FormatPane;
-                            self.selected_format_option = 0;
-                        }
+                        KeyCode::Char('f') if ctrl => {}
                         KeyCode::Char('h') if ctrl => {
                             self.open_scene_navigator();
                         }
@@ -466,71 +506,6 @@ impl App {
                     }
                     return Ok(false);
                 }
-                AppMode::FormatPane => {
-                    // Navigable count = 7 (headers are skipped)
-                    // nav idx -> action : 0=PageNums, 1=HideMarkup, 2=AutoContd,
-                    //                     3=ProdLock, 4=Renumber, 5=ClearAll, 6=ShowSceneNums
-                    const NAV_COUNT: usize = 7;
-                    fn next_nav(cur: usize, dir: isize) -> usize {
-                        let next = (cur as isize + dir).clamp(0, (NAV_COUNT - 1) as isize) as usize;
-                        next
-                    }
-                    match key.code {
-                        KeyCode::Esc | KeyCode::Char('f') if ctrl => {
-                            self.mode = AppMode::Normal;
-                        }
-                        KeyCode::Char('p') if ctrl => {
-                            self.mode = AppMode::SettingsPane;
-                            self.selected_setting = 0;
-                        }
-                        KeyCode::Char('h') if ctrl => {
-                            self.open_scene_navigator();
-                        }
-                        KeyCode::Up | KeyCode::Char('k') => {
-                            self.selected_format_option = next_nav(self.selected_format_option, -1);
-                        }
-                        KeyCode::Down | KeyCode::Char('j') => {
-                            self.selected_format_option = next_nav(self.selected_format_option, 1);
-                        }
-                        KeyCode::Enter | KeyCode::Char(' ') => {
-                            match self.selected_format_option {
-                                0 => self.config.show_page_numbers = !self.config.show_page_numbers,
-                                1 => self.config.hide_markup = !self.config.hide_markup,
-                                2 => self.config.auto_contd = !self.config.auto_contd,
-                                3 => {
-                                    self.config.production_lock = !self.config.production_lock;
-                                    let state = if self.config.production_lock { "ON" } else { "OFF" };
-                                    self.set_status(&format!("Production Lock {}", state));
-                                }
-                                4 => {
-                                    self.renumber_all_scenes();
-                                    self.set_status("All scenes renumbered");
-                                }
-                                5 => {
-                                    self.strip_all_scene_numbers();
-                                }
-                                6 => self.config.show_scene_numbers = !self.config.show_scene_numbers,
-                                _ => {}
-                            }
-                            *text_changed = true;
-                        }
-                        KeyCode::Char('?') => {
-                            let desc = match self.selected_format_option {
-                                0 => "Display page numbers in the right margin.",
-                                1 => "Hide Fountain markup except on the active line.",
-                                2 => "Automatically append (CONT'D) to repeated characters.",
-                                3 => "Lock: prevents automatic scene number changes while editing.",
-                                4 => "Number all scenes chronologically (respects custom tags like 14B).",
-                                5 => "Remove ALL scene number tags from the entire script.",
-                                6 => "Display scene numbers in the left margin.",
-                                _ => "",
-                            };
-                            if !desc.is_empty() { self.set_status(desc); }
-                        }
-                        _ => {}
-                    }
-                    return Ok(false);
-                }
                 AppMode::Command => {
                     match key.code {
                         KeyCode::Esc => {
@@ -543,8 +518,8 @@ impl App {
                                 "w", "q", "q!", "wq",
                                 "renum", "clearnum", "locknum", "unlocknum",
                                 "set", "search",
-                                "u", "undo", "redo", "cut", "paste", "pos",
-                                "injectnum", "s",
+                                "u", "undo", "redo", "copy", "cut", "paste", "pos",
+                                "injectnum", "selectall", "s",
                             ];
                             let matches: Vec<&&str> = commands.iter()
                                 .filter(|c| c.starts_with(&self.command_input))
@@ -590,10 +565,7 @@ impl App {
                             self.mode = AppMode::SettingsPane;
                             self.selected_setting = 0;
                         }
-                        KeyCode::Char('f') if ctrl => {
-                            self.mode = AppMode::FormatPane;
-                            self.selected_format_option = 0;
-                        }
+                        KeyCode::Char('f') if ctrl => {}
                         _ => {}
                     }
                     return Ok(false);
@@ -670,11 +642,8 @@ impl App {
                             self.mode = AppMode::SettingsPane;
                             self.selected_setting = 0;
                         }
-                        KeyCode::Char('f') if ctrl => {
-                            self.mode = AppMode::FormatPane;
-                            self.selected_format_option = 0;
-                        }
-                        KeyCode::Char(':') => {
+                        KeyCode::Char('f') if ctrl => {}
+                        KeyCode::Char('/') => {
                             self.mode = AppMode::Command;
                             self.command_input.clear();
                             self.command_error = false;
@@ -691,23 +660,97 @@ impl App {
                         KeyCode::Char('c') if ctrl => {}
                         KeyCode::Char('i') if ctrl && shift => {}
 
+                        KeyCode::Char('a') if ctrl => {
+                            self.select_all();
+                            *cursor_moved = true;
+                        }
+                        KeyCode::Char('c') if ctrl => {
+                            self.copy_to_clipboard();
+                        }
+                        KeyCode::Char('x') if ctrl => {
+                            if self.selection_anchor.is_some() {
+                                self.cut_to_clipboard();
+                            } else {
+                                self.cut_line();
+                                self.set_status("Line cut");
+                            }
+                            *update_target_x = true;
+                            *text_changed = true;
+                            *cursor_moved = true;
+                        }
+                        KeyCode::Char('v') if ctrl => {
+                            self.paste_from_clipboard();
+                            *update_target_x = true;
+                            *text_changed = true;
+                            *cursor_moved = true;
+                        }
                         KeyCode::F(1) => {
                             self.mode = AppMode::Shortcuts;
                         }
+                        KeyCode::Up if shift => {
+                            if self.selection_anchor.is_none() {
+                                self.selection_anchor = Some((self.cursor_y, self.cursor_x));
+                            }
+                            self.move_up();
+                            *cursor_moved = true;
+                        }
+                        KeyCode::Down if shift => {
+                            if self.selection_anchor.is_none() {
+                                self.selection_anchor = Some((self.cursor_y, self.cursor_x));
+                            }
+                            self.move_down();
+                            *cursor_moved = true;
+                        }
+                        KeyCode::Left if shift => {
+                            if self.selection_anchor.is_none() {
+                                self.selection_anchor = Some((self.cursor_y, self.cursor_x));
+                            }
+                            self.move_left();
+                            *update_target_x = true;
+                            *cursor_moved = true;
+                        }
+                        KeyCode::Right if shift => {
+                            if self.selection_anchor.is_none() {
+                                self.selection_anchor = Some((self.cursor_y, self.cursor_x));
+                            }
+                            self.move_right();
+                            *update_target_x = true;
+                            *cursor_moved = true;
+                        }
+                        KeyCode::Home if shift => {
+                            if self.selection_anchor.is_none() {
+                                self.selection_anchor = Some((self.cursor_y, self.cursor_x));
+                            }
+                            self.move_home();
+                            *update_target_x = true;
+                            *cursor_moved = true;
+                        }
+                        KeyCode::End if shift => {
+                            if self.selection_anchor.is_none() {
+                                self.selection_anchor = Some((self.cursor_y, self.cursor_x));
+                            }
+                            self.move_end();
+                            *update_target_x = true;
+                            *cursor_moved = true;
+                        }
                         KeyCode::Up => {
+                            self.clear_selection();
                             self.move_up();
                             *cursor_moved = true;
                         }
                         KeyCode::Down => {
+                            self.clear_selection();
                             self.move_down();
                             *cursor_moved = true;
                         }
                         KeyCode::Left => {
+                            self.clear_selection();
                             self.move_left();
                             *update_target_x = true;
                             *cursor_moved = true;
                         }
                         KeyCode::Right => {
+                            self.clear_selection();
                             self.move_right();
                             *update_target_x = true;
                             *cursor_moved = true;
@@ -739,13 +782,23 @@ impl App {
                             *cursor_moved = true;
                         }
                         KeyCode::Backspace => {
-                            self.backspace();
+                            if self.selection_anchor.is_some() {
+                                self.delete_selection();
+                                self.parse_document();
+                            } else {
+                                self.backspace();
+                            }
                             *update_target_x = true;
                             *text_changed = true;
                             *cursor_moved = true;
                         }
                         KeyCode::Delete => {
-                            self.delete_forward();
+                            if self.selection_anchor.is_some() {
+                                self.delete_selection();
+                                self.parse_document();
+                            } else {
+                                self.delete_forward();
+                            }
                             *update_target_x = true;
                             *text_changed = true;
                             *cursor_moved = true;
@@ -757,6 +810,10 @@ impl App {
                             *cursor_moved = true;
                         }
                         KeyCode::Char(c) if !ctrl => {
+                            if self.selection_anchor.is_some() {
+                                self.delete_selection();
+                                self.parse_document();
+                            }
                             self.insert_char(c);
                             *update_target_x = true;
                             *text_changed = true;

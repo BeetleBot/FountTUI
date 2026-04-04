@@ -62,7 +62,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     app.settings_area = Rect::default();
-    if app.mode == AppMode::SettingsPane || app.mode == AppMode::Shortcuts || app.mode == AppMode::ExportPane || app.mode == AppMode::FormatPane {
+    if app.mode == AppMode::SettingsPane || app.mode == AppMode::Shortcuts || app.mode == AppMode::ExportPane {
         let side_chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Min(0), Constraint::Length(35)])
@@ -219,6 +219,26 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     }
                 }
 
+                // Selection highlight (overrides search)
+                let mut sel_highlights = HashSet::new();
+                if let Some(((sel_sl, sel_sc), (sel_el, sel_ec))) = app.selection_range() {
+                    let li = row.line_idx;
+                    if li >= sel_sl && li <= sel_el {
+                        let line_len = full_logical_line.chars().count();
+                        let from = if li == sel_sl { sel_sc } else { 0 };
+                        let to = if li == sel_el { sel_ec.min(line_len) } else { line_len };
+                        for idx in from..to {
+                            sel_highlights.insert(idx);
+                        }
+                    }
+                }
+
+                // Merge: sel_highlights takes priority — remove those from row_highlights
+                // so render_inline gets the clean search set, and we'll override selected below.
+                for idx in &sel_highlights {
+                    row_highlights.remove(idx);
+                }
+
                 spans.extend(render_inline(
                     &display,
                     bst,
@@ -233,6 +253,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                         no_formatting: app.config.no_formatting,
                     },
                     &row_highlights,
+                    &sel_highlights,
                 ));
 
                 if row.is_active
@@ -364,8 +385,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let left_text = match app.mode {
             AppMode::SceneNavigator => "  SCENE NAVIGATOR".to_string(),
             AppMode::SettingsPane => "  SETTINGS".to_string(),
-            AppMode::FormatPane => "  FORMAT".to_string(),
-            AppMode::Shortcuts => "  SHORTCUTS".to_string(),
             AppMode::ExportPane => "  EXPORT OPTIONS".to_string(),
             _ => {
                 if app.has_multiple_buffers {
@@ -435,59 +454,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         f.render_widget(list, app.settings_area);
     }
 
-    if app.mode == AppMode::FormatPane {
-        // Sections: each item is (display_text, is_header, is_toggle with Option<bool>)
-        // Headers are visual-only and skipped during navigation.
-        // Navigable indices: 0=Show Page Nums, 1=Hide Markup, 2=Auto-CONT'D,
-        //                    3=Production Lock, 4=Re number scenes, 5=Clear all scene numbers., 6=Show Scene Nums
-        let nav_items: Vec<(bool, &str, Option<bool>)> = vec![
-            // is_header, label, toggle_value (None = action button)
-            (true,  "── GENERAL ──",               None),
-            (false, "Show Page Nums",               Some(app.config.show_page_numbers)),
-            (false, "Hide Markup",                  Some(app.config.hide_markup)),
-            (false, "Auto-CONT'D",                  Some(app.config.auto_contd)),
-            (true,  "── SCENE NUMBERS ──",          None),
-            (false, "Production Lock",              Some(app.config.production_lock)),
-            (false, "Re number scenes",             None),
-            (false, "Clear all scene numbers.",     None),
-            (false, "Show Scene Nums",              Some(app.config.show_scene_numbers)),
-        ];
-
-        let items: Vec<ListItem> = nav_items
-            .iter()
-            .enumerate()
-            .map(|(render_i, (is_header, label, toggle))| {
-                // The navigable index excludes headers
-                let nav_i = nav_items[..render_i].iter().filter(|(h,_,_)| !h).count();
-                let is_selected = !is_header && nav_i == app.selected_format_option;
-                let style = if is_selected {
-                    Style::default().add_modifier(Modifier::REVERSED)
-                } else if *is_header {
-                    Style::default().add_modifier(Modifier::DIM)
-                } else {
-                    Style::default()
-                };
-
-                let text = if *is_header {
-                    format!(" {}", label)
-                } else if let Some(v) = toggle {
-                    format!(" {} {}", if *v { "[X]" } else { "[ ]" }, label)
-                } else {
-                    format!(" [→] {}", label)
-                };
-
-                ListItem::new(text).style(style)
-            })
-            .collect();
-
-        let list = List::new(items).block(
-            Block::default()
-                .title(" Format  [?] ")
-                .border_style(panel_style),
-        );
-        f.render_widget(list, app.settings_area);
-    }
-
     if app.mode == AppMode::ExportPane {
         let export_options = vec![
             format!(" Format: {}", app.config.export_format.to_uppercase()),
@@ -518,68 +484,28 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     if app.mode == AppMode::Shortcuts {
-        // Categorized Command Legend
-        enum LegendRow {
-            Header(&'static str),
-            Entry(&'static str, &'static str),
-        }
-        let legend: Vec<LegendRow> = vec![
-            LegendRow::Header("── FILE ─────────────────────────"),
-            LegendRow::Entry(":w",        "Save script"),
-            LegendRow::Entry(":w <name>", "Save as new file"),
-            LegendRow::Entry(":q",        "Quit (safe)"),
-            LegendRow::Entry(":q!",       "Force quit"),
-            LegendRow::Entry(":wq",       "Save and quit"),
-            LegendRow::Entry("^X",        "Close buffer"),
-            LegendRow::Header("── EDIT ─────────────────────────"),
-            LegendRow::Entry(":u / :undo","Undo last change"),
-            LegendRow::Entry(":redo",     "Redo last change"),
-            LegendRow::Entry(":cut",      "Cut current line"),
-            LegendRow::Entry(":paste",    "Paste cut line"),
-            LegendRow::Entry(":pos",      "Report cursor position"),
-            LegendRow::Header("── SCENES ───────────────────────"),
-            LegendRow::Entry(":renum",         "Renumber all scenes"),
-            LegendRow::Entry(":clearnum",      "Strip all scene numbers"),
-            LegendRow::Entry(":injectnum",     "Inject num at cursor"),
-            LegendRow::Entry(":injectnum[N]",  "Inject specific number N"),
-            LegendRow::Header("── SEARCH & JUMP ──────────────"),
-            LegendRow::Entry(":search [q]",   "Search for text"),
-            LegendRow::Entry(":[n]",          "Jump to line number"),
-            LegendRow::Entry(":s[n]",         "Jump to scene number"),
-            LegendRow::Header("── SETTINGS ──────────────────"),
-            LegendRow::Entry(":locknum",       "Enable production lock"),
-            LegendRow::Entry(":unlocknum",     "Disable production lock"),
-            LegendRow::Entry(":set markup on/off",   "Show/hide markup"),
-            LegendRow::Entry(":set pagenums on/off", "Show/hide page nums"),
-            LegendRow::Header("── PANES (Keys) ─────────────"),
-            LegendRow::Entry("^H", "Scene Navigator"),
-            LegendRow::Entry("^P", "Settings Pane"),
-            LegendRow::Entry("^F", "Format Pane"),
-            LegendRow::Entry("^E", "Export Pane"),
-            LegendRow::Entry("F1", "Toggle this legend"),
-            LegendRow::Entry("^. / ^,", "Next / prev buffer"),
+        let items = vec![
+            ListItem::new("  ── COMMANDS ──").style(Style::default().add_modifier(Modifier::DIM)),
+            ListItem::new("  /w            Save Buffer"),
+            ListItem::new("  /q            Quit Application"),
+            ListItem::new("  /renum        Renumber Scenes"),
+            ListItem::new("  /set [opt]    Change Settings"),
+            ListItem::new("  /search [q]   Global Search"),
+            ListItem::new("  /s[num]       Jump to Scene"),
+            ListItem::new(""),
+            ListItem::new("  ── EDITING ──").style(Style::default().add_modifier(Modifier::DIM)),
+            ListItem::new("  ^A            Select All"),
+            ListItem::new("  ^C            Copy Selection"),
+            ListItem::new("  ^X            Cut Selection"),
+            ListItem::new("  ^V            Paste Clipboard"),
+            ListItem::new("  Shift+Arrows  Manual Selection"),
+            ListItem::new(""),
+            ListItem::new("  ── PANES ──").style(Style::default().add_modifier(Modifier::DIM)),
+            ListItem::new("  ^H            Scene Navigator"),
+            ListItem::new("  ^P            Settings Pane"),
+            ListItem::new("  ^E            Export Options"),
+            ListItem::new("  F1            Command Legend"),
         ];
-
-        let items: Vec<ListItem> = legend.iter().map(|row| {
-            match row {
-                LegendRow::Header(h) => {
-                    let line = Line::from(vec![
-                        Span::styled(*h, Style::default().add_modifier(Modifier::DIM)),
-                    ]);
-                    ListItem::new(line)
-                }
-                LegendRow::Entry(key, desc) => {
-                    let line = Line::from(vec![
-                        Span::styled(
-                            format!(" {:17}", key),
-                            Style::default().add_modifier(Modifier::BOLD),
-                        ),
-                        Span::raw(desc.to_string()),
-                    ]);
-                    ListItem::new(line)
-                }
-            }
-        }).collect();
 
         let list = List::new(items).block(
             Block::default()
@@ -665,8 +591,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     .add_modifier(Modifier::BOLD)
             };
 
-            // Build styled spans: bold ':' prefix + command text + blinking cursor hint
-            let prefix = Span::styled(" : ", cmd_style.add_modifier(Modifier::BOLD));
+            // Build styled spans: bold '/' prefix + command text + blinking cursor hint
+            let prefix = Span::styled(" / ", cmd_style.add_modifier(Modifier::BOLD));
             let cmd_text = Span::styled(
                 format!("{} ", app.command_input),
                 cmd_style,

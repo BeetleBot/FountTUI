@@ -7,7 +7,6 @@
 - [ ] **Structure & Navigation**: 
     - Way to implement structures into the screenplay.
     - Making those structures visible in the Scene Navigator.
-- [ ] **Visual Selection**: Restore text selection within the editor when mouse capture is active.
 - [ ] **Settings Fix**: Ensure settings changed in the pane actually save back to the config file.
 
 ### Already Done
@@ -33,3 +32,14 @@
     - Move shortcut legend to the side bar.
     - Add real-time stats (Word count, Page count, etc.) to the bar.
 - [x] **Navigator Clicking**: Enable clicking on a line in the Scene Navigator to jump there.
+- [x] **Modernized Command Interface (`/`)**: 
+    - Replaced `:` with `/` as the primary command trigger to avoid script syntax conflicts.
+    - Added dedicated commands for scene jumping (`/s50`), line jumping (`/123`), and production locking (`/locknum`).
+    - Integrated a professional, high-visibility command bar with autocomplete support.
+- [x] **Visual Selection & Clipboard**:
+    - Implemented a robust text selection system (Shift+Arrows and Mouse Dragging).
+    - Integrated cross-platform system clipboard support (`Ctrl+C`, `Ctrl+X`, `Ctrl+V`).
+    - Added high-contrast Cyan/Black visual highlighting for selected text.
+- [x] **Command Legend Pane**:
+    - Replaced the old shortcut pane with a categorized Command Legend (`F1` to toggle).
+    - Cleaned up the UI by removing the legacy Format Pane and migrating actions to commands.

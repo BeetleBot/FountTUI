@@ -105,6 +105,67 @@ pub struct LineFormatting {
 
 
 
+fn find_pairs(
+    len: usize,
+    chars: &[char],
+    skip: &mut HashSet<usize>,
+    fmt: &mut LineFormatting,
+    open: &[char],
+    close: &[char],
+    hide_markers: bool,
+    apply: &mut dyn FnMut(usize, usize, &mut LineFormatting),
+) {
+    let mut i = 0;
+    while i < len {
+        if skip.contains(&i) {
+            i += 1;
+            continue;
+        }
+        let mut match_open = true;
+        for (k, &c) in open.iter().enumerate() {
+            if i + k >= len || chars[i + k] != c || skip.contains(&(i + k)) {
+                match_open = false;
+                break;
+            }
+        }
+        if match_open {
+            let mut j = i + open.len();
+            while j < len {
+                if skip.contains(&j) {
+                    j += 1;
+                    continue;
+                }
+                let mut match_close = true;
+                for (k, &c) in close.iter().enumerate() {
+                    if j + k >= len || chars[j + k] != c || skip.contains(&(j + k)) {
+                        match_close = false;
+                        break;
+                    }
+                }
+                if match_close {
+                    apply(i, j, fmt);
+                    for k in 0..open.len() {
+                        skip.insert(i + k);
+                        if hide_markers {
+                            fmt.hidden_chars.insert(i + k);
+                        }
+                    }
+                    for k in 0..close.len() {
+                        skip.insert(j + k);
+                        if hide_markers {
+                            fmt.hidden_chars.insert(j + k);
+                        }
+                    }
+                    i = j + close.len() - 1;
+                    break;
+                }
+                j += 1;
+            }
+        }
+        i += 1;
+    }
+}
+
 pub fn parse_formatting(text: &str) -> LineFormatting {
     if !has_markup_bytes(text) {
         return LineFormatting::default();
@@ -123,103 +184,98 @@ pub fn parse_formatting(text: &str) -> LineFormatting {
         }
     }
 
-    
-    let mut find_pairs =
-        |open: &[char], close: &[char], hide_markers: bool, apply: &mut dyn FnMut(usize, usize)| {
-            let mut i = 0;
-            while i < len {
-                if skip.contains(&i) {
-                    i += 1;
-                    continue;
-                }
-                let mut match_open = true;
-                for (k, &c) in open.iter().enumerate() {
-                    if i + k >= len || chars[i + k] != c || skip.contains(&(i + k)) {
-                        match_open = false;
-                        break;
-                    }
-                }
-                if match_open {
-                    let mut j = i + open.len();
-                    while j < len {
-                        if skip.contains(&j) {
-                            j += 1;
-                            continue;
-                        }
-                        let mut match_close = true;
-                        for (k, &c) in close.iter().enumerate() {
-                            if j + k >= len || chars[j + k] != c || skip.contains(&(j + k)) {
-                                match_close = false;
-                                break;
-                            }
-                        }
-                        if match_close {
-                            apply(i, j);
-                            for k in 0..open.len() {
-                                skip.insert(i + k);
-                                if hide_markers {
-                                    fmt.hidden_chars.insert(i + k);
-                                }
-                            }
-                            for k in 0..close.len() {
-                                skip.insert(j + k);
-                                if hide_markers {
-                                    fmt.hidden_chars.insert(j + k);
-                                }
-                            }
-                            i = j + close.len() - 1;
-                            break;
-                        }
-                        j += 1;
-                    }
-                }
-                i += 1;
-            }
-        };
-
-    find_pairs(&['/', '*'], &['*', '/'], true, &mut |start, end| {
-        for i in start..(end + 2) {
-            fmt.boneyard.insert(i);
-        }
-    });
-
-    find_pairs(&['[', '['], &[']', ']'], true, &mut |start, end| {
-        let content: String = chars[start + 2..end].iter().collect();
-        let color = get_marker_color(&content);
-        for i in start..(end + 2) {
-            fmt.note.insert(i);
-            if let Some(c) = color {
-                fmt.note_color.insert(i, c);
-            }
-        }
-    });
-
     find_pairs(
-        &['*', '*', '*'],
-        &['*', '*', '*'],
+        len,
+        &chars,
+        &mut skip,
+        &mut fmt,
+        &['/', '*'][..],
+        &['*', '/'][..],
         true,
-        &mut |start, end| {
-            for i in (start + 3)..end {
-                fmt.bold.insert(i);
-                fmt.italic.insert(i);
+        &mut |start, end, f| {
+            for i in start..(end + 2) {
+                f.boneyard.insert(i);
             }
         },
     );
-    find_pairs(&['*', '*'], &['*', '*'], true, &mut |start, end| {
-        for i in (start + 2)..end {
-            fmt.bold.insert(i);
-        }
-    });
-    find_pairs(&['*'], &['*'], true, &mut |start, end| {
-        for i in (start + 1)..end {
-            fmt.italic.insert(i);
-        }
-    });
-    find_pairs(&['_'], &['_'], true, &mut |start, end| {
-        for i in (start + 1)..end {
-            fmt.underlined.insert(i);
-        }
-    });
+
+    find_pairs(
+        len,
+        &chars,
+        &mut skip,
+        &mut fmt,
+        &['[', '['][..],
+        &[']', ']'][..],
+        true,
+        &mut |start, end, f| {
+            let content: String = chars[start + 2..end].iter().collect();
+            let color = get_marker_color(&content);
+            for i in start..(end + 2) {
+                f.note.insert(i);
+                if let Some(c) = color {
+                    f.note_color.insert(i, c);
+                }
+            }
+        },
+    );
+
+    find_pairs(
+        len,
+        &chars,
+        &mut skip,
+        &mut fmt,
+        &['*', '*', '*'][..],
+        &['*', '*', '*'][..],
+        true,
+        &mut |start, end, f| {
+            for i in (start + 3)..end {
+                f.bold.insert(i);
+                f.italic.insert(i);
+            }
+        },
+    );
+    find_pairs(
+        len,
+        &chars,
+        &mut skip,
+        &mut fmt,
+        &['*', '*'][..],
+        &['*', '*'][..],
+        true,
+        &mut |start, end, f| {
+            for i in (start + 2)..end {
+                f.bold.insert(i);
+            }
+        },
+    );
+    find_pairs(
+        len,
+        &chars,
+        &mut skip,
+        &mut fmt,
+        &['*'][..],
+        &['*'][..],
+        true,
+        &mut |start, end, f| {
+            for i in (start + 1)..end {
+                f.italic.insert(i);
+            }
+        },
+    );
+    find_pairs(
+        len,
+        &chars,
+        &mut skip,
+        &mut fmt,
+        &['_'][..],
+        &['_'][..],
+        true,
+        &mut |start, end, f| {
+            for i in (start + 1)..end {
+                f.underlined.insert(i);
+            }
+        },
+    );
 
     fmt
 }
@@ -286,6 +342,7 @@ pub fn render_inline(
     fmt: &LineFormatting,
     cfg: RenderConfig,
     highlights: &HashSet<usize>,
+    selection: &HashSet<usize>,
 ) -> Vec<Span<'static>> {
     if cfg.skip_markdown && !cfg.exclude_comments {
         return vec![Span::styled(text.to_string(), base)];
@@ -340,7 +397,14 @@ pub fn render_inline(
             }
         }
 
-        if highlights.contains(&global_i) {
+        if selection.contains(&global_i) {
+            if cfg.no_color {
+                s.add_modifier = s.add_modifier.union(Modifier::REVERSED);
+            } else {
+                s.bg = Some(Color::Cyan);
+                s.fg = Some(Color::Black);
+            }
+        } else if highlights.contains(&global_i) {
             if cfg.no_color {
                 s.fg = None;
                 s.bg = None;
@@ -485,7 +549,8 @@ mod formatting_tests {
             ..Default::default()
         };
         let hl = HashSet::new();
-        let spans = render_inline("**bold**", Style::default(), &fmt, cfg, &hl);
+        let sel = HashSet::new();
+        let spans = render_inline("**bold**", Style::default(), &fmt, cfg, &hl, &sel);
         assert_eq!(spans.len(), 1);
         assert_eq!(spans[0].content, "**bold**");
     }
@@ -498,7 +563,8 @@ mod formatting_tests {
             ..Default::default()
         };
         let hl = HashSet::new();
-        let spans = render_inline("**bold**", Style::default(), &fmt, cfg, &hl);
+        let sel = HashSet::new();
+        let spans = render_inline("**bold**", Style::default(), &fmt, cfg, &hl, &sel);
         let complete_text: String = spans.iter().map(|s| s.content.as_ref()).collect();
         assert_eq!(complete_text, "**bold**");
     }
@@ -513,6 +579,7 @@ mod formatting_tests {
             &fmt,
             RenderConfig::default(),
             &hl,
+            &HashSet::new(),
         );
         let complete_text: String = spans.iter().map(|s| s.content.as_ref()).collect();
         assert_eq!(complete_text, "bold");
@@ -526,7 +593,7 @@ mod formatting_tests {
             ..Default::default()
         };
         let hl = HashSet::new();
-        let spans = render_inline("Title: Text", Style::default(), &fmt, cfg, &hl);
+        let spans = render_inline("Title: Text", Style::default(), &fmt, cfg, &hl, &HashSet::new());
         assert_eq!(spans[0].content, "Title: ");
         assert_eq!(spans[0].style.fg, Some(ratatui::style::Color::DarkGray));
         assert_eq!(spans[1].content, "Text");
@@ -550,6 +617,7 @@ mod formatting_tests {
             &fmt,
             cfg,
             &hl,
+            &HashSet::new(),
         );
 
         let bold_span = spans.iter().find(|s| s.content.contains("bold")).unwrap();
@@ -593,6 +661,7 @@ mod formatting_tests {
             &fmt,
             cfg,
             &hl,
+            &HashSet::new(),
         );
 
         let bold_span = spans.iter().find(|s| s.content.contains("bold")).unwrap();
@@ -632,6 +701,7 @@ mod formatting_tests {
             &fmt,
             cfg,
             &hl,
+            &HashSet::new(),
         );
 
         for span in spans {
@@ -655,7 +725,7 @@ mod formatting_tests {
             .add_modifier(Modifier::BOLD)
             .fg(Color::White);
 
-        let spans = render_inline("test string", base_style, &fmt, cfg, &hl);
+        let spans = render_inline("test string", base_style, &fmt, cfg, &hl, &HashSet::new());
 
         let highlight_span = &spans[0];
         assert_eq!(highlight_span.content, "test");
@@ -676,7 +746,7 @@ mod formatting_tests {
         let mut hl = HashSet::new();
         hl.extend(0..4);
 
-        let spans = render_inline("test string", Style::default(), &fmt, cfg, &hl);
+        let spans = render_inline("test string", Style::default(), &fmt, cfg, &hl, &HashSet::new());
 
         let highlight_span = &spans[0];
         assert_eq!(highlight_span.style.bg, None);
@@ -756,7 +826,7 @@ mod formatting_tests {
         cfg.exclude_comments = true;
         let hl = HashSet::new();
 
-        let spans = render_inline("Action /* hidden */", Style::default(), &fmt, cfg, &hl);
+        let spans = render_inline("Action /* hidden */", Style::default(), &fmt, cfg, &hl, &HashSet::new());
         let text: String = spans.iter().map(|s| s.content.as_ref()).collect();
         assert_eq!(text, "Action ");
     }
@@ -767,7 +837,7 @@ mod formatting_tests {
         let cfg = RenderConfig::default();
         let hl = HashSet::new();
 
-        let spans = render_inline("/* boneyard */", Style::default(), &fmt, cfg, &hl);
+        let spans = render_inline("/* boneyard */", Style::default(), &fmt, cfg, &hl, &HashSet::new());
         assert_eq!(spans[0].style.fg, Some(ratatui::style::Color::DarkGray));
     }
 
