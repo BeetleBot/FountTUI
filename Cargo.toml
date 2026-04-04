@@ -11,7 +11,7 @@ homepage = "https://github.com/BeetleBot/Fount"
 repository = "https://github.com/BeetleBot/Fount"
 
 [package.metadata]
-readme = "To-Do.md"
+readme = "README.md"
 keywords = ["screenwriting", "fountain", "tui", "editor"]
 categories = ["text-editors", "command-line-utilities"]
 
