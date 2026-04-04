@@ -1,8 +1,8 @@
 [package]
 name = "fount"
-version = "0.2.17"
+version = "0.1.1"
 authors = [
-    "René Coignard <contact@renecoignard.com>"
+    "BeetleBot"
 ]
 edition = "2024"
 description = "A terminal-based Fountain screenplay editor"
@@ -11,7 +11,6 @@ homepage = "https://github.com/BeetleBot/Fount"
 repository = "https://github.com/BeetleBot/Fount"
 
 [package.metadata]
-forked_from = "https://github.com/coignard/lottie"
 readme = "To-Do.md"
 keywords = ["screenwriting", "fountain", "tui", "editor"]
 categories = ["text-editors", "command-line-utilities"]

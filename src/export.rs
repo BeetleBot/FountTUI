@@ -1,20 +1,3 @@
-// This file is part of Fount.
-//
-// Copyright (c) 2026  René Coignard <contact@renecoignard.com>
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 use ratatui::style::{Color, Modifier, Style};
 use unicode_width::UnicodeWidthStr;
 
@@ -67,41 +50,41 @@ fn style_to_ansi(style: Style, text: &str) -> String {
     ansi
 }
 
-/// Renders a laid-out Fountain document to a plain-text or ANSI-coloured string
-/// suitable for writing to a file or printing to a terminal.
-///
-/// The output respects the same column layout as the TUI editor: scene numbers
-/// appear in the left margin, page numbers in the right margin, and all text is
-/// indented according to its [`LineType`].
-///
-/// # Parameters
-///
-/// - `layout` -- the pre-built [`VisualRow`] slice produced by
-///   [`crate::layout::build_layout`].  Pass the result of a build with
-///   `active_line = usize::MAX` so that no line is treated as "active" and
-///   sigils are stripped everywhere.
-/// - `lines` -- the raw logical lines of the document, used to resolve metadata
-///   key boundaries for dimming.
-/// - `config` -- the active [`Config`]; `no_color`, `no_formatting`,
-///   `force_ascii`, `hide_markup`, and `show_*` flags are all honoured.
-/// - `with_ansi` -- when `true`, ANSI SGR escape sequences are embedded in the
-///   output for bold, italic, underline, and colour.  When `false`, the output
-///   is plain UTF-8 text with no escape codes.
-///
-/// # Skipped line types
-///
-/// [`Boneyard`](crate::types::LineType::Boneyard),
-/// [`Note`](crate::types::LineType::Note),
-/// [`Section`](crate::types::LineType::Section), and
-/// [`Synopsis`](crate::types::LineType::Synopsis) lines are omitted from the
-/// output, matching the behaviour of a standard Fountain renderer.  A blank
-/// line that would otherwise appear immediately after a skipped block is also
-/// suppressed.
-///
-/// # Returns
-///
-/// A `String` where each visual row occupies one line terminated by `\n`.
-/// The final character of the returned string is always `\n`.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn export_document(
     layout: &[VisualRow],
     lines: &[String],

@@ -1,20 +1,3 @@
-// This file is part of Fount.
-//
-// Copyright (c) 2026  René Coignard <contact@renecoignard.com>
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 use regex::Regex;
 use std::borrow::Cow;
 use std::rc::Rc;
@@ -28,72 +11,72 @@ use crate::types::{LINES_PER_PAGE, LineType, PAGE_WIDTH, get_marker_color};
 static SCENE_NUM_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(.*?)\s*#([^#]+)#\s*$").unwrap());
 
-/// A single rendered row on screen, derived from one logical line of text.
-///
-/// Because Fountain lines can be longer than `PAGE_WIDTH`, one logical line
-/// may produce several consecutive `VisualRow`s that all share the same
-/// `line_idx`.  The [`char_start`](VisualRow::char_start) /
-/// [`char_end`](VisualRow::char_end) range identifies the slice of the original
-/// logical line that this row covers.
+
+
+
+
+
+
+
 #[derive(Clone)]
 pub struct VisualRow {
-    /// Index into the `lines` / `types` arrays of the logical line that produced
-    /// this row.
+    
+    
     pub line_idx: usize,
 
-    /// Character offset (inclusive) in the logical line where this visual row begins.
+    
     pub char_start: usize,
 
-    /// Character offset (exclusive) in the logical line where this visual row ends.
+    
     pub char_end: usize,
 
-    /// The text content of this visual row, after sigil stripping and (for
-    /// word-wrapped rows) splitting, but *before* case transformation.
+    
+    
     pub raw_text: String,
 
-    /// The semantic type of the originating logical line.
+    
     pub line_type: LineType,
 
-    /// Left indent in columns, accounting for centring/right-alignment where
-    /// applicable.
+    
+    
     pub indent: u16,
 
-    /// `true` when the cursor's logical line matches this row's [`line_idx`](VisualRow::line_idx).
-    ///
-    /// Active rows show raw markup and suppress auto-CONT'D insertion.
+    
+    
+    
     pub is_active: bool,
 
-    /// Scene number to display in the left margin, if scene numbering is enabled
-    /// and this is the first visual row of a scene heading.
+    
+    
     pub scene_num: Option<String>,
 
-    /// Page number to display in the right margin, set on the *first* printable
-    /// non-empty row of each new page.
+    
+    
     pub page_num: Option<usize>,
 
-    /// An optional foreground colour override derived from an adjacent `[[marker]]`
-    /// note.  Supersedes the base style colour when present.
+    
+    
     pub override_color: Option<ratatui::style::Color>,
 
-    /// Inline formatting metadata (bold/italic/underline ranges) for the full
-    /// logical line, shared across all visual rows that originate from it.
+    
+    
     pub fmt: Rc<LineFormatting>,
 
-    /// `true` for synthetic empty rows injected by smart heading spacing.
-    ///
-    /// Phantom rows contribute to the printable line count for page-break
-    /// calculations but are invisible in the rendered output.
+    
+    
+    
+    
     pub is_phantom: bool,
 }
 
 impl VisualRow {
-    /// Converts a *logical* cursor position (a character index in the full
-    /// logical line) into a *visual* column offset within this row.
-    ///
-    /// Hidden markup characters (asterisks, underscores) are excluded from the
-    /// visual width when the row is inactive and markup hiding is in effect.
-    /// Returns [`indent`](VisualRow::indent) if `logical_x` is before the start of
-    /// this row.
+    
+    
+    
+    
+    
+    
+    
     pub fn logical_to_visual_x(&self, logical_x: usize) -> u16 {
         if logical_x <= self.char_start {
             return self.indent;
@@ -111,12 +94,12 @@ impl VisualRow {
         vis
     }
 
-    /// Converts a *visual* column offset within this row back to a *logical*
-    /// character index in the full logical line.
-    ///
-    /// `is_last_in_logical` must be `true` when this is the last visual row for
-    /// its logical line, so that the cursor may land *on* the final character
-    /// rather than being clamped one position short.
+    
+    
+    
+    
+    
+    
     pub fn visual_to_logical_x(&self, vis_x: u16, is_last_in_logical: bool) -> usize {
         if vis_x <= self.indent {
             return self.char_start;
@@ -147,23 +130,23 @@ impl VisualRow {
     }
 }
 
-/// Strips the Fountain sigil characters from the start (and sometimes end) of
-/// `raw`, returning the displayable portion of the line.
-///
-/// Sigils are syntax markers that force a particular line type but are not
-/// themselves part of the content (e.g. the leading `~` on a lyric line, or
-/// the leading `.` on a forced scene heading).  The returned slice is a
-/// sub-slice of `raw`; no allocation is performed.
-///
-/// # Examples
-///
-/// ```
-/// use fount_rs::layout::strip_sigils;
-/// use fount_rs::types::LineType;
-///
-/// assert_eq!(strip_sigils("~Song line", LineType::Lyrics), "Song line");
-/// assert_eq!(strip_sigils(">CENTER<",   LineType::Centered), "CENTER");
-/// ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn strip_sigils(raw: &str, lt: LineType) -> &str {
     let trimmed = raw.trim_start();
     match lt {
@@ -194,11 +177,11 @@ pub fn strip_sigils(raw: &str, lt: LineType) -> &str {
     }
 }
 
-/// Returns the number of characters consumed by the sigil prefix of `raw` for
-/// the given `lt`.
-///
-/// This is used to calculate [`VisualRow::char_start`] so that cursor positions
-/// remain anchored to the logical line even after sigil stripping.
+
+
+
+
+
 pub fn sigil_left_chars(raw: &str, lt: LineType) -> usize {
     let stripped = strip_sigils(raw, lt);
     if stripped.as_ptr() >= raw.as_ptr() {
@@ -209,11 +192,11 @@ pub fn sigil_left_chars(raw: &str, lt: LineType) -> usize {
     }
 }
 
-/// Returns `true` if lines of `lt` contribute to the printable line count used
-/// for page-break and page-number calculations.
-///
-/// Non-printable types (metadata, boneyard, notes, page breaks) are excluded
-/// from the count so they do not affect pagination.
+
+
+
+
+
 pub fn is_printable(lt: LineType) -> bool {
     !matches!(
         lt,
@@ -328,20 +311,20 @@ impl<'a> Iterator for TokenizeText<'a> {
     }
 }
 
-/// Converts a sequence of logical Fountain lines into a flat list of
-/// [`VisualRow`]s ready for terminal rendering or export.
-///
-/// The function handles:
-/// - Word-wrapping and hard-wrapping to `PAGE_WIDTH`.
-/// - Per-type indentation (including dynamic centring and right-alignment).
-/// - Smart heading spacing (phantom rows).
-/// - Page-break injection for `===` lines.
-/// - Scene and page numbering.
-/// - CONT'D auto-insertion for consecutive character cues.
-/// - Inline note annotation stripping for non-active scene/section lines.
-///
-/// `active_line` is the index of the logical line that currently holds the
-/// cursor; pass `usize::MAX` when rendering for export (no active line).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn build_layout(
     lines: &[String],
     types: &[LineType],
@@ -809,13 +792,13 @@ pub fn build_layout(
     rows
 }
 
-/// Locates the visual row and column that correspond to a logical cursor
-/// position `(cursor_y, cursor_x)`.
-///
-/// Returns `(visual_row_index, visual_column)`.  When the exact position falls
-/// between two visual rows (e.g. at a wrap boundary), the function prefers the
-/// row whose range includes `cursor_x`.  Falls back to the last visual row for
-/// the logical line if no better match is found.
+
+
+
+
+
+
+
 pub fn find_visual_cursor(layout: &[VisualRow], cursor_y: usize, cursor_x: usize) -> (usize, u16) {
     let mut last_for_line = None;
 

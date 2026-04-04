@@ -1,9 +1,9 @@
 Title: Fount Tutorial
 Credit: Written by
-Author: René Coignard
+Author: BeetleBot
 Draft date: Version 0.2.17
 Contact:
-contact@renecoignard.com
+contact@beetlebot.io
 
 
 
@@ -11,32 +11,32 @@ contact@renecoignard.com
 
 
 
-INT. FLAT IN WOLFEN-NORD - DAY
+INT. CONTROL ROOM - DAY
 
-RENÉ sits at his desk, typing.
+BEETLEBOT sits at the console, processing.
 
-RENÉ
-(turning round)
-Oh, hello there. It seems you've found my terminal Rust port of Beat. Sit back and I'll show you how everything works.
+BEETLEBOT
+(beeping softly)
+Oh, hello there. It seems you've found Fount, a terminal-based Fountain screenplay editor. Sit back and I'll show you how everything works.
 
-I sometimes write screenplays on my Gentoo laptop, and doing it in plain nano isn't terribly comfortable (I work entirely in the terminal there). So I decided to put this port of Beat together. I used Beat's source code as a reference when writing Fount, so things work more or less the same way.
+Fount is designed to be a lightweight and efficient tool for screenwriters who prefer the terminal environment. It takes inspiration from various open-source screenplay editors and aims to provide a seamless writing experience.
 
-As you may have already noticed, the navigation is rather reminiscent of nano, because I did look at its source code and took inspiration, for the sake of authenticity. I'm rather fond of it, and I hope you will be too. Not quite as nerdy as vim, but honestly, I'm an average nano enjoyer and I'm not ashamed of it.
+The navigation and keyboard shortcuts are designed to be intuitive and fast, allowing you to focus on your writing without taking your hands off the keyboard.
 
 Anyway, let's get into it.
 
-EXT. NORDPARK - DAY
+EXT. DIGITAL LANDSCAPE - DAY
 
-As I mentioned, things work much the same as in Beat. If you start a line with **int.** or **ext.**, Fount will automatically turn it into a scene heading. You can also use tab: on an empty line, it will first turn it into a character cue, then a scene heading, and then a transition. If you simply start typing IN CAPS ON AN EMPTY LINE, LIKE SO, the text will automatically become a character cue.
+As I mentioned, things work much the same as in other Fountain editors. If you start a line with **int.** or **ext.**, Fount will automatically turn it into a scene heading. You can also use tab: on an empty line, it will first turn it into a character cue, then a scene heading, and then a transition. If you simply start typing IN CAPS ON AN EMPTY LINE, LIKE SO, the text will automatically become a character cue.
 
 You can also use notes:
 
-/* Two sailors are walking along the deck, when one turns to the other and says: */
+
 
 SAILOR
 I'm not a sailor, actually.
 
-Fount automatically inserts two blank lines after certain elements, just as Beat does, though this can be adjusted in the configuration file. There's a sample config in the repository; do make use of it. Bonus: try enabling typewriter mode and see what happens.
+Fount automatically inserts two blank lines after certain elements, though this can be adjusted in the configuration file. There's a sample config in the repository; do make use of it. Bonus: try enabling typewriter mode and see what happens.
 
 To create a transition, simply write in capitals and end with a colon, like so:
 
@@ -44,23 +44,17 @@ CUT TO:
 
 That alone is quite enough to write a proper screenplay. But there's more! For instance, we also have these:
 
-/*
 
-A multi-line comment.
 
-For very, very, very long notes.
 
-*/
-
-[[Comments can look like this as well. They don't differ much from other comment types, but for compatibility with Beat, all the same comment types are supported.]]
 
 # This is a new section
 
 = And this is a synopsis.
 
-INT. EDEKA - ABEND
+INT. ARCHIVE - DAY
 
-Unlike Beat, there's no full render or PDF export here, but you can always save your screenplay and open it in Beat to do that. In Beat, synopses wouldn't appear in the rendered script, nor would comments. Which is why they share the same colour here, incidentally.
+Fount is focused on providing a great writing and editing experience. While there's no full render or PDF export here, you can always save your screenplay and open it in other Fountain-compatible applications to do that. Synopses and comments are highlighted to help you navigate your script.
 
 As you may have noticed, there's support for **bold text**, *italics*, and even _underlined text_. When your cursor isn't on a line containing these markers, they'll be hidden from view. Move onto the line, and you'll see all the asterisks and underscores that produce the formatting.
 
@@ -72,9 +66,9 @@ You can also force transitions:
 
 >AN ABRUPT TRANSITION TO THE NEXT SCENE:
 
-EXT. WOLFEN(BITTERFELD) RAILWAY STATION - MORNING
+EXT. STATION - MORNING
 
-[[marker red]]
+
 
 Lyrics are supported too, using a tilde at the start of the line:
 
@@ -88,15 +82,15 @@ Lyrics are supported too, using a tilde at the start of the line:
 That's Wise Guys. Onwards.
 
 
-EXT. LEIPZIG HBF - MORNING
+EXT. HUB - MORNING
 
 Well, do have a go on it, write something from scratch, or edit this screenplay. You might even turn up a bug or two; if so, please do let me know :-) Everything seemed to behave itself while I was putting this tutorial together, and I hope it all runs just as smoothly for you. I hope you enjoy working in Fount.
 
-[[marker Speaking of which, I named the application after a certain Charlotte I once knew, who wrote quite wonderful screenplays.]]
-[[marker blue The colour of these comment markers can be changed, as you can see.]]
-[[marker red]]
+
+
+
 You can find more information about the Fountain markup language at https://www.fountain.io/
 
-And Beat itself, of course: https://www.beat-app.fi/
+And more Fountain editors here: https://fountain.io/apps
 
 > FADE OUT

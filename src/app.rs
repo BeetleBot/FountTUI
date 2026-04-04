@@ -1,20 +1,3 @@
-// This file is part of Fount.
-//
-// Copyright (c) 2026  René Coignard <contact@renecoignard.com>
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 use std::{collections::HashSet, fs, io, path::PathBuf};
 
 use ratatui::{
@@ -37,239 +20,239 @@ use crate::{
 };
 
 #[derive(Clone)]
-/// A snapshot of the document and cursor position for undo/redo.
+
 pub struct HistoryState {
-    /// The complete set of logical lines at the time the snapshot was taken.
+    
     pub lines: Vec<String>,
 
-    /// Logical line index of the cursor at the time of the snapshot.
+    
     pub cursor_y: usize,
 
-    /// Character offset within the cursor line at the time of the snapshot.
+    
     pub cursor_x: usize,
 }
 
 #[derive(PartialEq, Clone, Default)]
-/// Categorises the most recent editing operation to decide whether to coalesce
-/// the next operation into the same undo entry.
+
+
 pub enum LastEdit {
     #[default]
-    /// No edit has been recorded yet, or the state was just restored from history.
+    
     None,
 
-    /// The last operation was a character insertion.
+    
     Insert,
 
-    /// The last operation was a deletion (backspace or forward-delete).
+    
     Delete,
 
-    /// The last operation was a line-cut (`Ctrl-K`).
+    
     Cut,
 
-    /// Any other operation (newline, tab, word deletion, etc.) that always starts
-    /// a fresh undo entry.
+    
+    
     Other,
 }
 
-/// The current input mode of the editor.
+
 #[derive(PartialEq, Debug)]
 pub enum AppMode {
-    /// Regular editing mode; keystrokes are interpreted as cursor movement or text
-    /// insertion.
+    
+    
     Normal,
 
-    /// The incremental search bar is active; keystrokes update the search query.
+    
     Search,
 
-    /// The "save modified script?" confirmation prompt is displayed.
+    
     PromptSave,
 
-    /// The "file name to write" input prompt is displayed.
+    
     PromptFilename,
 
-    /// The independent scene navigator is active.
+    
     SceneNavigator,
 
-    /// The settings pane is active.
+    
     SettingsPane,
 }
 
-/// The complete persisted state of a single open document buffer.
-///
-/// When the user switches between open files, the current buffer's state is
-/// serialised into this struct and stored in [`App::buffers`], then the
-/// incoming buffer's `BufferState` is swapped into the live `App` fields.
+
+
+
+
+
 #[derive(Clone, Default)]
 pub struct BufferState {
-    /// The logical lines of the document.
+    
     pub lines: Vec<String>,
 
-    /// The parsed [`LineType`] for each logical line.
+    
     pub types: Vec<LineType>,
 
-    /// The most recently built visual layout.
+    
     pub layout: Vec<VisualRow>,
 
-    /// The path to the file on disk, or `None` for unsaved buffers.
+    
     pub file: Option<PathBuf>,
 
-    /// `true` when the buffer has unsaved changes.
+    
     pub dirty: bool,
 
-    /// Logical line index of the cursor.
+    
     pub cursor_y: usize,
 
-    /// Character offset within the cursor line.
+    
     pub cursor_x: usize,
 
-    /// The visual column the cursor "wants" to be on when moving vertically.
-    ///
-    /// Preserved across up/down movements so that the cursor snaps back to its
-    /// original column when traversing a short line.
+    
+    
+    
+    
     pub target_visual_x: u16,
 
-    /// Index of the first visual row currently visible in the viewport.
+    
     pub scroll: usize,
 
-    /// All unique character names seen in the document, used for auto-completion.
+    
     pub characters: HashSet<String>,
 
-    /// All unique scene-heading location strings, used for auto-completion.
+    
     pub locations: HashSet<String>,
 
-    /// History stack; the top entry is the state before the most recent edit.
+    
     pub undo_stack: Vec<HistoryState>,
 
-    /// Redo stack; populated when an undo is performed.
+    
     pub redo_stack: Vec<HistoryState>,
 
-    /// Classification of the most recent editing operation.
+    
     pub last_edit: LastEdit,
 }
 
-/// The top-level application state, owning all open buffers and the active
-/// editing session.
-///
-/// `App` owns the *active* buffer's data directly (fields such as `lines`,
-/// `cursor_y`, etc.) for ergonomic access, and stores inactive buffers in
-/// [`buffers`](App::buffers).  Switching buffers is done via
-/// [`swap_buffer`](App::swap_buffer).
+
+
+
+
+
+
+
 pub struct App {
-    /// The active runtime configuration.
+    
     pub config: Config,
 
-    /// All open buffers, including the currently active one (stored as a default
-    /// placeholder while the real data lives in the top-level fields).
+    
+    
     pub buffers: Vec<BufferState>,
 
-    /// Index into [`buffers`](App::buffers) of the currently active buffer.
+    
     pub current_buf_idx: usize,
 
-    /// `true` if more than one file was opened at startup; used to show the
-    /// `[current/total]` indicator in the title bar even after buffers are closed.
+    
+    
     pub has_multiple_buffers: bool,
 
-    /// `true` when an `Esc` key-press was received but not yet paired with a
-    /// second keystroke.  Used to emulate Alt-key sequences on terminals that
-    /// send `Esc` + key instead of a single Alt escape.
+    
+    
+    
     pub escape_pressed: bool,
 
-    /// Logical lines of the active document.
+    
     pub lines: Vec<String>,
 
-    /// Parsed line types for the active document.
+    
     pub types: Vec<LineType>,
 
-    /// Most recently built visual layout for the active document.
+    
     pub layout: Vec<VisualRow>,
 
-    /// Path to the active buffer's file on disk.
+    
     pub file: Option<PathBuf>,
 
-    /// `true` when the active buffer has unsaved changes.
+    
     pub dirty: bool,
 
-    /// Logical line index of the cursor in the active buffer.
+    
     pub cursor_y: usize,
 
-    /// Character offset within the cursor line.
+    
     pub cursor_x: usize,
 
-    /// Visual column the cursor targets during vertical movement.
+    
     pub target_visual_x: u16,
 
-    /// Height of the text viewport in rows; updated on every draw call.
+    
     pub visible_height: usize,
 
-    /// First visual row index that is currently visible.
+    
     pub scroll: usize,
 
-    /// All character names in the active document, for auto-completion.
+    
     pub characters: HashSet<String>,
 
-    /// All scene-heading location strings in the active document, for auto-completion.
+    
     pub locations: HashSet<String>,
 
-    /// The currently displayed auto-completion ghost text, if any.
+    
     pub suggestion: Option<String>,
 
-    /// Undo history for the active buffer.
+    
     pub undo_stack: Vec<HistoryState>,
 
-    /// Redo stack for the active buffer.
+    
     pub redo_stack: Vec<HistoryState>,
 
-    /// Classification of the most recent edit, used for undo coalescing.
+    
     pub last_edit: LastEdit,
 
-    /// Current input mode.
+    
     pub mode: AppMode,
 
-    /// When `true`, the buffer will be closed (or the application will exit) once
-    /// the pending save prompt is resolved.
+    
+    
     pub exit_after_save: bool,
 
-    /// Accumulates keystrokes in [`PromptFilename`](AppMode::PromptFilename) mode.
+    
     pub filename_input: String,
 
-    /// Transient status message shown in the status bar (e.g. "Wrote 69 lines").
+    
     pub status_msg: Option<String>,
 
-    /// Clipboard for cut lines (`Ctrl-K` / `Ctrl-U`).  Multiple consecutive cuts
-    /// append to this buffer, separated by newlines.
+    
+    
     pub cut_buffer: Option<String>,
 
-    /// The search term being entered in [`Search`](AppMode::Search) mode.
+    
     pub search_query: String,
 
-    /// The most recently executed search term; shown as the default in brackets
-    /// when the search bar is next opened.
+    
+    
     pub last_search: String,
 
-    /// When `true`, search matches are highlighted in the editor view.
+    
     pub show_search_highlight: bool,
 
-    /// The compiled regex for the current search query; rebuilt via
-    /// [`update_search_regex`](App::update_search_regex) on every keystroke.
+    
+    
     pub compiled_search_regex: Option<regex::Regex>,
 
-    /// The list of all scenes in the current buffer, for the scene navigator.
-    /// Each entry is (line_index, heading_text, scene_num, notes, color).
+    
+    
     pub scenes: Vec<(usize, String, Option<String>, Vec<String>, Option<Color>)>,
 
-    /// The index of the currently selected scene in the navigator.
+    
     pub selected_scene: usize,
 
-    /// The index of the currently selected setting in the settings pane.
+    
     pub selected_setting: usize,
 
-    /// Rect of the scene navigator sidebar.
+    
     pub sidebar_area: Rect,
 
-    /// Rect of the settings pane.
+    
     pub settings_area: Rect,
 
-    /// State for the scene navigator list (for scrolling).
+    
     pub navigator_state: ListState,
 }
 
@@ -283,11 +266,11 @@ impl Drop for App {
 }
 
 impl App {
-    /// Constructs a new `App` from command-line arguments.
-    ///
-    /// Loads the configuration, opens all files specified on the command line
-    /// (creating an empty buffer if none were given), parses every document, builds
-    /// the initial layouts, and positions the cursors.
+    
+    
+    
+    
+    
     pub fn new(cli: Cli) -> Self {
         let config = Config::load(&cli);
 
@@ -409,10 +392,10 @@ impl App {
         app
     }
 
-    /// Atomically exchanges the live buffer fields with a [`BufferState`] struct.
-    ///
-    /// Used internally by [`switch_buffer`](App::switch_buffer) to persist the
-    /// outgoing buffer and restore the incoming one in a single step.
+    
+    
+    
+    
     pub fn swap_buffer(&mut self, other: &mut BufferState) {
         std::mem::swap(&mut self.lines, &mut other.lines);
         std::mem::swap(&mut self.types, &mut other.types);
@@ -430,11 +413,11 @@ impl App {
         std::mem::swap(&mut self.last_edit, &mut other.last_edit);
     }
 
-    /// Switches the active buffer to the one at `next_idx`.
-    ///
-    /// The current buffer's state is saved, the target buffer is loaded, and the
-    /// document is re-parsed and laid out.  A status message shows the filename
-    /// and line count of the newly active buffer.
+    
+    
+    
+    
+    
     pub fn switch_buffer(&mut self, next_idx: usize) {
         if self.buffers.len() <= 1 || next_idx == self.current_buf_idx {
             return;
@@ -468,13 +451,13 @@ impl App {
         self.set_status(&format!("{} -- {} {}", file_name, line_count, line_word));
     }
 
-    /// Switches to the next buffer in the ring, wrapping around at the end.
+    
     pub fn switch_next_buffer(&mut self) {
         let next = (self.current_buf_idx + 1) % self.buffers.len();
         self.switch_buffer(next);
     }
 
-    /// Switches to the previous buffer in the ring, wrapping around at the start.
+    
     pub fn switch_prev_buffer(&mut self) {
         let prev = if self.current_buf_idx == 0 {
             self.buffers.len() - 1
@@ -484,10 +467,10 @@ impl App {
         self.switch_buffer(prev);
     }
 
-    /// Closes the currently active buffer and switches to an adjacent one.
-    ///
-    /// Returns `true` if this was the last buffer, indicating the application
-    /// should exit.
+    
+    
+    
+    
     pub fn close_current_buffer(&mut self) -> bool {
         if self.buffers.len() <= 1 {
             return true;
@@ -522,11 +505,11 @@ impl App {
         false
     }
 
-    /// Writes an emergency backup of every dirty buffer to disk.
-    ///
-    /// Called from the panic hook so that unsaved work is preserved if the
-    /// application crashes.  Backup files are named `<original>.save` (or
-    /// `<original>.save.<N>` if a backup already exists).
+    
+    
+    
+    
+    
     #[allow(dead_code)]
     pub fn emergency_save(&mut self) {
         let mut to_save = Vec::new();
@@ -573,21 +556,21 @@ impl App {
         }
     }
 
-    /// Sets the transient status bar message.
+    
     pub fn set_status(&mut self, msg: &str) {
         self.status_msg = Some(msg.to_string());
     }
 
-    /// Clears the status bar message.
+    
     pub fn clear_status(&mut self) {
         self.status_msg = None;
     }
 
-    /// Recompiles the search regex from the current `search_query` (or
-    /// `last_search` if the query is empty).
-    ///
-    /// The regex is case-insensitive and the query is treated as a literal string
-    /// (special characters are escaped).
+    
+    
+    
+    
+    
     pub fn update_search_regex(&mut self) {
         let active_query = if self.search_query.is_empty() {
             &self.last_search
@@ -605,11 +588,11 @@ impl App {
         }
     }
 
-    /// Computes and displays cursor position statistics in the status bar.
-    ///
-    /// The message format is:
-    /// `line L/TL (P%), col C/TC (P%), char CH/TCH (P%)`
-    /// where percentages are rounded to the nearest integer.
+    
+    
+    
+    
+    
     pub fn report_cursor_position(&mut self) {
         if self.lines.is_empty() {
             self.set_status("line 1/1 (100%), col 1/1 (100%), char 1/1 (100%)");
@@ -660,10 +643,10 @@ impl App {
         self.set_status(&msg);
     }
 
-    /// Cuts the current logical line into the cut buffer (`Ctrl-K`).
-    ///
-    /// Consecutive cuts append to the existing cut buffer (separated by `\n`) so
-    /// that a block of lines can be cut and then pasted as a unit.
+    
+    
+    
+    
     pub fn cut_line(&mut self) {
         if self.last_edit != LastEdit::Cut {
             self.save_state(true);
@@ -695,10 +678,10 @@ impl App {
         }
     }
 
-    /// Pastes the cut buffer above the current line (`Ctrl-U`).
-    ///
-    /// All newline-separated lines in the cut buffer are inserted as individual
-    /// logical lines.
+    
+    
+    
+    
     pub fn paste_line(&mut self) {
         if let Some(cut_buf) = self.cut_buffer.clone() {
             self.save_state(true);
@@ -714,11 +697,11 @@ impl App {
         }
     }
 
-    /// Executes the current search query and advances the cursor to the next match.
-    ///
-    /// Searches forward from the current cursor position, wrapping around the end
-    /// of the document if necessary.  Sets a "Search Wrapped" status message when
-    /// wrapping occurs, or a "not found" message when no match exists.
+    
+    
+    
+    
+    
     pub fn execute_search(&mut self) {
         if self.search_query.is_empty() {
             self.search_query = self.last_search.clone();
@@ -786,11 +769,11 @@ impl App {
         self.search_query.clear();
     }
 
-    /// Pushes the current document and cursor state onto the undo stack.
-    ///
-    /// When `force` is `false`, the state is only pushed if the document has
-    /// actually changed since the last snapshot.  Clears the redo stack.  The
-    /// stack is capped at 500 entries; older entries are dropped.
+    
+    
+    
+    
+    
     pub fn save_state(&mut self, force: bool) {
         let state = HistoryState {
             lines: self.lines.clone(),
@@ -805,16 +788,16 @@ impl App {
         {
             self.undo_stack.push(state);
             if self.undo_stack.len() > 640 {
-                // 640 ought to be enough for anybody ;-)
+                
                 self.undo_stack.remove(0);
             }
             self.redo_stack.clear();
         }
     }
 
-    /// Restores the previous state from the undo stack.
-    ///
-    /// Returns `true` if an undo was performed, `false` if the stack was empty.
+    
+    
+    
     pub fn undo(&mut self) -> bool {
         if let Some(state) = self.undo_stack.pop() {
             self.redo_stack.push(HistoryState {
@@ -833,9 +816,9 @@ impl App {
         }
     }
 
-    /// Re-applies a previously undone edit from the redo stack.
-    ///
-    /// Returns `true` if a redo was performed, `false` if the stack was empty.
+    
+    
+    
     pub fn redo(&mut self) -> bool {
         if let Some(state) = self.redo_stack.pop() {
             self.undo_stack.push(HistoryState {
@@ -854,10 +837,10 @@ impl App {
         }
     }
 
-    /// Re-parses the active document, rebuilding `types`, `characters`, and
-    /// `locations`.
-    ///
-    /// Must be called after any edit that may change line types.
+    
+    
+    
+    
     pub fn parse_document(&mut self) {
         self.types = Parser::parse(&self.lines);
         self.characters.clear();
@@ -929,26 +912,26 @@ impl App {
         }
     }
 
-    /// Rebuilds the visual layout from the current `lines`, `types`, and
-    /// `cursor_y`.  Must be called after any edit or cursor movement that affects
-    /// the layout.
+    
+    
+    
     pub fn update_layout(&mut self) {
         self.layout = build_layout(&self.lines, &self.types, self.cursor_y, &self.config);
     }
 
-    /// Returns the current visual column of the cursor, as it would appear on
-    /// screen.
+    
+    
     pub fn current_visual_x(&self) -> u16 {
         let (_, vis_x) = find_visual_cursor(&self.layout, self.cursor_y, self.cursor_x);
         vis_x
     }
 
-    /// Updates `suggestion` with the best auto-completion candidate for the
-    /// current cursor context.
-    ///
-    /// Completes character names when the cursor is on a character cue, and scene
-    /// heading locations when on a scene heading.  Clears the suggestion if no
-    /// suitable candidate exists or if auto-completion is disabled.
+    
+    
+    
+    
+    
+    
     pub fn update_autocomplete(&mut self) {
         let pending_tab_suggestion = self.suggestion.take();
         let mut matched = false;
@@ -1060,12 +1043,12 @@ impl App {
         }
     }
 
-    /// Saves the active buffer to its associated file path.
-    ///
-    /// Returns an error if the file path is not set or if the write fails.
-    /// Sets a status message with the number of lines written on success.
-    ///
-    /// For Charlotte.
+    
+    
+    
+    
+    
+    
     pub fn save(&mut self) -> io::Result<()> {
         if let Some(ref p) = self.file {
             let mut content = self.lines.join("\n");
@@ -1079,13 +1062,13 @@ impl App {
         Ok(())
     }
 
-    /// Returns the number of *characters* (not bytes) in logical line `y`.
+    
     pub fn line_len(&self, y: usize) -> usize {
         self.lines.get(y).map(|l| l.chars().count()).unwrap_or(0)
     }
 
-    /// Moves the cursor up by one visual row, preserving the target horizontal
-    /// position where possible.
+    
+    
     pub fn move_up(&mut self) {
         self.last_edit = LastEdit::Other;
         let (vis_row, _) = find_visual_cursor(&self.layout, self.cursor_y, self.cursor_x);
@@ -1101,8 +1084,8 @@ impl App {
         }
     }
 
-    /// Moves the cursor down by one visual row, preserving the target horizontal
-    /// position where possible.
+    
+    
     pub fn move_down(&mut self) {
         self.last_edit = LastEdit::Other;
         let (vis_row, _) = find_visual_cursor(&self.layout, self.cursor_y, self.cursor_x);
@@ -1118,8 +1101,8 @@ impl App {
         }
     }
 
-    /// Moves the cursor one character to the left, wrapping to the end of the
-    /// previous line at the start of a line.
+    
+    
     pub fn move_left(&mut self) {
         self.last_edit = LastEdit::Other;
         if self.cursor_x > 0 {
@@ -1130,8 +1113,8 @@ impl App {
         }
     }
 
-    /// Moves the cursor one character to the right, wrapping to the start of the
-    /// next line at the end of a line.
+    
+    
     pub fn move_right(&mut self) {
         self.last_edit = LastEdit::Other;
         let max = self.line_len(self.cursor_y);
@@ -1143,7 +1126,7 @@ impl App {
         }
     }
 
-    /// Moves the cursor to the start of the current or preceding word.
+    
     pub fn move_word_left(&mut self) {
         self.last_edit = LastEdit::Other;
         if self.cursor_x == 0 {
@@ -1159,7 +1142,7 @@ impl App {
         }
     }
 
-    /// Moves the cursor to the end of the current or next word.
+    
     pub fn move_word_right(&mut self) {
         self.last_edit = LastEdit::Other;
         let chars: Vec<char> = self.lines[self.cursor_y].chars().collect();
@@ -1176,19 +1159,19 @@ impl App {
         }
     }
 
-    /// Moves the cursor to the start of the current logical line.
+    
     pub fn move_home(&mut self) {
         self.last_edit = LastEdit::Other;
         self.cursor_x = 0;
     }
 
-    /// Moves the cursor to the end of the current logical line.
+    
     pub fn move_end(&mut self) {
         self.last_edit = LastEdit::Other;
         self.cursor_x = self.line_len(self.cursor_y);
     }
 
-    /// Moves the cursor up by one viewport height.
+    
     pub fn move_page_up(&mut self) {
         self.last_edit = LastEdit::Other;
         let height = self.visible_height.max(1);
@@ -1205,7 +1188,7 @@ impl App {
         }
     }
 
-    /// Moves the cursor down by one viewport height.
+    
     pub fn move_page_down(&mut self) {
         self.last_edit = LastEdit::Other;
         let height = self.visible_height.max(1);
@@ -1271,10 +1254,10 @@ impl App {
         }
     }
 
-    /// Returns the UTF-8 byte offset of character index `cx` within logical line `y`.
-    ///
-    /// Returns the byte length of the line if `cx` is at or beyond the end,
-    /// which is the correct position for insertions at the end of a line.
+    
+    
+    
+    
     pub fn byte_of(&self, y: usize, cx: usize) -> usize {
         self.lines[y]
             .char_indices()
@@ -1283,11 +1266,11 @@ impl App {
             .unwrap_or(self.lines[y].len())
     }
 
-    /// Inserts character `c` at the cursor position.
-    ///
-    /// Also inserts matching closing delimiters (`)`, `]]`, `*/`, `**`) when
-    /// the relevant auto-close options are enabled and the context is
-    /// appropriate.
+    
+    
+    
+    
+    
     pub fn insert_char(&mut self, c: char) {
         if self.last_edit != LastEdit::Insert || c.is_whitespace() || ".,;?!()[]*\"'".contains(c) {
             self.save_state(true);
@@ -1365,7 +1348,7 @@ impl App {
         self.dirty = true;
     }
 
-    /// Inserts a string at the current cursor position, handling multiple lines.
+    
     pub fn insert_str(&mut self, text: &str) {
         if text.is_empty() {
             return;
@@ -1395,7 +1378,7 @@ impl App {
             let mut insert_idx = self.cursor_y + 1;
             for i in 1..lines.len() - 1 {
                 self.lines.insert(insert_idx, lines[i].clone());
-                self.types.insert(insert_idx, LineType::Action); // Default to Action
+                self.types.insert(insert_idx, LineType::Action); 
                 insert_idx += 1;
             }
             let last_line_content = lines.last().unwrap();
@@ -1408,16 +1391,16 @@ impl App {
         self.dirty = true;
     }
 
-    /// Inserts a newline at the current cursor position.
-    ///
-    /// When `is_shift` is `true`, the line is split literally (Shift-Enter)
-    /// without any smart behaviour.  Otherwise, context-sensitive logic applies:
-    ///
-    /// - On an empty or trailing-only character/dialogue/parenthetical cue, a
-    ///   single blank line is inserted and the cursor advances (smart escape from
-    ///   the dialogue block).
-    /// - For action, dialogue, scene headings, and similar elements,
-    ///   `auto_paragraph_breaks` inserts the required blank lines automatically.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn insert_newline(&mut self, is_shift: bool) {
         self.save_state(true);
         self.last_edit = LastEdit::Other;
@@ -1498,15 +1481,15 @@ impl App {
         self.dirty = true;
     }
 
-    /// Handles a Tab key press.
-    ///
-    /// If a completion suggestion is active, Tab accepts it.  Otherwise, Tab
-    /// cycles the current line through the Fountain type state machine:
-    ///
-    /// `empty` → `@character` → `.scene` → `>transition` → `empty`
-    ///
-    /// Already-typed content with a recognised sigil is demoted by stripping the
-    /// sigil, and content without a sigil is promoted by prepending one.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn handle_tab(&mut self) {
         if let Some(sug) = self.suggestion.take() {
             self.save_state(true);
@@ -1675,12 +1658,12 @@ impl App {
         self.dirty = true;
     }
 
-    /// Deletes the character to the left of the cursor.
-    ///
-    /// Special cases:
-    /// - Deleting the opening character of a smart-paired delimiter (`()`, `[[]]`,
-    ///   `/**/`, `****`) removes both the opening and closing characters at once.
-    /// - At the start of a line, merges the current line with the preceding one.
+    
+    
+    
+    
+    
+    
     pub fn backspace(&mut self) {
         if self.last_edit != LastEdit::Delete {
             self.save_state(true);
@@ -1743,10 +1726,10 @@ impl App {
         }
     }
 
-    /// Deletes the character to the right of the cursor.
-    ///
-    /// Mirrors [`backspace`](App::backspace): handles smart-pair deletion and
-    /// merges with the following line when at the end.
+    
+    
+    
+    
     pub fn delete_forward(&mut self) {
         if self.last_edit != LastEdit::Delete {
             self.save_state(true);
@@ -1801,8 +1784,8 @@ impl App {
         }
     }
 
-    /// Deletes from the cursor backwards to the start of the current word,
-    /// consuming any leading whitespace first.
+    
+    
     pub fn delete_word_back(&mut self) {
         let max = self.line_len(self.cursor_y);
         if self.cursor_x > max {
@@ -1829,8 +1812,8 @@ impl App {
         self.dirty = true;
     }
 
-    /// Deletes from the cursor forwards to the end of the current word,
-    /// consuming any leading whitespace first.
+    
+    
     pub fn delete_word_forward(&mut self) {
         let max = self.line_len(self.cursor_y);
         if self.cursor_x > max {
@@ -1855,14 +1838,14 @@ impl App {
         self.dirty = true;
     }
 
-    /// Dispatches a single crossterm [`Event`] to the appropriate handler for the
-    /// current [`AppMode`].
-    ///
-    /// The three `*_changed` / `*_moved` output flags are set to `true` when the
-    /// corresponding categories of state have been mutated, so the caller can
-    /// batch multiple events before deciding what to redraw or reparse.
-    ///
-    /// Returns `Ok(true)` when the application should exit, `Ok(false)` otherwise.
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn handle_event(
         &mut self,
         ev: Event,
@@ -1893,11 +1876,11 @@ impl App {
                             && y >= self.settings_area.y && y < self.settings_area.y + self.settings_area.height
                         {
                             let rel_y = (y - self.settings_area.y) as usize;
-                            if rel_y > 0 && rel_y <= 10 { // Header is 1 line
+                            if rel_y > 0 && rel_y <= 10 { 
                                 let setting_idx = rel_y - 1;
                                 self.selected_setting = setting_idx;
                                 
-                                // Check if click was on the [?] part (roughly at the end of the line)
+                                
                                 if x >= self.settings_area.x + self.settings_area.width - 5 {
                                      let desc = match self.selected_setting {
                                         0 => "Always center the cursor, even at the start of the file.",
@@ -1915,7 +1898,7 @@ impl App {
                                         self.set_status(desc);
                                     }
                                 } else {
-                                    // Toggle the setting
+                                    
                                     match self.selected_setting {
                                         0 => self.config.strict_typewriter_mode = !self.config.strict_typewriter_mode,
                                         1 => self.config.auto_save = !self.config.auto_save,
@@ -1938,13 +1921,13 @@ impl App {
                          if x >= self.sidebar_area.x && x < self.sidebar_area.x + self.sidebar_area.width
                             && y >= self.sidebar_area.y && y < self.sidebar_area.y + self.sidebar_area.height
                          {
-                             // This is tricky because list items can have multiple lines (synopsis)
-                             // For now, let's just use the click to change selection if possible,
-                             // or just Jump on click.
-                             // Implementing a perfect "click to select" for variable-height items in a list
-                             // is hard without re-calculating their heights.
-                             // But we can jump to the scene if the user clicks.
-                             // Let's at least jump to the scene.
+                             
+                             
+                             
+                             
+                             
+                             
+                             
                          }
                     }
                 }
@@ -2125,7 +2108,7 @@ impl App {
                     let alt = key.modifiers.contains(KeyModifiers::ALT) || self.escape_pressed;
                     self.escape_pressed = false;
 
-                    let settings_count = 9; // Reduced count
+                    let settings_count = 9; 
 
                     match key.code {
                         KeyCode::Esc => {
@@ -2223,7 +2206,7 @@ impl App {
                                 8 => self.config.focus_mode = !self.config.focus_mode,
                                 _ => {}
                             }
-                            *text_changed = true; // Force redraw/re-layout if needed
+                            *text_changed = true; 
                         }
                         KeyCode::Char('?') | KeyCode::Char('h') => {
                             let desc = match self.selected_setting {
@@ -2331,23 +2314,23 @@ impl App {
                                 let mut last_color: Option<Color> = None;
 
                                 for row in &self.layout {
-                                    // 1. Collect color from a standalone Note line
+                                    
                                     if row.line_type == LineType::Note {
                                         last_color = row.override_color;
                                     }
 
-                                    // 2. Handle Scene Heading
+                                    
                                     if row.line_type == LineType::SceneHeading {
                                         if let Some(s) = current_scene.take() {
                                             self.scenes.push(s);
                                         }
                                         let heading = strip_sigils(&row.raw_text, row.line_type).to_uppercase_1to1();
-                                        // Priority: Inline heading color > color from preceding note
+                                        
                                         let color = row.override_color.or(last_color);
                                         current_scene = Some((row.line_idx, heading, row.scene_num.clone(), Vec::new(), color));
-                                        last_color = None; // Used or discarded
+                                        last_color = None; 
                                     } 
-                                    // 3. Collect Synopsis
+                                    
                                     else if row.line_type == LineType::Synopsis {
                                         if let Some(ref mut s) = current_scene {
                                             let note_text = strip_sigils(&row.raw_text, row.line_type).to_string();
@@ -2357,12 +2340,12 @@ impl App {
                                         }
                                         last_color = None;
                                     } 
-                                    // 4. Reset last_color if we hit other non-empty content
+                                    
                                     else if row.line_type != LineType::Empty {
                                         last_color = None;
                                     }
 
-                                    // 5. Retroactively apply color to current scene if it has none yet
+                                    
                                     if let Some(ref mut s) = current_scene {
                                         if s.4.is_none() {
                                             if let Some(c) = row.override_color {
@@ -2519,16 +2502,16 @@ impl App {
     }
 }
 
-/// Renders the complete TUI to the given ratatui [`Frame`].
-///
-/// Lays out the screen into four vertical sections:
-/// 1. **Title bar** -- file name, modification indicator, and buffer index.
-/// 2. **Text area** -- the screenplay content, centred around `PAGE_WIDTH`.
-/// 3. **Status bar** -- mode-specific prompts or transient messages.
-/// 4. **Shortcut bar** -- two rows of keyboard shortcut hints.
-///
-/// Also positions the terminal cursor at the correct screen cell so the
-/// terminal's own caret is visible.
+
+
+
+
+
+
+
+
+
+
 pub fn draw(f: &mut Frame, app: &mut App) {
     let area = f.area();
 
@@ -2803,7 +2786,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 lines.push(Line::from(Span::styled(format!(" {}", heading_text), heading_style)));
 
                 for syn in synopses {
-                    // Simple word wrap for synopses (max width ~40)
+                    
                     let max_w = 40;
                     let mut current_line = String::new();
                     for word in syn.split_whitespace() {
@@ -2821,7 +2804,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     }
                 }
 
-                // Blank line for segregation
+                
                 lines.push(Line::from(""));
 
                 ListItem::new(lines)

@@ -1,20 +1,3 @@
-// This file is part of Fount.
-//
-// Copyright (c) 2026  René Coignard <contact@renecoignard.com>
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 use regex::Regex;
 use std::sync::LazyLock;
 
@@ -23,35 +6,35 @@ use crate::types::LineType;
 static META_KEY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^([\p{L}][\p{L}\s]*):\s*").unwrap());
 
-/// Stateless Fountain markup language parser.
-///
-/// The parser classifies every line of a Fountain document as a [`LineType`]
-/// variant.  It understands the full Fountain specification including:
-///
-/// - Title-page metadata blocks
-/// - Scene headings (standard prefixes and forced `.HEADING`)
-/// - Character cues and dual-dialogue (`^`)
-/// - Dialogue, parentheticals
-/// - Transitions (uppercase + colon, `FADE OUT.`, forced `>`)
-/// - Centred text (`>text<`)
-/// - Lyrics (`~`), sections (`#`), synopses (`=`)
-/// - Boneyard (`/* ... */`) and notes (`[[ ... ]]`) spanning multiple lines
-/// - Page breaks (`===`)
-/// - Forced action (`!`) and shots (`!!`)
-///
-/// All methods are associated functions; no state is maintained between calls.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct Parser;
 
 impl Parser {
-    /// Classifies every line in `lines` and returns a parallel `Vec<LineType>`.
-    ///
-    /// The returned vector has the same length as `lines`.  The parser is
-    /// context-sensitive: the type assigned to a line may depend on the types of
-    /// preceding lines (e.g. dialogue follows a character cue, parentheticals
-    /// follow dialogue).
-    ///
-    /// Multi-line boneyard and note spans are tracked via internal flags so that
-    /// their constituent lines are correctly tagged even across blank lines.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn parse(lines: &[String]) -> Vec<LineType> {
         let mut types = vec![LineType::Empty; lines.len()];
 
@@ -244,26 +227,26 @@ impl Parser {
         types
     }
 
-    /// Returns `true` when `s` matches the pattern of a Fountain transition.
-    ///
-    /// A line is a transition if it is entirely uppercase and ends with a colon,
-    /// or if it is one of the special-cased literals `FADE TO BLACK.`,
-    /// `FADE OUT.`, or `CUT TO BLACK.`.
-    ///
-    /// This method is `pub` so that [`crate::config`] can reuse the check when
-    /// disambiguating metadata keys from transitions at the start of a document.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fount_rs::parser::Parser;
-    ///
-    /// assert!(Parser::is_transition_format("CUT TO:"));
-    /// assert!(Parser::is_transition_format("FADE TO BLACK."));
-    /// assert!(Parser::is_transition_format("FADE OUT."));
-    /// assert!(!Parser::is_transition_format("Action line"));
-    /// assert!(!Parser::is_transition_format("Author:"));  // lowercase letters
-    /// ```
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn is_transition_format(s: &str) -> bool {
         (s.ends_with(':') && Self::is_uppercase_content(s))
             || s == "FADE TO BLACK."
@@ -338,26 +321,26 @@ impl Parser {
         false
     }
 
-    /// Returns `true` if `s` contains at least one uppercase letter and no
-    /// lowercase letters.
-    ///
-    /// Digits, punctuation, and whitespace are neutral and do not affect the
-    /// result.  An empty string or a string consisting solely of non-alphabetic
-    /// characters returns `false`.
-    ///
-    /// Used to detect character cues, scene headings, and transitions.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fount_rs::parser::Parser;
-    ///
-    /// assert!(Parser::is_uppercase_content("CUT TO:"));
-    /// assert!(Parser::is_uppercase_content("RENÉ"));
-    /// assert!(!Parser::is_uppercase_content("René"));
-    /// assert!(!Parser::is_uppercase_content("12345"));
-    /// assert!(!Parser::is_uppercase_content("!@#$"));
-    /// ```
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn is_uppercase_content(s: &str) -> bool {
         let mut has = false;
         for c in s.chars() {
@@ -373,7 +356,7 @@ impl Parser {
 
     fn is_character_cue(s: &str) -> bool {
         let stripped = s.trim_end_matches('^').trim();
-        // Hubert Blaine Wolfeschlegelsteinhausenbergerdorff fits (barely)
+        
         if stripped.is_empty() || stripped.len() > 50 || stripped.ends_with('.') {
             return false;
         }

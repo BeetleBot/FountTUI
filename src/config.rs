@@ -1,20 +1,3 @@
-// This file is part of Fount.
-//
-// Copyright (c) 2026  René Coignard <contact@renecoignard.com>
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 use clap::Parser;
 use std::fs;
 use std::path::PathBuf;
@@ -122,220 +105,220 @@ unset force_ansi
 unset force_ascii
 "#;
 
-/// Controls whether scene numbers are mirrored to the right margin
-/// instead of page numbers.
+
+
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub enum MirrorOption {
-    /// Never mirror scene numbers; display page numbers in the right margin.
+    
     Off,
 
-    /// Always mirror scene numbers, both in the editor and during export.
+    
     Always,
 
-    /// Mirror scene numbers only during export; show page numbers in the editor.
+    
     #[default]
     ExportOnly,
 }
 
-/// Command-line arguments parsed by [`clap`].
-///
-/// All flag names mirror the configuration file directives so that CLI options
-/// act as overrides on top of whatever the config file specifies.  See
-/// [`Config::load`] for the precedence order.
+
+
+
+
+
 #[derive(Parser, Debug, Default, Clone)]
 #[command(name = "fount", author, version, about, long_about = None)]
 pub struct Cli {
-    /// The fountain file(s) to open
+    
     #[arg(num_args = 0..)]
     pub files: Vec<PathBuf>,
 
-    /// Path to a custom configuration file
+    
     #[arg(long, value_name = "FILE")]
     pub config: Option<PathBuf>,
 
-    /// Hide scene numbers
+    
     #[arg(long)]
     pub hide_scene_numbers: bool,
 
-    /// Hide page numbers
+    
     #[arg(long)]
     pub hide_page_numbers: bool,
 
-    /// Show formatting markup
+    
     #[arg(long)]
     pub show_markup: bool,
 
-    /// Disable autocomplete
+    
     #[arg(long)]
     pub no_autocomplete: bool,
 
-    /// Disable automatic (CONT'D)
+    
     #[arg(long)]
     pub no_auto_contd: bool,
 
-    /// Disable auto paragraph breaks
+    
     #[arg(long)]
     pub no_auto_paragraph_breaks: bool,
 
-    /// Generate title page if file is new
+    
     #[arg(long)]
     pub auto_title_page: bool,
 
-    /// Enable typewriter mode
+    
     #[arg(long)]
     pub typewriter_mode: bool,
 
-    /// Enable strict typewriter mode (always center)
+    
     #[arg(long)]
     pub strict_typewriter_mode: bool,
 
-    /// Enable focus mode
+    
     #[arg(long)]
     pub focus_mode: bool,
 
-    /// Disable breaking actions across pages
+    
     #[arg(long)]
     pub no_break_actions: bool,
 
-    /// Open the file with the cursor at the end
+    
     #[arg(long)]
     pub goto_end: bool,
 
-    /// Mirror scene numbers to the right margin instead of page numbers
+    
     #[arg(long, value_name = "MODE", num_args = 0..=1, default_missing_value = "always")]
     pub mirror_scene_numbers: Option<String>,
 
-    /// Set (CONT'D) extension text
+    
     #[arg(long)]
     pub contd_extension: Option<String>,
 
-    /// Set heading style (e.g., "bold underline")
+    
     #[arg(long)]
     pub heading_style: Option<String>,
 
-    /// Set spacing before scene headings
+    
     #[arg(long)]
     pub heading_spacing: Option<usize>,
 
-    /// Set shot style (e.g., "bold")
+    
     #[arg(long)]
     pub shot_style: Option<String>,
 
-    /// Disable color formatting
+    
     #[arg(long)]
     pub no_color: bool,
 
-    /// Disable text formatting (bold, italic, underline)
+    
     #[arg(long)]
     pub no_formatting: bool,
 
-    /// Use ASCII characters instead of Unicode
+    
     #[arg(long)]
     pub force_ascii: bool,
 
-    /// Force ANSI color output even if unsupported by the terminal
+    
     #[arg(long)]
     pub force_ansi: bool,
 
-    /// Export the rendered script to a file or stdout (use '-' or omit value for stdout)
+    
     #[arg(long, value_name = "FILE", num_args = 0..=1, default_missing_value = "-")]
     pub export: Option<PathBuf>,
 
-    /// Format for the export (plain, ascii, ansi)
+    
     #[arg(long, default_value = "plain", value_name = "FORMAT")]
     pub format: String,
 }
 
-/// Runtime configuration for the Fount editor and export pipeline.
-///
-/// Values are loaded from the user's config file (`~/.config/fount/fount.conf`)
-/// and then overridden by any matching CLI flags.  Defaults match the shipped
-/// `DEFAULT_CONFIG` template.
+
+
+
+
+
 #[derive(Clone, Debug)]
 pub struct Config {
-    /// Display scene numbers in the left margin next to each scene heading.
+    
     pub show_scene_numbers: bool,
 
-    /// Display page numbers in the right margin at the first printable line of
-    /// each new page.
+    
+    
     pub show_page_numbers: bool,
 
-    /// Hide Fountain inline markup characters (asterisks, underscores) when the
-    /// cursor is not on the same line.
+    
+    
     pub hide_markup: bool,
 
-    /// Enable auto-completion for character names and scene heading locations.
+    
     pub autocomplete: bool,
 
-    /// Automatically append the [`contd_extension`](Config::contd_extension) string
-    /// to a character cue when the same character speaks consecutively.
+    
+    
     pub auto_contd: bool,
 
-    /// Automatically insert blank lines after action, dialogue, and similar
-    /// elements when the user presses Enter at the end of a line.
+    
+    
     pub auto_paragraph_breaks: bool,
 
-    /// Insert a blank title-page template when creating a new empty file.
+    
     pub auto_title_page: bool,
 
-    /// Keep the cursor vertically centred in the viewport as the user types.
+    
     pub typewriter_mode: bool,
 
-    /// Like `typewriter_mode` but forces the active line to the exact centre of
-    /// the terminal at all times, even at the beginning of the document.
+    
+    
     pub strict_typewriter_mode: bool,
 
-    /// Hide the title bar and shortcut bar to maximise writing space.
+    
     pub focus_mode: bool,
 
-    /// Allow action blocks to be split across page boundaries.
-    ///
-    /// When `false`, the layout engine attempts to keep each action block on a
-    /// single page by pushing it to the next page if it would otherwise be split.
+    
+    
+    
+    
     pub break_actions: bool,
 
-    /// Open files with the cursor positioned at the very end of the document.
+    
     pub goto_end: bool,
 
-    /// Disable all terminal colour output.  Text formatting (bold, italic, underline)
-    /// is not affected unless `no_formatting` is also set.
+    
+    
     pub no_color: bool,
 
-    /// Disable all bold, italic, and underline text modifiers.  Colour output is
-    /// not affected unless `no_color` is also set.
+    
+    
     pub no_formatting: bool,
 
-    /// Force the use of ASCII characters (e.g. `-` for page-break lines) instead
-    /// of Unicode box-drawing characters.
+    
+    
     pub force_ascii: bool,
 
-    /// Force emission of ANSI escape codes even when the terminal is not detected
-    /// as supporting colour.  Overrides `no_color`.
+    
+    
     pub force_ansi: bool,
 
-    /// Mirror scene numbers to the right margin instead of page numbers.
+    
     pub mirror_scene_numbers: MirrorOption,
 
-    /// The string appended to a character name for consecutive speech, e.g.
-    /// `"(CONT'D)"`.
+    
+    
     pub contd_extension: String,
 
-    /// Visual style applied to scene headings.  Accepted values: `"bold"`,
-    /// `"underline"`, `"bold underline"`.
+    
+    
     pub heading_style: String,
 
-    /// Minimum number of blank lines inserted before each scene heading by the
-    /// layout engine.
+    
+    
     pub heading_spacing: usize,
 
-    /// Visual style applied to shot lines (`!! text`).  Accepted values match
-    /// [`heading_style`](Config::heading_style).
+    
+    
     pub shot_style: String,
 
-    /// Automatically save modified buffers periodically.
+    
     pub auto_save: bool,
 
-    /// Interval in seconds between automatic saves.
+    
     pub auto_save_interval: u64,
 }
 
@@ -375,12 +358,12 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Applies `set` / `unset` directives from a configuration file string to
-    /// this `Config` instance.
-    ///
-    /// Lines that start with `#` are treated as comments and ignored.  Unknown
-    /// keys are silently skipped for forward compatibility.  String values must
-    /// be quoted with `"..."` in the file; the quotes are stripped during parsing.
+    
+    
+    
+    
+    
+    
     pub fn parse_config_str(&mut self, content: &str) {
         for line in content.lines() {
             let line = line.trim();
@@ -465,18 +448,18 @@ impl Config {
         }
     }
 
-    /// Constructs a `Config` by loading the user's config file (creating it from
-    /// the built-in template if absent) and then applying CLI overrides.
-    ///
-    /// Precedence (highest to lowest):
-    /// 1. CLI flags passed at invocation time.
-    /// 2. `~/.config/fount/fount.conf` (or the path given by `--config`).
-    /// 3. Hard-coded [`Default`] values.
-    ///
-    /// Terminal capability detection (Unicode support, colour support) is also
-    /// performed here; `force_ascii` and `no_color` are set automatically when
-    /// the terminal does not advertise the relevant capabilities, unless
-    /// `force_ansi` is set.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn load(cli: &Cli) -> Self {
         let mut config = Self::default();
 
