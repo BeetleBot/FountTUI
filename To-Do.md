@@ -5,17 +5,12 @@
 - [ ] **Home Page**: A simple landing area when opening without a file. (New, Open, Tutorial, Exit).
 - [ ] **PDF Export**: The big one—implementing a clean PDF generator.
 - [ ] **Refactoring app.rs**: It's getting huge (~197KB). Break it down into logic and UI modules for better maintenance.
-- [ ] **Status Bar Overhaul**: 
-    - Move shortcut legend to the side bar.
-    - Add real-time stats (Word count, Page count, etc.) to the bar.
 - [ ] **Structure & Navigation**: 
     - Way to implement structures into the screenplay.
     - Making those structures visible in the Scene Navigator.
 - [ ] **Visual Selection**: Restore text selection within the editor when mouse capture is active.
 - [ ] **Navigator Clicking**: Enable clicking on a line in the Scene Navigator to jump there.
 - [ ] **Settings Fix**: Ensure settings changed in the pane actually save back to the config file.
-- [ ] **Dynamic Contrast**: Implement an "Adaptive" approach where we use terminal default colors (like `Reset`) more intelligently to blend across themes naturally.
-
 
 ### Already Done
 - [x] **App Identity**: Completely renamed to **Fount**. Terminal command is now `fount`.
@@ -34,3 +29,7 @@
     - `Hide Markup` now respects Fountain sigils (headings, lyrics, etc.).
     - Proper support for pasting multiple lines of text.
     - Removed redundant 'Highlight Action' feature.
+- [x] **Dynamic Contrast**: Implement an "Adaptive" approach where we use terminal default colors (like `Reset`) more intelligently to blend across themes naturally.
+- [x] **Status Bar Overhaul**: 
+    - Move shortcut legend to the side bar.
+    - Add real-time stats (Word count, Page count, etc.) to the bar.
