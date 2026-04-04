@@ -14,6 +14,8 @@
 - [ ] **Visual Selection**: Restore text selection within the editor when mouse capture is active.
 - [ ] **Navigator Clicking**: Enable clicking on a line in the Scene Navigator to jump there.
 - [ ] **Settings Fix**: Ensure settings changed in the pane actually save back to the config file.
+- [ ] **Dynamic Contrast**: Implement an "Adaptive" approach where we use terminal default colors (like `Reset`) more intelligently to blend across themes naturally.
+
 
 ### Already Done
 - [x] **App Identity**: Completely renamed to **Fount**. Terminal command is now `fount`.
