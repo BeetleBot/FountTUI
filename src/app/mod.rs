@@ -58,6 +58,8 @@ pub enum AppMode {
 
     ExportPane,
 
+    FormatPane,
+
     PromptExportFilename,
 }
 
@@ -158,6 +160,8 @@ pub struct App {
     pub selected_setting: usize,
 
     pub selected_export_option: usize,
+    
+    pub selected_format_option: usize,
 
     pub sidebar_area: Rect,
 
@@ -282,6 +286,7 @@ impl App {
             selected_scene: 0,
             selected_setting: 0,
             selected_export_option: 0,
+            selected_format_option: 0,
             sidebar_area: Rect::default(),
             settings_area: Rect::default(),
             navigator_state: ListState::default(),
@@ -845,6 +850,170 @@ impl App {
                     self.locations.insert(final_loc);
                 }
             }
+        }
+    }
+
+    /// Strips a trailing `#num#` tag from a scene heading line if present.
+    fn strip_scene_number_from_line(line: &str) -> &str {
+        let trimmed = line.trim_end();
+        if trimmed.ends_with('#') {
+            if let Some(open) = trimmed[..trimmed.len() - 1].rfind('#') {
+                let inner = &trimmed[open + 1..trimmed.len() - 1];
+                if !inner.is_empty() && !inner.contains(' ') {
+                    return trimmed[..open].trim_end();
+                }
+            }
+        }
+        line
+    }
+
+    /// Calculates what scene-number integer a given scene index should receive,
+    /// walking all scene headings up to `target_idx` and applying the same
+    /// cascading logic used by the full renumber pass.
+    fn compute_scene_number_for(&self, target_line_idx: usize) -> usize {
+        let mut count = 1usize;
+        for i in 0..self.lines.len() {
+            if self.types[i] != LineType::SceneHeading {
+                continue;
+            }
+            let base = Self::strip_scene_number_from_line(&self.lines[i]);
+            // Check if a non-integer override is already present
+            let existing: Option<&str> = {
+                let t = self.lines[i].trim_end();
+                if t.ends_with('#') {
+                    t[..t.len()-1].rfind('#').and_then(|o| {
+                        let inner = &t[o+1..t.len()-1];
+                        if !inner.is_empty() && !inner.contains(' ') { Some(inner) } else { None }
+                    })
+                } else { None }
+            };
+            if i == target_line_idx {
+                // If the existing tag is non-integer (custom lock like 14B) keep count as-is
+                if let Some(num) = existing {
+                    if !num.chars().all(|c| c.is_ascii_digit()) {
+                        return count; // will be ignored by caller
+                    }
+                }
+                return count;
+            }
+            // Advance count only for scenes that consume an integer slot
+            let _ = base;
+            if let Some(num) = existing {
+                if num.chars().all(|c| c.is_ascii_digit()) {
+                    count += 1;
+                }
+                // non-integer overrides don't consume a slot
+            } else {
+                count += 1;
+            }
+        }
+        count
+    }
+
+    /// Numbers ALL scene headings chronologically. Respects non-integer custom
+    /// overrides (e.g. `14B`) — those scenes keep their tag, subsequent integer
+    /// scenes are re-indexed. Ignores `production_lock`; this is an explicit
+    /// on-demand action.
+    pub fn renumber_all_scenes(&mut self) {
+        let mut count = 1usize;
+        let mut changed = false;
+
+        for i in 0..self.lines.len() {
+            if self.types[i] != LineType::SceneHeading {
+                continue;
+            }
+            let base = Self::strip_scene_number_from_line(&self.lines[i]).to_string();
+            // Detect existing custom (non-integer) tag
+            let existing_custom: Option<String> = {
+                let t = self.lines[i].trim_end();
+                if t.ends_with('#') {
+                    t[..t.len()-1].rfind('#').and_then(|o| {
+                        let inner = &t[o+1..t.len()-1];
+                        if !inner.is_empty() && !inner.contains(' ') && !inner.chars().all(|c| c.is_ascii_digit()) {
+                            Some(inner.to_string())
+                        } else { None }
+                    })
+                } else { None }
+            };
+
+            let new_line = if let Some(custom) = existing_custom {
+                // Keep custom tag, don't consume an integer slot
+                format!("{} #{}#", base, custom)
+            } else {
+                let n = count;
+                count += 1;
+                format!("{} #{}#", base, n)
+            };
+
+            if self.lines[i] != new_line {
+                self.lines[i] = new_line;
+                changed = true;
+            }
+        }
+
+        if changed {
+            self.parse_document();
+        }
+    }
+
+    /// Injects or updates the scene number **only for the line the cursor is on**.
+    /// Does nothing if the current line is not a scene heading.
+    /// Respects `production_lock`: if locked, this call is still allowed (it's
+    /// triggered explicitly by the user). 
+    /// Unlike `renumber_all_scenes`, this only touches one line.
+    pub fn inject_current_scene_number(&mut self) {
+        let y = self.cursor_y;
+        if y >= self.types.len() || self.types[y] != LineType::SceneHeading {
+            self.set_status("Not a scene heading");
+            return;
+        }
+        let num = self.compute_scene_number_for(y);
+        let base = Self::strip_scene_number_from_line(&self.lines[y]).to_string();
+        // Preserve existing non-integer custom tag
+        let existing_custom: Option<String> = {
+            let t = self.lines[y].trim_end();
+            if t.ends_with('#') {
+                t[..t.len()-1].rfind('#').and_then(|o| {
+                    let inner = &t[o+1..t.len()-1];
+                    if !inner.is_empty() && !inner.contains(' ') && !inner.chars().all(|c| c.is_ascii_digit()) {
+                        Some(inner.to_string())
+                    } else { None }
+                })
+            } else { None }
+        };
+        let new_line = if let Some(custom) = existing_custom {
+            format!("{} #{}#", base, custom)
+        } else {
+            format!("{} #{}#", base, num)
+        };
+        if self.lines[y] != new_line {
+            self.lines[y] = new_line;
+            self.parse_document();
+            self.set_status(&format!("Scene number #{} injected", num));
+        } else {
+            self.set_status("Scene already numbered");
+        }
+    }
+
+    /// Removes `#num#` tags from ALL scene headings. Always allowed, even with
+    /// `production_lock` on.
+    pub fn strip_all_scene_numbers(&mut self) {
+        let mut changed = false;
+        for i in 0..self.lines.len() {
+            if self.types[i] != LineType::SceneHeading {
+                continue;
+            }
+            let base = Self::strip_scene_number_from_line(&self.lines[i]);
+            if self.lines[i].trim_end() != base {
+                self.lines[i] = base.to_string();
+                changed = true;
+            }
+        }
+        if changed {
+            self.parse_document();
+            self.set_status("All scene numbers cleared");
+        } else {
+            self.set_status("No scene numbers found");
         }
     }
 

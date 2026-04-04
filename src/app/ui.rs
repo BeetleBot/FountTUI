@@ -57,7 +57,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     app.settings_area = Rect::default();
-    if app.mode == AppMode::SettingsPane || app.mode == AppMode::Shortcuts || app.mode == AppMode::ExportPane {
+    if app.mode == AppMode::SettingsPane || app.mode == AppMode::Shortcuts || app.mode == AppMode::ExportPane || app.mode == AppMode::FormatPane {
         let side_chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Min(0), Constraint::Length(35)])
@@ -359,6 +359,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let left_text = match app.mode {
             AppMode::SceneNavigator => "  SCENE NAVIGATOR".to_string(),
             AppMode::SettingsPane => "  SETTINGS".to_string(),
+            AppMode::FormatPane => "  FORMAT".to_string(),
             AppMode::Shortcuts => "  SHORTCUTS".to_string(),
             AppMode::ExportPane => "  EXPORT OPTIONS".to_string(),
             _ => {
@@ -402,11 +403,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let settings = vec![
             ("Typewriter Mode", &app.config.strict_typewriter_mode),
             ("Auto-Save", &app.config.auto_save),
-            ("Scene Numbers", &app.config.show_scene_numbers),
-            ("Page Numbers", &app.config.show_page_numbers),
-            ("Hide Markup", &app.config.hide_markup),
             ("Autocomplete", &app.config.autocomplete),
-            ("Auto-CONT'D", &app.config.auto_contd),
             ("Auto-Breaks", &app.config.auto_paragraph_breaks),
             ("Focus Mode", &app.config.focus_mode),
         ];
@@ -428,6 +425,59 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let list = List::new(items).block(
             Block::default()
                 .title(" Settings  [?] ")
+                .border_style(panel_style),
+        );
+        f.render_widget(list, app.settings_area);
+    }
+
+    if app.mode == AppMode::FormatPane {
+        // Sections: each item is (display_text, is_header, is_toggle with Option<bool>)
+        // Headers are visual-only and skipped during navigation.
+        // Navigable indices: 0=Show Page Nums, 1=Hide Markup, 2=Auto-CONT'D,
+        //                    3=Production Lock, 4=Re number scenes, 5=Clear all scene numbers., 6=Show Scene Nums
+        let nav_items: Vec<(bool, &str, Option<bool>)> = vec![
+            // is_header, label, toggle_value (None = action button)
+            (true,  "── GENERAL ──",               None),
+            (false, "Show Page Nums",               Some(app.config.show_page_numbers)),
+            (false, "Hide Markup",                  Some(app.config.hide_markup)),
+            (false, "Auto-CONT'D",                  Some(app.config.auto_contd)),
+            (true,  "── SCENE NUMBERS ──",          None),
+            (false, "Production Lock",              Some(app.config.production_lock)),
+            (false, "Re number scenes",             None),
+            (false, "Clear all scene numbers.",     None),
+            (false, "Show Scene Nums",              Some(app.config.show_scene_numbers)),
+        ];
+
+        let items: Vec<ListItem> = nav_items
+            .iter()
+            .enumerate()
+            .map(|(render_i, (is_header, label, toggle))| {
+                // The navigable index excludes headers
+                let nav_i = nav_items[..render_i].iter().filter(|(h,_,_)| !h).count();
+                let is_selected = !is_header && nav_i == app.selected_format_option;
+                let style = if is_selected {
+                    Style::default().add_modifier(Modifier::REVERSED)
+                } else if *is_header {
+                    Style::default().add_modifier(Modifier::DIM)
+                } else {
+                    Style::default()
+                };
+
+                let text = if *is_header {
+                    format!(" {}", label)
+                } else if let Some(v) = toggle {
+                    format!(" {} {}", if *v { "[X]" } else { "[ ]" }, label)
+                } else {
+                    format!(" [→] {}", label)
+                };
+
+                ListItem::new(text).style(style)
+            })
+            .collect();
+
+        let list = List::new(items).block(
+            Block::default()
+                .title(" Format  [?] ")
                 .border_style(panel_style),
         );
         f.render_widget(list, app.settings_area);

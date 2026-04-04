@@ -356,6 +356,9 @@ pub struct Config {
 
     /// Selected export format
     pub export_format: String,
+
+    /// When ON, scene numbers in text are frozen — no automatic re-indexing.
+    pub production_lock: bool,
 }
 
 impl Default for Config {
@@ -394,6 +397,7 @@ impl Default for Config {
             force_scene_numbers: false,
             export_bold_scene_headings: true,
             export_format: "pdf".to_string(),
+            production_lock: false,
         }
     }
 }

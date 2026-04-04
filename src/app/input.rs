@@ -410,13 +410,17 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::SettingsPane => {
-                    let settings_count = 9;
+                    let settings_count = 5;
                     match key.code {
                         KeyCode::Esc => {
                             self.mode = AppMode::Normal;
                         }
                         KeyCode::Char('p') if ctrl => {
                             self.mode = AppMode::Normal;
+                        }
+                        KeyCode::Char('f') if ctrl => {
+                            self.mode = AppMode::FormatPane;
+                            self.selected_format_option = 0;
                         }
                         KeyCode::Char('h') if ctrl => {
                             self.open_scene_navigator();
@@ -435,18 +439,12 @@ impl App {
                                         !self.config.strict_typewriter_mode
                                 }
                                 1 => self.config.auto_save = !self.config.auto_save,
-                                2 => {
-                                    self.config.show_scene_numbers = !self.config.show_scene_numbers
-                                }
-                                3 => self.config.show_page_numbers = !self.config.show_page_numbers,
-                                4 => self.config.hide_markup = !self.config.hide_markup,
-                                5 => self.config.autocomplete = !self.config.autocomplete,
-                                6 => self.config.auto_contd = !self.config.auto_contd,
-                                7 => {
+                                2 => self.config.autocomplete = !self.config.autocomplete,
+                                3 => {
                                     self.config.auto_paragraph_breaks =
                                         !self.config.auto_paragraph_breaks
                                 }
-                                8 => self.config.focus_mode = !self.config.focus_mode,
+                                4 => self.config.focus_mode = !self.config.focus_mode,
                                 _ => {}
                             }
                             *text_changed = true;
@@ -455,18 +453,85 @@ impl App {
                             let desc = match self.selected_setting {
                                 0 => "Always center the cursor, even at the start of the file.",
                                 1 => "Periodically save the current buffer to disk.",
-                                2 => "Display scene numbers in the left margin.",
-                                3 => "Display page numbers in the right margin.",
-                                4 => "Hide Fountain markup (headings, blocks) except for active line.",
-                                5 => "Suggest character names and scene prefixes.",
-                                6 => "Automatically append (CONT'D) to character names.",
-                                7 => "Insert paragraph breaks after screenplay elements.",
-                                8 => "Hide the UI bars for a distraction-free view.",
+                                2 => "Suggest character names and scene prefixes.",
+                                3 => "Insert paragraph breaks after screenplay elements.",
+                                4 => "Hide the UI bars for a distraction-free view.",
                                 _ => "",
                             };
                             if !desc.is_empty() {
                                 self.set_status(desc);
                             }
+                        }
+                        _ => {}
+                    }
+                    return Ok(false);
+                }
+                AppMode::FormatPane => {
+                    // Navigable count = 7 (headers are skipped)
+                    // nav idx -> action : 0=PageNums, 1=HideMarkup, 2=AutoContd,
+                    //                     3=ProdLock, 4=Renumber, 5=ClearAll, 6=ShowSceneNums
+                    const NAV_COUNT: usize = 7;
+                    // Header positions in the rendered list: render_idx 0 and 4
+                    // nav_idx maps to render_idx: +1 for idx>=0 (skip header at 0),
+                    //                             +1 again for idx>=3 (skip header at render 4)
+                    fn next_nav(cur: usize, dir: isize) -> usize {
+                        let next = (cur as isize + dir).clamp(0, (NAV_COUNT - 1) as isize) as usize;
+                        next
+                    }
+                    match key.code {
+                        KeyCode::Esc => {
+                            self.mode = AppMode::Normal;
+                        }
+                        KeyCode::Char('f') if ctrl => {
+                            self.mode = AppMode::Normal;
+                        }
+                        KeyCode::Char('p') if ctrl => {
+                            self.mode = AppMode::SettingsPane;
+                            self.selected_setting = 0;
+                        }
+                        KeyCode::Char('h') if ctrl => {
+                            self.open_scene_navigator();
+                        }
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            self.selected_format_option = next_nav(self.selected_format_option, -1);
+                        }
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            self.selected_format_option = next_nav(self.selected_format_option, 1);
+                        }
+                        KeyCode::Enter | KeyCode::Char(' ') => {
+                            match self.selected_format_option {
+                                0 => self.config.show_page_numbers = !self.config.show_page_numbers,
+                                1 => self.config.hide_markup = !self.config.hide_markup,
+                                2 => self.config.auto_contd = !self.config.auto_contd,
+                                3 => {
+                                    self.config.production_lock = !self.config.production_lock;
+                                    let state = if self.config.production_lock { "ON" } else { "OFF" };
+                                    self.set_status(&format!("Production Lock {}", state));
+                                }
+                                4 => {
+                                    self.renumber_all_scenes();
+                                    self.set_status("All scenes renumbered");
+                                }
+                                5 => {
+                                    self.strip_all_scene_numbers();
+                                }
+                                6 => self.config.show_scene_numbers = !self.config.show_scene_numbers,
+                                _ => {}
+                            }
+                            *text_changed = true;
+                        }
+                        KeyCode::Char('?') => {
+                            let desc = match self.selected_format_option {
+                                0 => "Display page numbers in the right margin.",
+                                1 => "Hide Fountain markup except on the active line.",
+                                2 => "Automatically append (CONT'D) to repeated characters.",
+                                3 => "Lock: prevents automatic scene number changes while editing.",
+                                4 => "Number all scenes chronologically (respects custom tags like 14B).",
+                                5 => "Remove ALL scene number tags from the entire script.",
+                                6 => "Display scene numbers in the left margin.",
+                                _ => "",
+                            };
+                            if !desc.is_empty() { self.set_status(desc); }
                         }
                         _ => {}
                     }
@@ -483,6 +548,10 @@ impl App {
                         KeyCode::Char('p') if ctrl => {
                             self.mode = AppMode::SettingsPane;
                             self.selected_setting = 0;
+                        }
+                        KeyCode::Char('f') if ctrl => {
+                            self.mode = AppMode::FormatPane;
+                            self.selected_format_option = 0;
                         }
                         _ => {}
                     }
@@ -566,6 +635,10 @@ impl App {
                             self.mode = AppMode::SettingsPane;
                             self.selected_setting = 0;
                         }
+                        KeyCode::Char('f') if ctrl => {
+                            self.mode = AppMode::FormatPane;
+                            self.selected_format_option = 0;
+                        }
                         KeyCode::Char('z') if ctrl => {
                             if self.undo() {
                                 self.set_status("Undo applied");
@@ -611,6 +684,11 @@ impl App {
                         KeyCode::Char('c') if ctrl => {
                             self.report_cursor_position();
                         }
+                        KeyCode::Char('i') if ctrl && shift => {
+                            self.inject_current_scene_number();
+                            *text_changed = true;
+                        }
+
                         KeyCode::F(1) => {
                             self.mode = AppMode::Shortcuts;
                         }
@@ -687,6 +765,7 @@ impl App {
                 }
             }
         }
+        
         Ok(false)
     }
 }
