@@ -28,6 +28,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut app = App::new(cli.clone());
 
         let fmt = cli.format.to_lowercase();
+        if fmt == "pdf" {
+            let fountain_text = app.lines.join("\n");
+            let paper_size = if app.config.paper_size.to_lowercase() == "letter" {
+                fount::pdf::LETTER
+            } else {
+                fount::pdf::A4
+            };
+            if let Err(e) = fount::pdf::export_to_pdf(&fountain_text, &export_path, paper_size, app.config.export_bold_scene_headings) {
+                eprintln!("Error exporting to PDF: {}", e);
+                std::process::exit(1);
+            }
+            return Ok(());
+        }
+
         let with_ansi = match fmt.as_str() {
             "ansi" => true,
             "ascii" => {
@@ -37,10 +51,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "plain" => false,
             _ => {
                 eprintln!(
-                    "Error: Unknown export format '{}'. Expected 'plain', 'ascii', or 'ansi'.",
+                    "Error: Unknown export format '{}'. Expected 'plain', 'ascii', 'ansi', or 'pdf'.",
                     fmt
                 );
-                std::process::exit(1);
+                std::process::exit(1)
             }
         };
 

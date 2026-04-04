@@ -57,7 +57,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     app.settings_area = Rect::default();
-    if app.mode == AppMode::SettingsPane || app.mode == AppMode::Shortcuts {
+    if app.mode == AppMode::SettingsPane || app.mode == AppMode::Shortcuts || app.mode == AppMode::ExportPane {
         let side_chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Min(0), Constraint::Length(35)])
@@ -360,6 +360,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             AppMode::SceneNavigator => "  SCENE NAVIGATOR".to_string(),
             AppMode::SettingsPane => "  SETTINGS".to_string(),
             AppMode::Shortcuts => "  SHORTCUTS".to_string(),
+            AppMode::ExportPane => "  EXPORT OPTIONS".to_string(),
             _ => {
                 if app.has_multiple_buffers {
                     format!("  [{}/{}]", app.current_buf_idx + 1, app.buffers.len())
@@ -432,6 +433,35 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         f.render_widget(list, app.settings_area);
     }
 
+    if app.mode == AppMode::ExportPane {
+        let export_options = vec![
+            format!(" Format: {}", app.config.export_format.to_uppercase()),
+            format!(" Paper: {}", app.config.paper_size.to_uppercase()),
+            format!(" Bold Headings: {}", if app.config.export_bold_scene_headings { "[X]" } else { "[ ]" }),
+            " [ EXPORT ]".to_string(),
+        ];
+
+        let items: Vec<ListItem> = export_options
+            .into_iter()
+            .enumerate()
+            .map(|(i, label)| {
+                let style = if i == app.selected_export_option {
+                    Style::default().add_modifier(Modifier::REVERSED)
+                } else {
+                    Style::default()
+                };
+                ListItem::new(label).style(style)
+            })
+            .collect();
+
+        let list = List::new(items).block(
+            Block::default()
+                .title(" Export  [?] ")
+                .border_style(panel_style),
+        );
+        f.render_widget(list, app.settings_area);
+    }
+
     if app.mode == AppMode::Shortcuts {
         let shortcuts = vec![
             ("^S", "Save Script"),
@@ -440,6 +470,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             ("^U", "Paste Line"),
             ("^Z", "Undo Change"),
             ("^R", "Redo Change"),
+            ("^E", "Export PDF"),
             ("^H", "Scene Navigator"),
             ("^P", "Settings Pane"),
             ("^W", "Search Text"),
@@ -494,6 +525,9 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 AppMode::PromptSave => center_text = "SAVE MODIFIED SCRIPT? (Y/N/C)".to_string(),
                 AppMode::PromptFilename => {
                     center_text = format!("FILENAME: {}", app.filename_input)
+                }
+                AppMode::PromptExportFilename => {
+                    center_text = format!("EXPORT {}: {}", app.config.export_format.to_uppercase(), app.filename_input)
                 }
                 _ => {}
             }

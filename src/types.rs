@@ -334,7 +334,7 @@ mod types_tests {
     fn test_base_style_default_heading() {
         let config = Config::default();
         let style = base_style(LineType::SceneHeading, &config);
-        assert_eq!(style.fg, Some(Color::White));
+        assert_eq!(style.fg, None);
         assert!(style.add_modifier.contains(Modifier::BOLD));
         assert!(!style.add_modifier.contains(Modifier::UNDERLINED));
     }
@@ -361,7 +361,7 @@ mod types_tests {
     fn test_base_style_character() {
         let config = Config::default();
         let style = base_style(LineType::Character, &config);
-        assert_eq!(style.fg, Some(Color::White));
+        assert_eq!(style.fg, None);
         assert!(style.add_modifier.contains(Modifier::BOLD));
     }
 
@@ -376,7 +376,7 @@ mod types_tests {
     fn test_base_style_action_explicit_reset() {
         let config = Config::default();
         let style = base_style(LineType::Action, &config);
-        assert_eq!(style.fg, Some(Color::Reset));
+        assert_eq!(style.fg, None);
     }
 
     #[test]
@@ -439,8 +439,8 @@ mod types_tests {
         assert!(!style_char.add_modifier.contains(Modifier::BOLD));
         assert!(!style_lyrics.add_modifier.contains(Modifier::ITALIC));
 
-        assert_eq!(style_heading.fg, Some(Color::White));
-        assert_eq!(style_char.fg, Some(Color::White));
+        assert_eq!(style_heading.fg, None);
+        assert_eq!(style_char.fg, None);
         assert_eq!(style_lyrics.fg, None);
     }
 

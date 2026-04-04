@@ -55,6 +55,10 @@ pub enum AppMode {
     SettingsPane,
 
     Shortcuts,
+
+    ExportPane,
+
+    PromptExportFilename,
 }
 
 #[derive(Clone, Default)]
@@ -152,6 +156,8 @@ pub struct App {
     pub selected_scene: usize,
 
     pub selected_setting: usize,
+
+    pub selected_export_option: usize,
 
     pub sidebar_area: Rect,
 
@@ -275,6 +281,7 @@ impl App {
             scenes: Vec::new(),
             selected_scene: 0,
             selected_setting: 0,
+            selected_export_option: 0,
             sidebar_area: Rect::default(),
             settings_area: Rect::default(),
             navigator_state: ListState::default(),

@@ -99,10 +99,22 @@ unset no_formatting
 # that your terminal does not support them.
 unset force_ansi
 
-# Force the use of ASCII characters instead of Unicode (e.g., for page
+# Force output of ASCII characters instead of Unicode (e.g., for page
 # break lines). Useful for older terminals. Fount will try to detect
 # Unicode support automatically.
 unset force_ascii
+
+## PDF Export
+
+# Paper size for PDF export. Available values: "a4", "letter"
+set paper_size "a4"
+
+# Force scene numbers to be generated in PDF export even if they
+# are not explicitly numbered in the Fountain source.
+unset force_scene_numbers
+
+# Render scene headings in bold for exports (PDF/HTML).
+set export_bold_scene_headings
 "#;
 
 
@@ -227,6 +239,18 @@ pub struct Cli {
     
     #[arg(long, default_value = "plain", value_name = "FORMAT")]
     pub format: String,
+
+    /// Paper size for PDF export (a4, letter)
+    #[arg(long, value_name = "SIZE")]
+    pub paper_size: Option<String>,
+
+    /// Force scene numbers in PDF export
+    #[arg(long)]
+    pub force_scene_numbers: bool,
+
+    /// Export scene headings in bold
+    #[arg(long)]
+    pub export_bold_scene_headings: bool,
 }
 
 
@@ -320,6 +344,18 @@ pub struct Config {
 
     
     pub auto_save_interval: u64,
+
+    /// PDF paper size
+    pub paper_size: String,
+
+    /// Force scene numbers in PDF export
+    pub force_scene_numbers: bool,
+
+    /// Export scene headings in bold
+    pub export_bold_scene_headings: bool,
+
+    /// Selected export format
+    pub export_format: String,
 }
 
 impl Default for Config {
@@ -353,6 +389,11 @@ impl Default for Config {
             force_ansi: false,
 
             mirror_scene_numbers: MirrorOption::ExportOnly,
+
+            paper_size: "a4".to_string(),
+            force_scene_numbers: false,
+            export_bold_scene_headings: true,
+            export_format: "pdf".to_string(),
         }
     }
 }
@@ -419,6 +460,10 @@ impl Config {
                         "no_formatting" => self.no_formatting = true,
                         "force_ascii" => self.force_ascii = true,
                         "force_ansi" => self.force_ansi = true,
+                        "paper_size" => self.paper_size = val,
+                        "force_scene_numbers" => self.force_scene_numbers = true,
+                        "export_bold_scene_headings" => self.export_bold_scene_headings = true,
+                        "export_format" => self.export_format = val,
                         _ => {}
                     }
                 } else if cmd == "unset" {
@@ -441,6 +486,8 @@ impl Config {
                         "no_formatting" => self.no_formatting = false,
                         "force_ascii" => self.force_ascii = false,
                         "force_ansi" => self.force_ansi = false,
+                        "force_scene_numbers" => self.force_scene_numbers = false,
+                        "export_bold_scene_headings" => self.export_bold_scene_headings = false,
                         _ => {}
                     }
                 }
@@ -522,6 +569,16 @@ impl Config {
         config.force_ascii |= cli.force_ascii;
         config.force_ansi |= cli.force_ansi;
         config.goto_end |= cli.goto_end;
+        config.force_scene_numbers |= cli.force_scene_numbers;
+        config.export_bold_scene_headings |= cli.export_bold_scene_headings;
+        
+        if config.export_format == "" {
+            config.export_format = "pdf".to_string();
+        }
+
+        if let Some(ref size) = cli.paper_size {
+            config.paper_size = size.clone();
+        }
 
         if let Some(ref mode) = cli.mirror_scene_numbers {
             config.mirror_scene_numbers = match mode.as_str() {

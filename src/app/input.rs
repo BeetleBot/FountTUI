@@ -267,6 +267,108 @@ impl App {
                     }
                     return Ok(false);
                 }
+                AppMode::ExportPane => {
+                    let options_count = 4;
+                    match key.code {
+                        KeyCode::Esc => {
+                            self.mode = AppMode::Normal;
+                        }
+                        KeyCode::Char('c') | KeyCode::Char('e') | KeyCode::Char('g') if ctrl => {
+                            self.mode = AppMode::Normal;
+                        }
+                        KeyCode::Char('h') if ctrl => {
+                            self.open_scene_navigator();
+                        }
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            self.selected_export_option = self.selected_export_option.saturating_sub(1);
+                        }
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            self.selected_export_option =
+                                (self.selected_export_option + 1).min(options_count - 1);
+                        }
+                        KeyCode::Enter | KeyCode::Char(' ') => {
+                            match self.selected_export_option {
+                                0 => {
+                                    if self.config.export_format == "pdf" {
+                                        self.config.export_format = "html".to_string();
+                                    } else {
+                                        self.config.export_format = "pdf".to_string();
+                                    }
+                                }
+                                1 => {
+                                    if self.config.paper_size == "a4" {
+                                        self.config.paper_size = "letter".to_string();
+                                    } else {
+                                        self.config.paper_size = "a4".to_string();
+                                    }
+                                }
+                                2 => self.config.export_bold_scene_headings = !self.config.export_bold_scene_headings,
+                                3 => {
+                                    self.filename_input = self
+                                        .file
+                                        .as_ref()
+                                        .map(|p| p.with_extension(&self.config.export_format).to_string_lossy().into_owned())
+                                        .unwrap_or_else(|| format!("screenplay.{}", self.config.export_format));
+                                    self.mode = AppMode::PromptExportFilename;
+                                }
+                                _ => {}
+                            }
+                        }
+                        _ => {}
+                    }
+                    return Ok(false);
+                }
+                AppMode::PromptExportFilename => {
+                    match key.code {
+                        KeyCode::Esc => {
+                            self.mode = AppMode::ExportPane;
+                            self.set_status("Cancelled");
+                        }
+                        KeyCode::Char('c') | KeyCode::Char('g') if ctrl => {
+                            self.mode = AppMode::Normal;
+                            self.set_status("Cancelled");
+                        }
+                        KeyCode::Enter => {
+                            if !self.filename_input.trim().is_empty() {
+                                let export_path = std::path::PathBuf::from(self.filename_input.trim());
+                                let fountain_text = self.lines.join("\n");
+                                
+                                let result = if self.config.export_format == "html" {
+                                    crate::pdf::export_to_html(&fountain_text, &export_path)
+                                } else {
+                                    let paper_size = if self.config.paper_size.to_lowercase() == "letter" {
+                                        crate::pdf::LETTER
+                                    } else {
+                                        crate::pdf::A4
+                                    };
+                                    crate::pdf::export_to_pdf(&fountain_text, &export_path, paper_size, self.config.export_bold_scene_headings)
+                                };
+
+                                match result {
+                                    Ok(_) => {
+                                        self.set_status(&format!("Exported to {}", export_path.display()));
+                                        self.mode = AppMode::Normal;
+                                    }
+                                    Err(e) => {
+                                        self.set_status(&format!("Error exporting: {}", e));
+                                        self.mode = AppMode::Normal;
+                                    }
+                                }
+                            } else {
+                                self.set_status("Cancelled");
+                                self.mode = AppMode::Normal;
+                            }
+                        }
+                        KeyCode::Backspace => {
+                            self.filename_input.pop();
+                        }
+                        KeyCode::Char(c) if !ctrl => {
+                            self.filename_input.push(c);
+                        }
+                        _ => {}
+                    }
+                    return Ok(false);
+                }
                 AppMode::SceneNavigator => {
                     match key.code {
                         KeyCode::Esc => {
@@ -483,6 +585,10 @@ impl App {
                             } else {
                                 self.set_status("Nothing to redo");
                             }
+                        }
+                        KeyCode::Char('e') if ctrl => {
+                            self.mode = AppMode::ExportPane;
+                            self.selected_export_option = 0;
                         }
                         KeyCode::Char('k') if ctrl => {
                             self.cut_line();
