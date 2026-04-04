@@ -2252,6 +2252,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     let area = f.area();
 
     f.render_widget(ratatui::widgets::Clear, area);
+    let panel_style = Style::default().add_modifier(Modifier::REVERSED);
+
 
     let is_prompt = app.mode != AppMode::Normal;
     let has_status = app.status_msg.is_some();
@@ -2281,6 +2283,11 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             .split(text_area);
         app.sidebar_area = side_chunks[0];
         text_area = side_chunks[1];
+
+        let sidebar_block = Block::default()
+            .borders(Borders::RIGHT)
+            .border_style(panel_style);
+        f.render_widget(sidebar_block, app.sidebar_area);
     }
 
     app.settings_area = Rect::default();
@@ -2290,7 +2297,12 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             .constraints([Constraint::Min(0), Constraint::Length(35)])
             .split(text_area);
         text_area = side_chunks[0];
-        app.settings_area = side_chunks[1]; // We reuse settings_area for the shortcuts sidebar too
+        app.settings_area = side_chunks[1];
+
+        let settings_block = Block::default()
+            .borders(Borders::LEFT)
+            .border_style(panel_style);
+        f.render_widget(settings_block, app.settings_area);
     }
 
     let height = text_area.height as usize;
@@ -2351,8 +2363,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             Color::DarkGray
         });
     }
-
-    let panel_style = Style::default().add_modifier(Modifier::REVERSED);
 
     let mut visible: Vec<Line> = Vec::new();
     for _ in 0..pad_top {
@@ -2527,20 +2537,22 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 } else {
                     heading.clone()
                 };
-                lines.push(Line::from(Span::styled(
-                    format!(" {}", heading_text),
-                    heading_style,
-                )));
+
+                let prefix = if is_selected { " » " } else { "   " };
+                lines.push(Line::from(vec![
+                    Span::styled(prefix, base_style),
+                    Span::styled(heading_text, heading_style),
+                ]));
 
                 for syn in synopses {
                     let max_w = 40;
                     let mut current_line = String::new();
                     for word in syn.split_whitespace() {
                         if current_line.len() + word.len() + 1 > max_w {
-                            lines.push(Line::from(Span::styled(
-                                format!("   {}", current_line),
-                                base_style,
-                            )));
+                            lines.push(Line::from(vec![
+                                Span::styled("     ", base_style),
+                                Span::styled(current_line.clone(), base_style),
+                            ]));
                             current_line.clear();
                         }
                         if !current_line.is_empty() {
@@ -2549,10 +2561,10 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                         current_line.push_str(word);
                     }
                     if !current_line.is_empty() {
-                        lines.push(Line::from(Span::styled(
-                            format!("   {}", current_line),
-                            base_style,
-                        )));
+                        lines.push(Line::from(vec![
+                            Span::styled("     ", base_style),
+                            Span::styled(current_line, base_style),
+                        ]));
                     }
                 }
                 lines.push(Line::from(""));
@@ -2560,11 +2572,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             })
             .collect();
 
-        let list = List::new(items).block(
-            Block::default()
-                .borders(Borders::RIGHT)
-                .border_style(panel_style),
-        );
+        let list = List::new(items);
         f.render_stateful_widget(list, app.sidebar_area, &mut app.navigator_state);
     }
 
@@ -2641,7 +2649,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let list = List::new(items).block(
             Block::default()
                 .title(" Settings  [?] ")
-                .borders(Borders::LEFT)
                 .border_style(panel_style),
         );
         f.render_widget(list, app.settings_area);
@@ -2679,7 +2686,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let list = List::new(items).block(
             Block::default()
                 .title(" Shortcuts ")
-                .borders(Borders::LEFT)
                 .border_style(panel_style),
         );
         f.render_widget(list, app.settings_area);
