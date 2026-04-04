@@ -529,53 +529,92 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         };
 
         // ── Status bar ────────────────────────────────────────────────────
-        let left_text = "  COMMANDS [F1]".to_string();
-        let cur_page = app.current_page_number();
-        let total_pages = app.total_page_count();
-        let word_count = app.total_word_count();
-        let right_text = format!("PAGE {}/{} | {} WORDS  ", cur_page, total_pages, word_count);
+        let (mode_str, mode_bg) = match app.mode {
+            AppMode::Normal => (" NORMAL ".to_string(), Color::LightBlue),
+            AppMode::Command => (" COMMAND ".to_string(), Color::Yellow),
+            AppMode::SceneNavigator => (" NAVIGATOR ".to_string(), Color::LightCyan),
+            AppMode::SettingsPane => (" SETTINGS ".to_string(), Color::LightCyan),
+            AppMode::ExportPane => (" EXPORT ".to_string(), Color::LightCyan),
+            AppMode::Search => (" SEARCH ".to_string(), Color::LightMagenta),
+            _ => (" PROMPT ".to_string(), Color::LightRed),
+        };
 
-        let mut center_text = String::new();
-        if let Some(msg) = &app.status_msg {
-            center_text = format!(" [ {} ] ", msg);
+        let mode_fg = Color::Black;
+        let mid_bg = Color::Rgb(40, 44, 52); // Darker grey
+        let mid_fg = Color::White;
+
+        let mut spans = Vec::new();
+
+        spans.push(Span::styled(mode_str, Style::default().bg(mode_bg).fg(mode_fg).add_modifier(Modifier::BOLD)));
+        spans.push(Span::styled("", Style::default().fg(mode_bg).bg(mid_bg)));
+
+        let center_text = if let Some(msg) = &app.status_msg {
+            format!(" {} ", msg)
         } else {
             match app.mode {
                 AppMode::Search => {
                     let prompt_base = if app.last_search.is_empty() {
-                        "SEARCH: ".to_string()
+                        " SEARCH: ".to_string()
                     } else {
-                        format!("SEARCH [{}]: ", app.last_search)
+                        format!(" SEARCH [{}]: ", app.last_search)
                     };
-                    center_text = format!("{}{}", prompt_base, app.search_query);
+                    format!(" {}{}", prompt_base, app.search_query)
                 }
-                AppMode::PromptSave => center_text = "SAVE MODIFIED SCRIPT? (Y/N/C)".to_string(),
-                AppMode::PromptFilename => {
-                    center_text = format!("FILENAME: {}", app.filename_input)
+                AppMode::PromptSave => " SAVE MODIFIED SCRIPT? (Y/N/C) ".to_string(),
+                AppMode::PromptFilename => format!(" FILENAME: {} ", app.filename_input),
+                AppMode::PromptExportFilename => format!(" EXPORT {}: {} ", app.config.export_format.to_uppercase(), app.filename_input),
+                _ => {
+                    let fname = app.file.as_ref()
+                        .and_then(|p| p.file_name())
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| "[No Name]".to_string());
+                    let dirty_str = if app.dirty { " [+] " } else { " " };
+                    format!(" {}{}", fname, dirty_str)
                 }
-                AppMode::PromptExportFilename => {
-                    center_text = format!("EXPORT {}: {}", app.config.export_format.to_uppercase(), app.filename_input)
-                }
-                _ => {}
             }
+        };
+        
+        spans.push(Span::styled(center_text.clone(), Style::default().bg(mid_bg).fg(mid_fg)));
+
+        let right_bg1 = Color::Rgb(60, 65, 75); // Lighter gray than mid_bg
+        let right_fg1 = Color::White;
+        let total_lines = app.layout.len();
+        let scroll_str = if total_lines <= app.visible_height {
+            " All ".to_string()
+        } else if app.scroll == 0 {
+            " Top ".to_string()
+        } else if app.scroll + app.visible_height >= total_lines {
+            " Bot ".to_string()
+        } else {
+            let pct = (app.scroll as f32 / total_lines as f32 * 100.0) as u8;
+            format!(" {}% ", pct)
+        };
+        
+        let right_bg2 = mode_bg;
+        let right_fg2 = Color::Black;
+        let pos_str = format!(" {}:{} ", app.cursor_y + 1, app.cursor_x + 1);
+
+        let mut right_spans = Vec::new();
+        right_spans.push(Span::styled("", Style::default().fg(right_bg1).bg(mid_bg)));
+        
+        let right_text1 = format!(" Δ {} ", scroll_str.trim());
+        right_spans.push(Span::styled(right_text1, Style::default().bg(right_bg1).fg(right_fg1)));
+        right_spans.push(Span::styled("", Style::default().fg(right_bg2).bg(right_bg1)));
+        right_spans.push(Span::styled(pos_str, Style::default().bg(right_bg2).fg(right_fg2).add_modifier(Modifier::BOLD)));
+
+        let left_width: usize = spans.iter().map(|s| UnicodeWidthStr::width(s.content.as_ref())).sum();
+        let right_width: usize = right_spans.iter().map(|s| UnicodeWidthStr::width(s.content.as_ref())).sum();
+        let total_width = status_area.width as usize;
+
+        if total_width > left_width + right_width {
+            let pad_len = total_width - left_width - right_width;
+            spans.push(Span::styled(" ".repeat(pad_len), Style::default().bg(mid_bg)));
         }
+        
+        spans.extend(right_spans);
 
-        let width = status_area.width as usize;
-        let left_len = left_text.chars().count();
-        let right_len = right_text.chars().count();
-        let center_len = center_text.chars().count();
-        let center_start = (width.saturating_sub(center_len)) / 2;
-        let pad_left = center_start.saturating_sub(left_len);
-        let pad_right = width.saturating_sub(left_len + pad_left + center_len + right_len);
-
-        let status_line = format!(
-            "{}{}{}{}{}",
-            left_text,
-            " ".repeat(pad_left),
-            center_text,
-            " ".repeat(pad_right),
-            right_text
-        );
-        f.render_widget(Paragraph::new(status_line).style(panel_style), status_area);
+        let status_line = Line::from(spans);
+        f.render_widget(Paragraph::new(status_line), status_area);
 
         // ── Command bar (only in Command mode) ────────────────────────────
         if let Some(cmd_rect) = cmd_area {
