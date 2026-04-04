@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-04
+
+### Added
+- **Text Selection & Clipboard**: Implement text selection, system clipboard support (`Ctrl+C`, `Ctrl+X`, `Ctrl+V`).
+- **Command Mode**: Implement a modernized command interface (`/`) with tab completion, migrating shortcut actions to command-based execution.
+- **Format Pane**: Introduce FormatPane for document formatting and scene number management.
+- **PDF Export**: Re-implement robust PDF screenplay export functionality.
+- **Mouse Support**: Added 'Click with mouse' and 'Scroll with mouse' to the scene navigator.
+- **Word Wrap**: Added word wrap for Scene headings.
+
+### Changed
+- Complete architecture refactoring of the source code (`app.rs` and inputs).
+
 ## [0.2.0] - 2026-04-04
 
 ### Added
