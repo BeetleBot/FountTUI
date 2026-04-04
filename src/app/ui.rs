@@ -497,70 +497,59 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         };
 
         let mode_fg = Color::Black;
-        let cmd_bg = Color::Rgb(60, 65, 75); // Lighter grey for F1 block
-        let cmd_fg = Color::White;
-        let mid_bg = Color::Rgb(40, 44, 52); // Darker grey for filename
-        let mid_fg = Color::White;
 
         let mut spans = Vec::new();
 
-        // 1. Mode Block
+        // 1. Mode Block (Colored)
         spans.push(Span::styled(mode_str, Style::default().bg(mode_bg).fg(mode_fg).add_modifier(Modifier::BOLD)));
-        spans.push(Span::styled("", Style::default().fg(mode_bg).bg(cmd_bg)));
+        spans.push(Span::styled(" ", Style::default().fg(mode_bg).bg(Color::Reset)));
 
-        // 2. Commands [F1] Block
-        spans.push(Span::styled(" COMMANDS [F1] ", Style::default().bg(cmd_bg).fg(cmd_fg)));
-        spans.push(Span::styled("", Style::default().fg(cmd_bg).bg(mid_bg)));
+        // 2. Commands info (Transparent)
+        spans.push(Span::raw("COMMANDS [F1]  "));
 
-        // 3. Center Text (Filename or Prompt)
+        // 3. Center Text (Filename or Prompt) - Transparent
         let center_text = if let Some(msg) = &app.status_msg {
-            format!(" {} ", msg)
+            format!("{} ", msg)
         } else {
             match app.mode {
                 AppMode::Search => {
                     let prompt_base = if app.last_search.is_empty() {
-                        " SEARCH: ".to_string()
+                        "SEARCH: ".to_string()
                     } else {
-                        format!(" SEARCH [{}]: ", app.last_search)
+                        format!("SEARCH [{}]: ", app.last_search)
                     };
-                    format!(" {}{}", prompt_base, app.search_query)
+                    format!("{}{}", prompt_base, app.search_query)
                 }
-                AppMode::PromptSave => " SAVE MODIFIED SCRIPT? (Y/N/C) ".to_string(),
-                AppMode::PromptFilename => format!(" FILENAME: {} ", app.filename_input),
-                AppMode::PromptExportFilename => format!(" EXPORT {}: {} ", app.config.export_format.to_uppercase(), app.filename_input),
+                AppMode::PromptSave => "SAVE MODIFIED SCRIPT? (Y/N/C) ".to_string(),
+                AppMode::PromptFilename => format!("FILENAME: {} ", app.filename_input),
+                AppMode::PromptExportFilename => format!("EXPORT {}: {} ", app.config.export_format.to_uppercase(), app.filename_input),
                 _ => {
                     let fname = app.file.as_ref()
                         .and_then(|p| p.file_name())
                         .map(|n| n.to_string_lossy().into_owned())
                         .unwrap_or_else(|| "[No Name]".to_string());
-                    let dirty_str = if app.dirty { " [+] " } else { " " };
-                    format!(" {}{}", fname, dirty_str)
+                    let dirty_str = if app.dirty { " [+] " } else { "" };
+                    format!("{}{}", fname, dirty_str)
                 }
             }
         };
         
-        spans.push(Span::styled(center_text.clone(), Style::default().bg(mid_bg).fg(mid_fg)));
+        spans.push(Span::raw(center_text));
 
-        // 4. Right Side (Counts & Cursor)
-        let right_bg1 = cmd_bg; // Match the Commands block color
-        let right_fg1 = Color::White;
-        
+        // 4. Right Side (Counts & Cursor) - Transparent transitioning to Colored
         let word_count = app.total_word_count();
         let line_count = app.lines.len();
-        
-        let right_bg2 = mode_bg;
-        let right_fg2 = Color::Black;
         let pos_str = format!(" {}:{} ", app.cursor_y + 1, app.cursor_x + 1);
 
         let mut right_spans = Vec::new();
-        // Transition into Counts block
-        right_spans.push(Span::styled("", Style::default().fg(right_bg1).bg(mid_bg)));
-        let right_text1 = format!(" {} WORDS  {} LINES ", word_count, line_count);
-        right_spans.push(Span::styled(right_text1, Style::default().bg(right_bg1).fg(right_fg1)));
         
-        // Transition into Cursor block
-        right_spans.push(Span::styled("", Style::default().fg(right_bg2).bg(right_bg1)));
-        right_spans.push(Span::styled(pos_str, Style::default().bg(right_bg2).fg(right_fg2).add_modifier(Modifier::BOLD)));
+        // Counts block (Transparent)
+        let right_text1 = format!("{} WORDS  {} LINES ", word_count, line_count);
+        right_spans.push(Span::raw(right_text1));
+        
+        // Transition into Cursor block (Colored)
+        right_spans.push(Span::styled("", Style::default().fg(mode_bg).bg(Color::Reset)));
+        right_spans.push(Span::styled(pos_str, Style::default().bg(mode_bg).fg(mode_fg).add_modifier(Modifier::BOLD)));
 
         let left_width: usize = spans.iter().map(|s| UnicodeWidthStr::width(s.content.as_ref())).sum();
         let right_width: usize = right_spans.iter().map(|s| UnicodeWidthStr::width(s.content.as_ref())).sum();
@@ -568,7 +557,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
         if total_width > left_width + right_width {
             let pad_len = total_width - left_width - right_width;
-            spans.push(Span::styled(" ".repeat(pad_len), Style::default().bg(mid_bg)));
+            spans.push(Span::styled(" ".repeat(pad_len), Style::default().bg(Color::Reset)));
         }
         
         spans.extend(right_spans);
