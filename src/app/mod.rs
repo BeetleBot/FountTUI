@@ -234,9 +234,7 @@ impl App {
         let config = Config::load(&cli);
 
         let mut files = Vec::new();
-        if cli.files.is_empty() {
-            files.push(None);
-        } else {
+        if !cli.files.is_empty() {
             let mut seen = std::collections::HashSet::new();
             for path in cli.files.clone() {
                 let normalized = path.canonicalize().unwrap_or_else(|_| path.clone());
@@ -323,7 +321,7 @@ impl App {
             redo_stack: Vec::new(),
             last_edit: LastEdit::None,
 
-            mode: AppMode::Normal,
+            mode: if buffers.is_empty() { AppMode::Home } else { AppMode::Normal },
             exit_after_save: false,
             filename_input: String::new(),
 
@@ -386,7 +384,13 @@ impl App {
     }
 
     pub fn switch_buffer(&mut self, next_idx: usize) {
-        if self.buffers.len() <= 1 || next_idx == self.current_buf_idx {
+        if self.buffers.is_empty() || next_idx >= self.buffers.len() {
+            return;
+        }
+
+        // If switching to the same buffer, we only return early if the app state
+        // is already populated (i.e. lines is not empty).
+        if next_idx == self.current_buf_idx && !self.lines.is_empty() {
             return;
         }
 
@@ -432,9 +436,35 @@ impl App {
         self.switch_buffer(prev);
     }
 
+    /// Resets all editor fields when no buffer is active.
+    pub fn clear_current_state(&mut self) {
+        self.lines = Vec::new();
+        self.types = Vec::new();
+        self.layout = Vec::new();
+        self.file = None;
+        self.dirty = false;
+        self.cursor_y = 0;
+        self.cursor_x = 0;
+        self.characters.clear();
+        self.locations.clear();
+        self.undo_stack.clear();
+        self.redo_stack.clear();
+        self.last_edit = LastEdit::None;
+        self.status_msg = None;
+        self.command_input.clear();
+        self.command_error = false;
+    }
+
     pub fn close_current_buffer(&mut self) -> bool {
+        if self.buffers.is_empty() {
+            return false;
+        }
+
         if self.buffers.len() <= 1 {
-            return true;
+            self.buffers.clear();
+            self.clear_current_state();
+            self.mode = AppMode::Home;
+            return false;
         }
 
         self.buffers.remove(self.current_buf_idx);
@@ -1421,17 +1451,32 @@ impl App {
                     self.set_error("No filename. Use :w <file>");
                 }
             }
+            "ww" => {
+                let default_name = self.file.as_ref()
+                    .and_then(|p| p.file_name())
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_else(|| "unnamed.fountain".to_string());
+                
+                if let Some(path) = rfd::FileDialog::new()
+                    .set_file_name(&default_name)
+                    .add_filter("Fountain scripts", &["fountain"][..])
+                    .save_file()
+                {
+                    self.save_as(path)?;
+                }
+            }
             "q" => {
                 if self.dirty && !self.is_tutorial {
                     self.set_error("Unsaved changes. Use :q! or :wq");
-                } else if self.close_current_buffer() {
-                    return Ok(true);
+                } else {
+                    self.close_current_buffer();
                 }
             }
             "q!" => {
-                if self.close_current_buffer() {
-                    return Ok(true);
-                }
+                self.close_current_buffer();
+            }
+            "ex" => {
+                return Ok(true);
             }
             "wq" => {
                 if self.file.is_some() {
@@ -1486,7 +1531,7 @@ impl App {
                     self.set_error("Usage: /set <option> [on/off]");
                 }
             }
-            "u" | "undo" => {
+            "ud" => {
                 if self.undo() {
                     self.set_status("Undo applied");
                     *update_target_x = true;
@@ -1496,7 +1541,7 @@ impl App {
                     self.set_error("Nothing to undo");
                 }
             }
-            "redo" => {
+            "rd" => {
                 if self.redo() {
                     self.set_status("Redo applied");
                     *update_target_x = true;
@@ -1608,6 +1653,52 @@ impl App {
                 self.mode = AppMode::Home;
                 self.home_selected = 0;
             }
+            "o" => {
+                let path_opt = if let Some(p) = args.get(0) {
+                    Some(PathBuf::from(p))
+                } else {
+                    rfd::FileDialog::new()
+                        .add_filter("Fountain scripts", &["fountain"][..])
+                        .pick_file()
+                };
+
+                if let Some(path) = path_opt {
+                    match std::fs::read_to_string(&path) {
+                        Ok(content) => {
+                            let lines: Vec<String> = content.replace('\t', "    ").lines().map(str::to_string).collect();
+                            let new_buf = crate::app::BufferState {
+                                lines,
+                                file: Some(path.clone()),
+                                ..Default::default()
+                            };
+                            self.buffers.push(new_buf);
+                            let new_idx = self.buffers.len() - 1;
+                            self.has_multiple_buffers = self.buffers.len() > 1;
+                            self.switch_buffer(new_idx);
+                            self.parse_document();
+                            self.update_autocomplete();
+                            self.update_layout();
+                            let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                            self.set_status(&format!("Opened: {}", name));
+                            *text_changed = true;
+                            *cursor_moved = true;
+                        }
+                        Err(e) => self.set_error(&format!("Error opening file: {}", e)),
+                    }
+                }
+            }
+            "bn" => {
+                self.switch_next_buffer();
+                *update_target_x = true;
+                *text_changed = true;
+                *cursor_moved = true;
+            }
+            "bp" => {
+                self.switch_prev_buffer();
+                *update_target_x = true;
+                *text_changed = true;
+                *cursor_moved = true;
+            }
             "newfile" | "new" => {
                 let new_buf = BufferState {
                     lines: vec![String::new()],
@@ -1620,6 +1711,10 @@ impl App {
                 self.set_status("New buffer opened");
                 *text_changed = true;
                 *cursor_moved = true;
+            }
+            "export" => {
+                self.mode = AppMode::ExportPane;
+                self.selected_export_option = 0;
             }
             _ => {
                 self.set_error(&format!("Unknown command: /{}", cmd));

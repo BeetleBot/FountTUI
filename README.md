@@ -19,18 +19,11 @@
 
 Fount is a dedicated writing environment designed to disappear while you work.
 
-- **Adaptive Interior**: Automatically detects your terminal's background. No more squinting at light themes or wrestling with dark modes—Fount respects your environment natively.
-- **Unified Vision**: A single-line footer displays real-time **Word Counts**, **Page Numbers**, and **Status Messages** without cluttering your screen.
-- **Story-Map Navigation**: Toggle the **Scene Navigator (`Ctrl+H`)** to see your screenplay's structure at a glance, complete with synopses and interactive focus indicators.
-- **Contextual Shortcuts**: Keep your mind on the page. Use **`F1`** to reveal a clean sidebar of keybindings only when you need them.
-
-## ✨ Features
-
-- **Strict Typewriter Mode**: Keep your focus centered on the active line, just like a physical typewriter.
-- **Smart Formatting**: Automatic `(CONT'D)` cues, Markdown support for visual emphasis, and "Hide Markup" logic for a clean preview of your prose.
-- **Multi-Buffer Workflow**: Open, edit, and switch between multiple scripts in a single session.
-- **Safe-by-Design**: Integrated **Auto-Save** and **Emergency Recovery** logic to ensure your draft is never lost to a crash or power failure.
-- **Portable Linux Binary**: Statically linked for universal compatibility across any distribution.
+- **Adaptive Interior**: Automatically detects your terminal's background. Fount respects your environment natively.
+- **Unified Vision**: A single-line footer displays real-time **Word Counts**, **Page Numbers**, and **Status Messages**.
+- **Story-Map Navigation**: Toggle the **Scene Navigator (`Ctrl+H`)** to see your screenplay's structure at a glance.
+- **Ensemble Management**: Use the **Character Sidebar (`Ctrl+L`)** to analyze character distribution and jump directly to appearances.
+- **Multi-Buffer Workflow**: Open, edit, and switch between multiple scripts seamlessy.
 
 ---
 
@@ -46,16 +39,9 @@ Download and run the latest **[Fount Windows Installer (.msi)](https://github.co
 curl -sSfL https://raw.githubusercontent.com/BeetleBot/Fount/main/scripts/install.sh | sh
 ```
 
-**Via Cargo (Recommended for Developers):**
+**Via Cargo:**
 ```bash
 cargo install fount
-```
-
-**From Source:**
-```bash
-git clone https://github.com/BeetleBot/Fount.git
-cd Fount
-cargo install --path .
 ```
 
 ### Usage
@@ -65,41 +51,84 @@ fount [script.fountain]
 
 ---
 
-## ⌨️ Essential Keybinds
+## ⌨️ Essential Keyboard Shortcuts
 
-| Key | Action |
+Fount prioritizes a command-driven workflow. Only core editing and viewing shortcuts remain mapped to keys.
+
+| Shortcut | Action |
 | :--- | :--- |
+| **`/`** | **Command Mode** (Open footer command bar) |
+| **`F1`** | **Internal Reference** (Toggle help panel) |
 | **`Ctrl + H`** | Open Scene Navigator |
+| **`Ctrl + L`** | Open Ensemble Sidebar |
 | **`Ctrl + P`** | Open Settings Pane |
-| **`F1`** | Toggle Shortcuts Legend |
-| **`Ctrl + S`** | Save Current Script |
-| **`Ctrl + X`** | Close Buffer / Exit |
-| **`Ctrl + W`** | Search (Regex Support) |
-| **`Ctrl + K`** | Cut Line |
-| **`Ctrl + U`** | Paste Line |
+| **`Ctrl + E`** | Open Export Pane |
+| **`Ctrl + A`** | Select All Text |
+| **`Ctrl + C`** | Copy Selection |
+| **`Ctrl + X`** | Cut Selection (or current line) |
+| **`Ctrl + V`** | Paste from Clipboard |
+| **`Shift + Arr`**   | Select Text |
+| **`Tab`**            | Smart Indent / Autocomplete |
+| **`Enter`**          | Insert Newline |
+| **`Esc`**            | Clear Status / Dismiss Sidebars |
 
 ---
 
-## 🎨 Configuration
+## ⚡ Shorthand Commands (/)
 
-Tailor Fount to your process by editing `~/.config/fount/fount.conf`. 
+Type `/` followed by a command to execute operations. Most physical shortcuts have been moved here for a cleaner experience.
 
-> [!TIP]
-> See `fount.conf.example` in the repository for a complete list of "Zen" options, including `Strict Typewriter Mode` and `Auto-Save` intervals.
+| Command | Action |
+| :--- | :--- |
+| **`/w`** | Save Current Script |
+| **`/ww`**| Save As (opens file picker) |
+| **`/o [path]`** | Open script (opens picker if no path) |
+| **`/ud`** | Undo last change |
+| **`/rd`** | Redo last change |
+| **`/bn`** | Buffer Next (Switch script) |
+| **`/bp`** | Buffer Previous (Switch script) |
+| **`/q`** | Close Current Script (Return to Home) |
+| **`/wq`** | Save and Close Script |
+| **`/q!`** | Force Close Script (Discard Changes) |
+| **`/ex`** | **Exit Fount Completely** |
+| **`/new`** | Create a New Empty Buffer |
+| **`/home`** | Return to the Home Screen |
+| **`/search [q]`** | Global Script Search |
+| **`/[number]`** | Jump to Line Number |
+| **`/s[number]`** | Jump to Scene Number |
+| **`/renum`** | Auto-Renumber all scenes |
+| **`/injectnum`** | Tag current scene with next available number |
+| **`/pos`** | Report detailed cursor position |
+
+---
+
+## 🎨 Global Configuration (/set)
+
+Tailor your environment in real-time. Use `/` as the trigger.
+
+```
+Usage : /set [option] [on/off]
+Example : /set focus
+```
+
+| Option | Description |
+| :--- | :--- |
+| **`focus`** | Zen Mode: Hides all UI elements for pure writing. |
+| **`typewriter`** | Strict Typewriter: Cursor stays centered vertically. |
+| **`markup`** | Hidden Sigils: Hides Fountain syntax markers (like `**`). |
+| **`pagenums`** | Live Page Counting in the footer. |
+| **`scenenums`** | Toggles Scene Numbers in the margin. |
+| **`contd`** | Automatically appends `(CONT'D)` to dialogue. |
+| **`autosave`** | Background saves your draft every 30 seconds. |
+
+---
 
 ## 🏛️ Credits
 
-Fount is a labor of love, built on the shoulders of giants in the terminal and screenwriting communities.
-
-- **[Lottie](https://github.com/coignard/lottie)**: The original project by [Thibault Coignard](https://github.com/coignard), which provided the solid foundation for Fount.
-- **[Ratatui](https://ratatui.rs/)**: The powerful library that powers our terminal interface.
-- **[Fountain](https://fountain.io/)**: The simple, universal screenplay format created by **John August** and **Ninian Lowe**.
-- **[Rust](https://www.rust-lang.org/)**: For the performance and safety that keeps your drafts secure.
-
-## ⚖️ Heritage & License
-
-Fount is built on top of [Lottie](https://github.com/coignard/lottie). It is proudly open-source and licensed under the **GPL-3.0 License**.
+- **[Ratatui](https://ratatui.rs/)**: Powering the terminal interface.
+- **[Fountain](https://fountain.io/)**: The simple, universal screenplay format.
+- **[Rust](https://www.rust-lang.org/)**: Performance and safety.
 
 ---
 
-*Crafted with <3 for the screenwriting community.*
+*Crafted for the screenwriting community.*

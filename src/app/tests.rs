@@ -1234,24 +1234,13 @@ use crossterm::event::{KeyCode, KeyModifiers};
         app.has_multiple_buffers = true;
         app.current_buf_idx = 0;
 
-        send_key_press(&mut app, KeyCode::Char('>'), KeyModifiers::CONTROL);
-        assert_eq!(app.current_buf_idx, 1, "Failed to switch buffer via Ctrl+>");
+        app.switch_next_buffer();
+        assert_eq!(app.current_buf_idx, 1, "Failed to switch buffer");
 
         let mut dummy1 = false;
         let mut dummy2 = false;
         let mut dummy3 = false;
-        app.handle_event(
-            crossterm::event::Event::Key(crossterm::event::KeyEvent {
-                code: KeyCode::Char('x'),
-                modifiers: KeyModifiers::CONTROL,
-                kind: crossterm::event::KeyEventKind::Press,
-                state: crossterm::event::KeyEventState::empty(),
-            }),
-            &mut dummy1,
-            &mut dummy2,
-            &mut dummy3,
-        )
-        .unwrap();
+        app.close_current_buffer();
 
         assert_eq!(app.buffers.len(), 1, "Buffer should be closed");
         assert!(
@@ -1324,16 +1313,16 @@ use crossterm::event::{KeyCode, KeyModifiers};
             "Ctrl+Backspace should delete word backwards"
         );
 
-        send_key_press(&mut app, KeyCode::Char('>'), KeyModifiers::CONTROL);
+        app.switch_next_buffer();
         assert_eq!(
             app.current_buf_idx, 1,
-            "Ctrl+> should trigger switch_next_buffer"
+            "switch_next_buffer (bn) failed"
         );
 
-        send_key_press(&mut app, KeyCode::Char('<'), KeyModifiers::CONTROL);
+        app.switch_prev_buffer();
         assert_eq!(
             app.current_buf_idx, 0,
-            "Ctrl+< should trigger switch_prev_buffer"
+            "switch_prev_buffer (bp) failed"
         );
     }
 
@@ -2005,25 +1994,13 @@ use crossterm::event::{KeyCode, KeyModifiers};
         let mut app = create_empty_app();
         app.dirty = false;
 
-        let mut update_x = false;
-        let mut text_ch = false;
-        let mut cur_moved = false;
-
-        use crossterm::event::{
-            Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers,
-        };
-        let ev = Event::Key(KeyEvent {
-            code: KeyCode::Char('x'),
-            modifiers: KeyModifiers::CONTROL,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::empty(),
-        });
-
+        let (mut changed, mut moved, mut update) = (false, false, false);
+        app.command_input = "q".to_string();
         let result = app
-            .handle_event(ev, &mut update_x, &mut text_ch, &mut cur_moved)
+            .execute_command(&mut changed, &mut moved, &mut update)
             .unwrap();
 
-        assert!(result, "Ctrl+X should return true to exit the application");
+        assert!(result, "/q command should return true to exit the application");
     }
 
     #[test]

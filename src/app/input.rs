@@ -800,27 +800,7 @@ impl App {
 
                     match key.code {
                         KeyCode::Esc => {}
-                        KeyCode::Char('x') if ctrl => {
-                            if self.dirty && !self.is_tutorial {
-                                self.exit_after_save = true;
-                                self.mode = AppMode::PromptSave;
-                            } else if self.close_current_buffer() {
-                                return Ok(true);
-                            }
-                        }
 
-                        KeyCode::Char('>') | KeyCode::Char('.') if ctrl => {
-                            self.switch_next_buffer();
-                            *update_target_x = true;
-                            *text_changed = true;
-                            *cursor_moved = true;
-                        }
-                        KeyCode::Char('<') | KeyCode::Char(',') if ctrl => {
-                            self.switch_prev_buffer();
-                            *update_target_x = true;
-                            *text_changed = true;
-                            *cursor_moved = true;
-                        }
 
                         KeyCode::Left if ctrl => {
                             self.move_word_left();
@@ -846,9 +826,6 @@ impl App {
                             *cursor_moved = true;
                         }
 
-                        KeyCode::Char('s') if ctrl => {
-                            // Use :w to save
-                        }
                         KeyCode::Char('h') if ctrl => {
                             self.open_scene_navigator();
                         }
@@ -865,16 +842,10 @@ impl App {
                             self.command_input.clear();
                             self.command_error = false;
                         }
-                        KeyCode::Char('z') if ctrl => {}
-                        KeyCode::Char('r') if ctrl => {}
                         KeyCode::Char('e') if ctrl => {
                             self.mode = AppMode::ExportPane;
                             self.selected_export_option = 0;
                         }
-                        KeyCode::Char('k') if ctrl => {}
-                        KeyCode::Char('u') if ctrl => {}
-                        KeyCode::Char('w') if ctrl => {}
-                        KeyCode::Char('c') if ctrl => {}
                         KeyCode::Char('i') if ctrl && shift => {}
 
                         KeyCode::Char('a') if ctrl => {

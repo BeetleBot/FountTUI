@@ -86,27 +86,32 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     let page_w = PAGE_WIDTH.min(text_area.width);
     let global_pad = text_area.width.saturating_sub(page_w) / 2;
 
-    let (vis_row, _vis_x) = find_visual_cursor(&app.layout, app.cursor_y, app.cursor_x);
-
     let mut pad_top = 0;
+    let (mut vis_row, mut _vis_x) = (0, 0);
 
-    if app.config.strict_typewriter_mode {
-        let absolute_center = area.height / 2;
-        let center_offset = absolute_center.saturating_sub(text_area.y) as usize;
-        if vis_row < center_offset {
-            pad_top = center_offset - vis_row;
-        }
-        app.scroll = vis_row.saturating_sub(center_offset);
-    } else if app.config.typewriter_mode {
-        let absolute_center = area.height / 2;
-        let center_offset = absolute_center.saturating_sub(text_area.y) as usize;
-        app.scroll = vis_row.saturating_sub(center_offset);
-    } else {
-        if vis_row < app.scroll {
-            app.scroll = vis_row;
-        }
-        if vis_row >= app.scroll + height {
-            app.scroll = vis_row + 1 - height;
+    if app.mode != AppMode::Home {
+        let (v_r, v_x) = find_visual_cursor(&app.layout, app.cursor_y, app.cursor_x);
+        vis_row = v_r;
+        _vis_x = v_x;
+
+        if app.config.strict_typewriter_mode {
+            let absolute_center = area.height / 2;
+            let center_offset = absolute_center.saturating_sub(text_area.y) as usize;
+            if vis_row < center_offset {
+                pad_top = center_offset - vis_row;
+            }
+            app.scroll = vis_row.saturating_sub(center_offset);
+        } else if app.config.typewriter_mode {
+            let absolute_center = area.height / 2;
+            let center_offset = absolute_center.saturating_sub(text_area.y) as usize;
+            app.scroll = vis_row.saturating_sub(center_offset);
+        } else {
+            if vis_row < app.scroll {
+                app.scroll = vis_row;
+            }
+            if vis_row >= app.scroll + height {
+                app.scroll = vis_row + 1 - height;
+            }
         }
     }
 
@@ -599,45 +604,33 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     if app.mode == AppMode::Shortcuts {
         let categories = vec![
             (" GLOBAL KEYS ", vec![
-                ("^H        ", "Scene Navigator"),
-                ("^L        ", "Ensemble Sidebar"),
-                ("^P        ", "Settings Pane"),
-                ("^S        ", "Save current"),
-                ("^O        ", "Open file..."),
-                ("^/        ", "Help (This Pane)"),
-                ("^Q        ", "Quit Fount"),
-            ]),
-            (" NAVIGATION ", vec![
-                ("Arrows    ", "Move cursor"),
-                ("Home/End  ", "Start/End of line"),
-                ("PgUp/Dn   ", "Scroll page"),
-                ("^+Left/Rt ", "Skip words"),
-                ("Shift+Arr ", "Select text"),
+                ("^H / ^L  ", "Scenes / Ensemble"),
+                ("^P / ^E  ", "Settings / Export"),
+                ("/         ", "Help / Command mode"),
+                ("F1        ", "Toggle This Panel"),
             ]),
             (" EDITING ", vec![
-                ("^A        ", "Select All"),
-                ("^C        ", "Copy selection"),
-                ("^X        ", "Cut selected/line"),
-                ("^V        ", "Paste clipboard"),
-                ("^Back / Del", "Delete word"),
+                ("^A / ^C  ", "Select / Copy"),
+                ("^X / ^V  ", "Cut / Paste"),
+                ("Tab       ", "Indent / Assist"),
                 ("Enter     ", "Add Line"),
+                ("Shift+Arr ", "Select Text"),
             ]),
             (" COMMANDS (/) ", vec![
-                ("/new      ", "New buffer"),
-                ("/open [p] ", "Open script"),
-                ("/w [path] ", "Save current"),
-                ("/wq / /q! ", "Exit with options"),
-                ("/export   ", "Open Export Pane"),
-                ("/renum    ", "Renumber Scenes"),
-                ("/clearnum ", "Clear numbers"),
-                ("/injectnum", "Tag Scene (#)"),
-                ("/[line]   ", "Jump to Line"),
-                ("/s[num]   ", "Jump to Scene"),
-                ("/search   ", "Global Search"),
-                ("/u / /redo", "Undo / Redo"),
-                ("/pos      ", "Cursor Position"),
+                ("/w / /ww  ", "Save / Save As"),
+                ("/o [path] ", "Open script"),
+                ("/ud / /rd ", "Undo / Redo"),
+                ("/bn / /bp ", "Buffer Next / Prev"),
+                ("/q / /wq  ", "Close Buffer / Save"),
+                ("/ex        ", "Exit Fount"),
+                ("/search    ", "Global Search"),
+                ("/renum     ", "Renumber Scenes"),
+                ("/injectnum ", "Tag Scene (#)"),
+                ("/[line]    ", "Jump to Line"),
+                ("/s[num]    ", "Jump to Scene"),
+                ("/pos       ", "Cursor Details"),
             ]),
-            (" SETTINGS (/set) ", vec![
+            (" ZEN SETS (/set) ", vec![
                 ("focus     ", "Zen Mode (Clean UI)"),
                 ("typewriter", "Lock cursor center"),
                 ("markup    ", "Hide syntax markers"),
@@ -645,8 +638,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 ("scenenums ", "Show scene numbers"),
                 ("contd     ", "Auto (CONT'D) tags"),
                 ("autosave  ", "Save every 30s"),
-                ("autocomplete", "Writing assist"),
-                ("autobreaks", "Action spacing"),
             ]),
         ];
 
