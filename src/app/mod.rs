@@ -1034,6 +1034,11 @@ impl App {
             }
         }
 
+        // Production lock: auto-assign suffixed numbers to new scenes
+        if self.config.production_lock {
+            self.auto_number_locked_scenes();
+        }
+
         self.characters.clear();
         self.locations.clear();
 
@@ -1115,6 +1120,141 @@ impl App {
             }
         }
         line
+    }
+
+    /// Extracts the `#tag#` inner value from a scene heading, if present.
+    fn extract_scene_tag(line: &str) -> Option<String> {
+        let trimmed = line.trim_end();
+        if trimmed.ends_with('#') {
+            if let Some(open) = trimmed[..trimmed.len() - 1].rfind('#') {
+                let inner = &trimmed[open + 1..trimmed.len() - 1];
+                if !inner.is_empty() && !inner.contains(' ') {
+                    return Some(inner.to_string());
+                }
+            }
+        }
+        None
+    }
+
+    /// Generates the next alphabetical suffix label after the given list.
+    /// e.g., given `["A", "B"]` returns `"C"`. After `"Z"` returns `"AA"`.
+    fn next_suffix_label(existing: &[String]) -> String {
+        if existing.is_empty() {
+            return "A".to_string();
+        }
+        // Find the "highest" suffix alphabetically
+        let max_suffix = existing.iter().max().unwrap();
+        Self::increment_suffix(max_suffix)
+    }
+
+    /// Increments an alphabetical suffix: A→B, Z→AA, AZ→BA, etc.
+    fn increment_suffix(s: &str) -> String {
+        let mut chars: Vec<char> = s.chars().collect();
+        let mut carry = true;
+        for i in (0..chars.len()).rev() {
+            if carry {
+                if chars[i] == 'Z' {
+                    chars[i] = 'A';
+                    // carry remains true
+                } else {
+                    chars[i] = (chars[i] as u8 + 1) as char;
+                    carry = false;
+                }
+            }
+        }
+        if carry {
+            chars.insert(0, 'A');
+        }
+        chars.into_iter().collect()
+    }
+
+    /// Auto-assigns suffixed scene numbers to un-numbered scene headings
+    /// when `production_lock` is ON. Scenes between locked `#N#` and `#N+1#`
+    /// get `#NA#`, `#NB#`, etc.
+    fn auto_number_locked_scenes(&mut self) {
+        // Collect all scene heading indices and their current tags
+        let scene_indices: Vec<usize> = (0..self.lines.len())
+            .filter(|&i| self.types[i] == LineType::SceneHeading)
+            .collect();
+
+        if scene_indices.is_empty() {
+            return;
+        }
+
+        // Build a snapshot: (line_index, Option<tag>)
+        let scene_tags: Vec<(usize, Option<String>)> = scene_indices
+            .iter()
+            .map(|&i| (i, Self::extract_scene_tag(&self.lines[i])))
+            .collect();
+
+        // Find un-numbered scenes and assign them suffix tags
+        for (pos, &(line_idx, ref tag)) in scene_tags.iter().enumerate() {
+            if tag.is_some() {
+                continue; // Already numbered, skip
+            }
+
+            // Find the previous numbered scene (walking backwards)
+            let prev_base = (0..pos)
+                .rev()
+                .find_map(|j| {
+                    scene_tags[j].1.as_ref().and_then(|t| {
+                        // Extract the integer base from the tag
+                        let digits: String = t.chars().take_while(|c| c.is_ascii_digit()).collect();
+                        if digits.is_empty() {
+                            None
+                        } else {
+                            Some((j, digits.parse::<usize>().unwrap_or(0), t.clone()))
+                        }
+                    })
+                });
+
+            // Determine the base number to suffix from
+            let base_num = if let Some((_, num, _)) = prev_base {
+                num
+            } else {
+                // No previous numbered scene — use 0 as the base
+                0
+            };
+
+            // Collect all existing suffixes for this base number
+            // (between the previous base and the next integer scene)
+            let mut existing_suffixes: Vec<String> = Vec::new();
+            let prefix = base_num.to_string();
+            for (_, other_tag) in &scene_tags {
+                if let Some(t) = other_tag {
+                    if t.len() > prefix.len()
+                        && t.starts_with(&prefix)
+                        && t[prefix.len()..].chars().all(|c| c.is_ascii_uppercase())
+                    {
+                        existing_suffixes.push(t[prefix.len()..].to_string());
+                    }
+                }
+            }
+
+            // Also check the lines directly (in case we already assigned
+            // suffixes earlier in this same pass via a previous iteration)
+            for &other_idx in &scene_indices {
+                if other_idx == line_idx {
+                    continue;
+                }
+                if let Some(t) = Self::extract_scene_tag(&self.lines[other_idx]) {
+                    if t.len() > prefix.len()
+                        && t.starts_with(&prefix)
+                        && t[prefix.len()..].chars().all(|c| c.is_ascii_uppercase())
+                    {
+                        let suf = t[prefix.len()..].to_string();
+                        if !existing_suffixes.contains(&suf) {
+                            existing_suffixes.push(suf);
+                        }
+                    }
+                }
+            }
+
+            let suffix = Self::next_suffix_label(&existing_suffixes);
+            let new_tag = format!("{}{}", base_num, suffix);
+            let base = Self::strip_scene_number_from_line(&self.lines[line_idx]).to_string();
+            self.lines[line_idx] = format!("{} #{}#", base, new_tag);
+        }
     }
 
     /// Calculates what scene-number integer a given scene index should receive,

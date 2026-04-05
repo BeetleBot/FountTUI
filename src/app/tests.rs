@@ -3052,3 +3052,206 @@ And Beat itself, of course: https://www.beat-app.fi/
         assert_eq!(app.lines[6], "CUT TO:");
         assert_eq!(app.lines[1], "Action line."); // Should stay original
     }
+
+    // ── Structural Locking (Production Mode) Tests ──────────────────────
+
+    #[test]
+    fn test_increment_suffix_basic() {
+        assert_eq!(App::increment_suffix("A"), "B");
+        assert_eq!(App::increment_suffix("B"), "C");
+        assert_eq!(App::increment_suffix("Y"), "Z");
+    }
+
+    #[test]
+    fn test_increment_suffix_wrap() {
+        assert_eq!(App::increment_suffix("Z"), "AA");
+        assert_eq!(App::increment_suffix("AZ"), "BA");
+        assert_eq!(App::increment_suffix("ZZ"), "AAA");
+    }
+
+    #[test]
+    fn test_next_suffix_label_empty() {
+        let existing: Vec<String> = vec![];
+        assert_eq!(App::next_suffix_label(&existing), "A");
+    }
+
+    #[test]
+    fn test_next_suffix_label_after_a_b() {
+        let existing = vec!["A".to_string(), "B".to_string()];
+        assert_eq!(App::next_suffix_label(&existing), "C");
+    }
+
+    #[test]
+    fn test_next_suffix_label_after_z() {
+        let existing = vec!["Z".to_string()];
+        assert_eq!(App::next_suffix_label(&existing), "AA");
+    }
+
+    #[test]
+    fn test_extract_scene_tag() {
+        assert_eq!(
+            App::extract_scene_tag("INT. ROOM - DAY #5#"),
+            Some("5".to_string())
+        );
+        assert_eq!(
+            App::extract_scene_tag("INT. ROOM - DAY #5A#"),
+            Some("5A".to_string())
+        );
+        assert_eq!(App::extract_scene_tag("INT. ROOM - DAY"), None);
+        assert_eq!(App::extract_scene_tag(""), None);
+    }
+
+    #[test]
+    fn test_production_lock_auto_suffix_single_insertion() {
+        let mut app = create_empty_app();
+        app.lines = vec![
+            "".to_string(),
+            "INT. ROOM - DAY #1#".to_string(),
+            "".to_string(),
+            "INT. HALLWAY - NIGHT".to_string(), // No tag — should get #1A#
+            "".to_string(),
+            "INT. KITCHEN - DAY #2#".to_string(),
+        ];
+        app.config.production_lock = true;
+        app.parse_document();
+
+        assert_eq!(
+            App::extract_scene_tag(&app.lines[3]),
+            Some("1A".to_string()),
+            "New scene between #1# and #2# should get #1A#"
+        );
+        // Existing scenes should be untouched
+        assert_eq!(App::extract_scene_tag(&app.lines[1]), Some("1".to_string()));
+        assert_eq!(App::extract_scene_tag(&app.lines[5]), Some("2".to_string()));
+    }
+
+    #[test]
+    fn test_production_lock_auto_suffix_multiple_insertions() {
+        let mut app = create_empty_app();
+        app.lines = vec![
+            "".to_string(),
+            "INT. ROOM - DAY #5#".to_string(),
+            "".to_string(),
+            "INT. HALLWAY #5A#".to_string(), // Already suffixed
+            "".to_string(),
+            "INT. CLOSET".to_string(), // Should get #5B#
+            "".to_string(),
+            "INT. KITCHEN - DAY #6#".to_string(),
+        ];
+        app.config.production_lock = true;
+        app.parse_document();
+
+        assert_eq!(
+            App::extract_scene_tag(&app.lines[5]),
+            Some("5B".to_string()),
+            "Second insertion between #5# and #6# should get #5B#"
+        );
+        // Existing tags remain
+        assert_eq!(App::extract_scene_tag(&app.lines[1]), Some("5".to_string()));
+        assert_eq!(App::extract_scene_tag(&app.lines[3]), Some("5A".to_string()));
+        assert_eq!(App::extract_scene_tag(&app.lines[7]), Some("6".to_string()));
+    }
+
+    #[test]
+    fn test_production_lock_scene_before_first_numbered() {
+        let mut app = create_empty_app();
+        app.lines = vec![
+            "".to_string(),
+            "INT. PROLOGUE".to_string(), // No tag, before first numbered scene
+            "".to_string(),
+            "INT. ROOM - DAY #1#".to_string(),
+        ];
+        app.config.production_lock = true;
+        app.parse_document();
+
+        assert_eq!(
+            App::extract_scene_tag(&app.lines[1]),
+            Some("0A".to_string()),
+            "Scene before first numbered scene should use base 0"
+        );
+    }
+
+    #[test]
+    fn test_production_lock_scene_after_last_numbered() {
+        let mut app = create_empty_app();
+        app.lines = vec![
+            "".to_string(),
+            "INT. ROOM - DAY #10#".to_string(),
+            "".to_string(),
+            "INT. EPILOGUE".to_string(), // No tag, after last numbered
+        ];
+        app.config.production_lock = true;
+        app.parse_document();
+
+        assert_eq!(
+            App::extract_scene_tag(&app.lines[3]),
+            Some("10A".to_string()),
+            "Scene after last numbered should suffix from that number"
+        );
+    }
+
+    #[test]
+    fn test_production_lock_off_no_auto_numbering() {
+        let mut app = create_empty_app();
+        app.lines = vec![
+            "".to_string(),
+            "INT. ROOM - DAY #1#".to_string(),
+            "".to_string(),
+            "INT. HALLWAY - NIGHT".to_string(),
+            "".to_string(),
+            "INT. KITCHEN - DAY #2#".to_string(),
+        ];
+        app.config.production_lock = false;
+        app.parse_document();
+
+        assert_eq!(
+            App::extract_scene_tag(&app.lines[3]),
+            None,
+            "With lock OFF, un-numbered scenes should stay un-numbered"
+        );
+    }
+
+    #[test]
+    fn test_locknum_does_not_renumber() {
+        let mut app = create_empty_app();
+        app.lines = vec![
+            "".to_string(),
+            "INT. ROOM - DAY #5#".to_string(), // Custom number
+            "".to_string(),
+            "INT. HALLWAY - NIGHT #10#".to_string(), // Custom number
+        ];
+        app.parse_document();
+        app.update_layout();
+
+        let mut changed = false;
+        let mut moved = false;
+        let mut update = false;
+        app.command_input = "locknum".to_string();
+        app.mode = AppMode::Command;
+        let _ = app.execute_command(&mut changed, &mut moved, &mut update);
+
+        assert!(app.config.production_lock);
+        // Custom numbers should NOT be overwritten
+        assert_eq!(App::extract_scene_tag(&app.lines[1]), Some("5".to_string()));
+        assert_eq!(App::extract_scene_tag(&app.lines[3]), Some("10".to_string()));
+    }
+
+    #[test]
+    fn test_renum_works_regardless_of_lock() {
+        let mut app = create_empty_app();
+        app.lines = vec![
+            "".to_string(),
+            "INT. ROOM - DAY #5#".to_string(),
+            "".to_string(),
+            "INT. HALLWAY - NIGHT #10#".to_string(),
+        ];
+        app.config.production_lock = true;
+        app.parse_document();
+        app.update_layout();
+
+        app.renumber_all_scenes();
+
+        // /renum should override regardless of lock
+        assert_eq!(App::extract_scene_tag(&app.lines[1]), Some("1".to_string()));
+        assert_eq!(App::extract_scene_tag(&app.lines[3]), Some("2".to_string()));
+    }

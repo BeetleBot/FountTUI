@@ -668,7 +668,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_else(|| "[No Name]".to_string());
         let dirty_str = if app.dirty { " [+]" } else { "" };
-        spans.push(Span::styled(format!("{}{}", fname, dirty_str), Style::default().fg(mode_bg)));
+        let lock_str = if app.config.production_lock { " (L)" } else { "" };
+        spans.push(Span::styled(format!("{}{}{}", fname, dirty_str, lock_str), Style::default().fg(mode_bg)));
         spans.push(Span::raw(" │ "));
 
         if app.mode == AppMode::Command {
