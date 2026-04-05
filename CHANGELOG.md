@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2026-04-05
+
+### Fixed
+- **Windows MSI Packaging**: Fixed GitHub Actions release workflow failing to build the MSI installer due to hardcoded executable paths.
+- **Dynamic MSI Naming**: The resulting Windows installer now includes the release version in its filename (e.g., `Fount_Windows_v0.4.3.msi`).
+
 ## [0.4.2] - 2026-04-05
 
 ### Added

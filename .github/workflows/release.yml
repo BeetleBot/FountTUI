@@ -33,7 +33,7 @@ jobs:
         os: [windows-latest]
         include:
           - os: windows-latest
-            artifact_name: fount-windows-x86_64.msi
+            artifact_name: Fount_Windows_${{ github.ref_name }}.msi
             target: x86_64-pc-windows-msvc
 
     runs-on: ${{ matrix.os }}
@@ -55,7 +55,7 @@ jobs:
         run: cargo install cargo-wix
 
       - name: Build MSI
-        run: cargo wix --target ${{ matrix.target }} -o target/wix/fount-windows-x86_64.msi
+        run: cargo wix --target ${{ matrix.target }} -o target/wix/Fount_Windows_${{ github.ref_name }}.msi
 
 
       # Upload to Release
@@ -63,6 +63,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            target/wix/fount-windows-x86_64.msi
+            target/wix/Fount_Windows_${{ github.ref_name }}.msi
           generate_release_notes: true
           name: Fount v${{ github.ref_name }}

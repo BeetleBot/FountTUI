@@ -7,7 +7,7 @@
         Manufacturer='BeetleBot'
         Language='1033'
         Codepage='1252'
-        Version='0.4.0'>
+        Version='$(var.Version)'>
 
         <Package
             InstallerVersion='450'
@@ -24,7 +24,7 @@
             <Directory Id='ProgramFiles64Folder'>
                 <Directory Id='APPLICATIONFOLDER' Name='Fount'>
                     <Component Id='Executable' Guid='*'>
-                        <File Id='FountExe' Name='fount.exe' Source='target\release\fount.exe' KeyPath='yes' />
+                        <File Id='FountExe' Name='fount.exe' Source='$(var.CargoTargetBinDir)\fount.exe' KeyPath='yes' />
                         <Environment Id='PATH' Name='PATH' Value='[APPLICATIONFOLDER]' Permanent='no' Part='last' Action='set' System='yes' />
                     </Component>
                 </Directory>
