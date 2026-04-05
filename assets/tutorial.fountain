@@ -1,131 +1,198 @@
-Title: The Fount Protocol
+Title: FOUNT: THE DEFINITIVE GUIDE
+Credit: Written by
 Author: Nirmal
-Draft date: 2026-04-05
+Source: Based on the Fount Screenwriting Software
+Draft date: April 5, 2026
 Contact:
     writingnirmal@gmail.com
+Notes:
+    This document is both a screenplay and a technical manual.
+    Read it to learn everything about Fount.
 
 
 
-# ACT I: THE DISCOVERY
+# ACT I: THE REVELATION
 
-INT. BEETLE'S APARTMENT - LATE NIGHT
+INT. BEETLE'S APARTMENT - NIGHT
 [[red]]
 
-=this is synopsis. this won't be in the final pdf output but will be displayed in the scene navigator menu. Where is the scene navigator menu? Wait for it!
+= Beetle and Bee discuss the merits of a minimalist terminal-based editor and demonstrate basic Fountain syntax.
 
-A ceiling fan clicks overhead. The air is thick with the humidity of Chennai.
+A terminal window pulses on a curved monitor. THE CURSOR blinks with steady, patient rhythm.
 
-BEETLE (20s, a screenwriter whose glasses are held together by sheer willpower and tape) stares blankly at a complex, heavily customized Vim setup.
-
-His girlfriend, BEE (20s, a sharp, pragmatic film writer who actually finishes her scripts), walks in holding two tumblers of filter coffee.
-
-BEE
-Still fighting with your plugins? Just use a normal app, babe. I sent you a Final Draft file three hours ago.
-
-Beetle takes the coffee.
+BEETLE (20s) and BEE (20s) sit side-by-side.
 
 BEETLE
-I refuse to leave the terminal. It's my zen zone. But... you're right. My setup broke again. So I found something new.
-
-Beetle hits a few keys. The screen clears. A beautiful, minimalist interface appears. It adapts perfectly to his terminal's background.
+It's not just a text editor, Bee. It's a "Distraction-Free Mode" for the mind. No menus, no ribbons, no clicking through sub-panels.
 
 BEE
-(squinting)
-What is that?
+(skeptical)
+So how do I know my word count? Or where I am in the script?
 
 BEETLE
-It's called Fount. It's a dedicated Fountain editor. No mouse required. Watch this.
+Check the status bar at the bottom. It shows your **W**ord count, **L**ine count, and current line:column position. It's subtle, but it's always there.
 
-Beetle presses `F1`. A clean SHORTCUTS LEGEND slides out on the right.
+Beetle types a period at the start of a line.
+
+.THIS IS A FORCED HEADING
 
 BEETLE (CONT'D)
-Everything I need to know. `Ctrl+S` to save, `Ctrl+X` to exit. And if I want to configure the environment...
-
-He hits `Ctrl+P`. The SETTINGS PANE appears.
+See that dot? That's a forced scene heading. If your location doesn't start with INT. or EXT., just add a dot. Fount hides the dot when you're not on that line.
 
 BEE
-Okay, but how do you actually format anything?
+And action lines?
 
 BEETLE
-You don't. That's the beauty of Fountain syntax. You just write. Scene headings start with INT or EXT, or you can force them with a dot.
+Just type. If you need to force a line to be "Action" that might otherwise look like something else, use an exclamation mark.
 
-.LIKE THIS
+!Beetle slams a book onto the desk.
 
 BEETLE (CONT'D)
-Characters are just all caps. Dialogue goes underneath. Fount handles the margins automatically when you export.
+The "!" forces it. Double "!!" is for SHOTS.
 
 
-# ACT II: NAVIGATION
+
+# ACT II: THE ART OF THE CRAFT
 
 INT. BEETLE'S APARTMENT - LATER
-[[yellow]]
-Bee is now sitting in the chair, leaning closer to the monitor.
+[[blue]]
 
-BEE
-Alright, the typing is smooth. But I have 120 pages. How do I find anything? In a GUI, I have a sidebar.
+= Demonstrating complex formatting like Dual Dialogue, Emphasis, and Boneyard text.
 
-BEETLE
-Press `Ctrl+H`.
-
-Bee hits the keys. The SCENE NAVIGATOR slides out from the left. It lists every scene heading.
-
-BEE
-Whoa.
+The coffee is cold now. Beetle hits `Enter` twice.
 
 BEETLE
-You can use the arrow keys to scroll through the scenes, and hit `Enter` to jump straight to one. It even picks up color markers. See those [[red]], [[yellow]] and [[blue]] tags in the scenes, and the Navigator colors the scene heading with those colors.
+Watch this. Dual Dialogue.
 
-BEE
-What if I need to jump to a specific line number?
-
-BEETLE
-For that, we use the Command Palette. Just type `/`.
-
-Bee presses `/`. A command bar appears at the bottom.
-
-BEETLE (CONT'D)
-Now type `150` and hit enter. It takes you straight to line 150. Or type `s5` to jump to scene 5.
-
-BEE
-(impressed)
-That's actually faster than clicking.
-
-
-# ACT III: THE FINAL DRAFT
-
-EXT. BESANT NAGAR BEACH - DAWN
-[[green]]
-
-The sun rises over the Bay of Bengal. Beetle and Bee are sitting on the sand with a laptop.
-
-BEE
-Okay, the interface is zen. The "Strict Typewriter Mode" keeps my eyes focused. But what happens when the producer asks for a PDF?
-
-Beetle smiles.
+Beetle types:
 
 BEETLE
-Fount has a built-in layout engine. Open the command palette with `/` and type `export`.
+I think I'm winning.
 
-BEE
-Wait, I don't need a separate converter?
-
-BEETLE
-Nope. It renders a perfect, industry-standard PDF right from the terminal. It handles page breaks, scene numbers, the title page... everything.
-
-BEE
-What about locking the script for production?
-
-BEETLE
-Also in the command palette. Just type `/locknum` and it assigns permanent scene numbers to every heading.
-
-Bee stares at the ocean, processing this information.
+BEE ^
+I think you're dreaming.
 
 BEE (CONT'D)
-It's just text. But it's everything.
+(to the reader)
+The "^" symbol at the end of a character name tells Fount to render this as side-by-side dialogue.
 
 BEETLE
-Exactly. It's just text. Now, let's write a movie.
+And check out the emphasis. You can do *italics*, **bold**, ***bold-italics***, or even _underline_.
+
+BEE
+What if I have notes for myself? Things I don't want the producer to see in the PDF?
+
+BEETLE
+You have two choices. Use a "Boneyard" for large blocks of text...
+
+/*
+This is a boneyard. 
+Everything in here is ignored by the exporter.
+It's perfect for deleted scenes or long-winded rants.
+*/
+
+BEETLE (CONT'D)
+...or use double brackets for quick inline notes.
+
+[[This note is ignored in the export, but the word "red" or "blue" inside brackets acts as a color marker for the Scene Navigator.]]
+
+BEE
+(pointing at the screen)
+Wait, what's that tilde?
+
+BEETLE
+~ That's for lyrics. Perfect for our musical number in Act III.
+
+BEE
+And this?
+
+> CENTERED TEXT <
+
+BEETLE
+Exactly what it looks like. Centered.
+
+
+
+# ACT III: TOTAL CONTROL
+
+INT. THE OFFICE - DAY
+[[yellow]]
+
+= The Scene Navigator, Settings Pane, and the powerful Command Palette.
+
+Beetle hits `Ctrl+H`. A list of scenes slides out on the left.
+
+BEETLE
+The Scene Navigator. It picks up every heading, plus your sections and synopses. You see how it's colored? That's because of the markers.
+
+BEE
+It says "ACT I", "ACT II"... how?
+
+BEETLE
+Sections. Just start a line with one or more "#" symbols. Fount uses them to organize your structure without printing them as headings.
+
+BEE
+Can I change how the editor feels?
+
+BEETLE
+Press `Ctrl+P`.
+
+A pane appears.
+
+BEETLE (CONT'D)
+The Settings Pane. You can toggle **Auto-Save**, **Autocomplete**, **Typewriter Mode** (which keeps your cursor centered vertically), and **Focus Mode** (which hides everything but the text).
+
+BEE
+What about jumping around?
+
+BEETLE
+Type `/`. That's the Command Palette. Type a number to jump to a line. Type "s" followed by a number to jump to a scene. Or type "/locknum" to freeze your scene numbers for production.
+
+BEE
+Wait, autocomplete?
+
+BEETLE
+Start typing a character name or location and hit `Tab`. Fount learns as you write.
+
+
+
+# ACT IV: THE FINISHING TOUCHES
+
+EXT. THE PRODUCTION SET - DAY
+[[green]]
+
+= Scene numbers, manual page breaks, and the final Export Pane.
+
+A camera crew waits for the script. Beetle is typing frantically.
+
+BEETLE
+I need permanent scene numbers for this shoot.
+
+Beetle adds `#15#` to the end of a heading.
+
+.INT. THE VAULT - NIGHT #15#
+
+BEE
+You can also do it manually for any heading. And if you need a forced page break...
+
+Beetle types:
+
+===
+
+BEE (CONT'D)
+That triple equals sign is a clean break.
+
+BEETLE
+Now for the magic. Press `Ctrl+E`.
+
+The Export Pane appears. Beetle can choose between PDF, Scene List (CSV), or Character Reports.
+
+BEE
+It's beautiful. It's distraction-free.
+
+BEETLE
+It's Fount.
 
 > FADE OUT.
 
-[End of Tutorial. Press `Ctrl+X` to close this buffer and return to your own script!]
+[End of Tutorial. Use `Ctrl+X` to close this buffer. Happy writing!]
