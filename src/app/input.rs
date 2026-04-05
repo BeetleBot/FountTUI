@@ -1,7 +1,7 @@
 use std::io;
-use crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers, MouseButton, MouseEventKind};
 use std::path::PathBuf;
-use crate::app::{App, AppMode, EnsembleItem, LastEdit, NavigatorItem};
+use crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers, MouseButton, MouseEventKind};
+use crate::app::{App, AppMode, EnsembleItem};
 
 impl App {
 
