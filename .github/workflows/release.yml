@@ -17,36 +17,75 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cargo Publish
-        run: cargo publish
+        run: cargo publish --allow-dirty
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-  build-portable-linux:
-    name: Build Fount Portable (Linux MUSL)
+  build:
+    name: Build Artifacts (${{ matrix.os }})
     needs: publish-crates-io
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: fount-portable-linux-x86_64.tar.gz
+            target: x86_64-unknown-linux-musl
+          - os: macos-latest
+            artifact_name: fount-macos-x86_64.tar.gz
+            target: x86_64-apple-darwin
+          - os: windows-latest
+            artifact_name: fount-windows-x86_64.msi
+            target: x86_64-pc-windows-msvc
+
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install MUSL Tools
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
-        
-      - name: Install Rust MUSL Target
+
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-unknown-linux-musl
-          
-      - name: Build Portable Binary
-        run: cargo build --release --target x86_64-unknown-linux-musl
-        
-      - name: Package Binary
+          targets: ${{ matrix.target }}
+
+      # Linux Setup
+      - name: Install MUSL Tools
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      # Build Binary
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      # Windows MSI Packaging
+      - name: Install cargo-wix
+        if: matrix.os == 'windows-latest'
+        run: cargo install cargo-wix
+
+      - name: Build MSI
+        if: matrix.os == 'windows-latest'
+        run: cargo wix --release --target ${{ matrix.target }} -o target/wix/fount-windows-x86_64.msi
+
+      # Linux Packaging
+      - name: Package Linux
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          cd target/x86_64-unknown-linux-musl/release
+          cd target/${{ matrix.target }}/release
           tar -czf ../../../fount-portable-linux-x86_64.tar.gz fount
-          
+
+      # macOS Packaging
+      - name: Package macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar -czf ../../../fount-macos-x86_64.tar.gz fount
+
+      # Upload to Release
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: fount-portable-linux-x86_64.tar.gz
+          files: |
+            fount-portable-linux-x86_64.tar.gz
+            fount-macos-x86_64.tar.gz
+            target/wix/fount-windows-x86_64.msi
           generate_release_notes: true
-          name: Fount Portable v${{ github.ref_name }}
+          name: Fount v${{ github.ref_name }}

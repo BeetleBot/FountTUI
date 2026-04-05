@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+    <Product
+        Id='*'
+        Name='Fount'
+        UpgradeCode='C313B0E7-B0E7-4E7B-B0E7-B0E7C313B0E7'
+        Manufacturer='BeetleBot'
+        Language='1033'
+        Codepage='1252'
+        Version='0.4.0'>
+
+        <Package
+            InstallerVersion='450'
+            Compressed='yes'
+            InstallScope='perMachine'
+            SummaryCodepage='1252'
+            />
+
+        <MajorUpgrade Schedule='afterInstallInitialize' DowngradeErrorMessage='A newer version of [ProductName] is already installed.' />
+
+        <Media Id='1' Cabinet='contents.cab' EmbedCab='yes' />
+
+        <Directory Id='TARGETDIR' Name='SourceDir'>
+            <Directory Id='ProgramFiles64Folder'>
+                <Directory Id='APPLICATIONFOLDER' Name='Fount'>
+                    <Component Id='Executable' Guid='*'>
+                        <File Id='FountExe' Name='fount.exe' Source='target\release\fount.exe' KeyPath='yes' />
+                        <Environment Id='PATH' Name='PATH' Value='[APPLICATIONFOLDER]' Permanent='no' Part='last' Action='set' System='yes' />
+                    </Component>
+                </Directory>
+            </Directory>
+        </Directory>
+
+        <Feature Id='Main' Title='Fount' Level='1'>
+            <ComponentRef Id='Executable' />
+        </Feature>
+    </Product>
+</Wix>

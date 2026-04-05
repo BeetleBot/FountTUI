@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-05
+
+### Added
+- **Home Screen**: New aesthetic main menu for quick access to recent scripts and help.
+- **Production Reports**: Expanded Export UI with options for production-ready reports.
+- **Shortcuts Mode**: Dedicated shortcuts status indicator in the UI.
+- **Proper Installation Channels**: Added Windows MSI installer support and automated release workflows.
+
+### Changed
+- **Responsive UI Refactor**: Redesigned UI panels with mode-aware coloring and refreshed list layouts for better clarity and focus.
+- **Improved Contrast**: Refined the theme detection and color mapping for a better experience across all terminals.
+
+### Fixed
+- Resolved cursor misalignment in certain terminal environments.
+- Fixed navigation issue where selection wouldn't update correctly when switching panes.
+
 ## [0.3.0] - 2026-04-04
 
 ### Added

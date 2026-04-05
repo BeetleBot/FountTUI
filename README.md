@@ -38,7 +38,15 @@ Fount is a dedicated writing environment designed to disappear while you work.
 
 ### Installation
 
-**Via Cargo (Recommended):**
+**Windows (Recommended):**
+Download and run the latest **[Fount Windows Installer (.msi)](https://github.com/BeetleBot/Fount/releases/latest)**. This will automatically add `fount` to your system PATH.
+
+**Linux & macOS (Single Command):**
+```bash
+curl -sSfL https://raw.githubusercontent.com/BeetleBot/Fount/main/scripts/install.sh | sh
+```
+
+**Via Cargo (Recommended for Developers):**
 ```bash
 cargo install fount
 ```
@@ -66,7 +74,7 @@ fount [script.fountain]
 | **`F1`** | Toggle Shortcuts Legend |
 | **`Ctrl + S`** | Save Current Script |
 | **`Ctrl + X`** | Close Buffer / Exit |
-| **`Ctrl + W`** | Seaerch (Regex Support) |
+| **`Ctrl + W`** | Search (Regex Support) |
 | **`Ctrl + K`** | Cut Line |
 | **`Ctrl + U`** | Paste Line |
 
