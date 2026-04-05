@@ -5,6 +5,19 @@
     - **Context**: The current TUI is functional and clean, but can be pushed further to feel like a premium, native application.
     - **Goal**: Implement customizable theme files (e.g., `.toml` or `.json` for colors like "Solarized" or "Paper") and soft UI popups with drop-shadows (using Ratatui's `Clear` widget and block borders) for the command palette (`/`) and settings (`Ctrl+P`).
 - [ ] **Release Automation (GitHub Actions)**: Get `.msi`/`.exe` and `.dmg` installers ready for future releases. Tentative timing. 
+- [ ] **Structural Locking (Production Mode)**: 
+    - **Context**: Essential for professional production where scene numbers must remain static even when new scenes are added.
+    - **Goal**: Implement a `/lock` command that freezes current numbering. Any scenes inserted between locked numbers (e.g., between 21 and 22) will be automatically designated with alphabetical suffixes (21A, 21B) to preserve the original production breakdown.
+- [ ] **Session Snapshots (Auto-Versioning)**:
+    - **Context**: Writers often "over-edit" and lose a phrase or beat that worked in an earlier draft, but full Git is too heavy for casual use.
+    - **Goal**: Automatically save a copy of the current buffer to the system's temporary folder (e.g., `/tmp` or `%TEMP%`) every time a session is closed or a major milestone is reached. Include a `/snapshots` interface to browse, diff, and restore these temporary versions without cluttering the project directory.
+- [ ] **Production Tagging & Logic**: Implement a system to parse `[[Markers]]` for characters, props, music, mood, lighting, including a `/report-production` command.
+- [ ] **UndoTree (Visual Branching Undo)**:
+    - **Context**: Standard linear undo/redo can be frustrating when you undo a change, write something new, and then realize you wanted the old version back.
+    - **Goal**: Implement a non-linear undo history using a Merkle Tree-like structure. Add a `/undotree` view that visualizes the "branches" of your script's evolution, allowing you to jump back to any point in time, even if those changes were previously "overwritten."
+- [ ] **Word-Count Sprint Timer**:
+    - **Context**: Many professional writers use "sprints" or timed goals to maintain momentum and combat writer's block.
+    - **Goal**: Add a `/sprint [minutes]` or `/goal [words]` command. Implement a subtle visual progress bar in the status bar that tracks time or word count in real-time, providing low-friction motivation directly in the TUI environment.
 - [ ] **Settings Fix**: Ensure settings changed in the pane actually save back to the config file.
 
 ### Already Done
