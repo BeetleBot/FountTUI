@@ -8,7 +8,7 @@ use ratatui::{
 use std::collections::HashSet;
 use unicode_width::UnicodeWidthStr;
 use crate::{
-    app::{App, AppMode, LineType, NavigatorItem, EnsembleItem},
+    app::{App, AppMode, LineType, EnsembleItem},
     formatting::{RenderConfig, StringCaseExt, render_inline},
     layout::{find_visual_cursor, strip_sigils},
     types::{PAGE_WIDTH, base_style},
@@ -67,9 +67,10 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     app.settings_area = Rect::default();
     if app.mode == AppMode::SettingsPane || app.mode == AppMode::Shortcuts || app.mode == AppMode::ExportPane {
+        let side_width = if app.mode == AppMode::Shortcuts { 42 } else { 35 };
         let side_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(0), Constraint::Length(35)])
+            .constraints([Constraint::Min(0), Constraint::Length(side_width)])
             .split(text_area);
         text_area = side_chunks[0];
         app.settings_area = side_chunks[1];
@@ -597,39 +598,55 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     if app.mode == AppMode::Shortcuts {
         let categories = vec![
-            (" NAVIGATION ", vec![
+            (" GLOBAL KEYS ", vec![
                 ("^H        ", "Scene Navigator"),
+                ("^L        ", "Ensemble Sidebar"),
                 ("^P        ", "Settings Pane"),
-                ("^E        ", "Export Options"),
-                ("^. / ^>   ", "Next Buffer"),
-                ("^, / ^<   ", "Prev Buffer"),
-                ("Arrows    ", "Move Cursor"),
-                ("^+Arrows  ", "Jump Words"),
-                ("Home/End  ", "Quick Jump"),
+                ("^S        ", "Save current"),
+                ("^O        ", "Open file..."),
+                ("^/        ", "Help (This Pane)"),
+                ("^Q        ", "Quit Fount"),
+            ]),
+            (" NAVIGATION ", vec![
+                ("Arrows    ", "Move cursor"),
+                ("Home/End  ", "Start/End of line"),
+                ("PgUp/Dn   ", "Scroll page"),
+                ("^+Left/Rt ", "Skip words"),
+                ("Shift+Arr ", "Select text"),
             ]),
             (" EDITING ", vec![
                 ("^A        ", "Select All"),
                 ("^C        ", "Copy selection"),
                 ("^X        ", "Cut selected/line"),
                 ("^V        ", "Paste clipboard"),
-                ("Shift+Arr ", "Select Text"),
-                ("^Backspace", "Delete word back"),
-                ("^Delete   ", "Delete word ahead"),
+                ("^Back / Del", "Delete word"),
                 ("Enter     ", "Add Line"),
-                ("Shift+Ent ", "Hard Break"),
             ]),
-            (" COMMANDS ", vec![
-                ("/w [path] ", "Save Buffer"),
-                ("/q / /wq  ", "Exit App"),
+            (" COMMANDS (/) ", vec![
+                ("/new      ", "New buffer"),
+                ("/open [p] ", "Open script"),
+                ("/w [path] ", "Save current"),
+                ("/wq / /q! ", "Exit with options"),
+                ("/export   ", "Open Export Pane"),
                 ("/renum    ", "Renumber Scenes"),
                 ("/clearnum ", "Clear numbers"),
-                ("/injectnum", "Tag Scene"),
+                ("/injectnum", "Tag Scene (#)"),
                 ("/[line]   ", "Jump to Line"),
                 ("/s[num]   ", "Jump to Scene"),
                 ("/search   ", "Global Search"),
                 ("/u / /redo", "Undo / Redo"),
-                ("/set [opt]", "Change Settings"),
                 ("/pos      ", "Cursor Position"),
+            ]),
+            (" SETTINGS (/set) ", vec![
+                ("focus     ", "Zen Mode (Clean UI)"),
+                ("typewriter", "Lock cursor center"),
+                ("markup    ", "Hide syntax markers"),
+                ("pagenums  ", "Show page counts"),
+                ("scenenums ", "Show scene numbers"),
+                ("contd     ", "Auto (CONT'D) tags"),
+                ("autosave  ", "Save every 30s"),
+                ("autocomplete", "Writing assist"),
+                ("autobreaks", "Action spacing"),
             ]),
         ];
 
