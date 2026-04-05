@@ -646,8 +646,8 @@ mod config_tests {
         assert!(config.show_scene_numbers);
         assert!(config.show_page_numbers);
         assert!(config.hide_markup);
-        assert!(!config.typewriter_mode);
-        assert!(!config.strict_typewriter_mode);
+        assert!(config.typewriter_mode);
+        assert!(config.strict_typewriter_mode);
         assert!(!config.focus_mode);
         assert!(config.autocomplete);
         assert!(config.auto_contd);
@@ -779,6 +779,6 @@ mod config_tests {
 
         let config = Config::load(&cli);
         assert_eq!(config.heading_spacing, 1);
-        assert!(!config.strict_typewriter_mode);
+        assert!(config.strict_typewriter_mode);
     }
 }

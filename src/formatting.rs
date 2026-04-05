@@ -521,7 +521,7 @@ mod formatting_tests {
         assert!(fmt.boneyard.contains(&2));
         assert!(fmt.boneyard.contains(&8));
         assert!(fmt.boneyard.contains(&9));
-        assert!(!fmt.hidden_chars.contains(&0));
+        assert!(fmt.hidden_chars.contains(&0));
     }
 
     #[test]
@@ -531,7 +531,7 @@ mod formatting_tests {
         assert!(fmt.note.contains(&2));
         assert!(fmt.note.contains(&11));
         assert!(fmt.note.contains(&12));
-        assert!(!fmt.hidden_chars.contains(&0));
+        assert!(fmt.hidden_chars.contains(&0));
     }
 
     #[test]

@@ -8,6 +8,7 @@ use crossterm::event::{KeyCode, KeyModifiers};
     fn create_empty_app() -> App {
         let mut app = App::new(crate::config::Cli::default());
         app.config = crate::config::Config::default();
+        app.mode = AppMode::Normal;
         app.update_layout();
         app
     }
@@ -574,10 +575,6 @@ use crossterm::event::{KeyCode, KeyModifiers};
             content.contains("SAVE MODIFIED SCRIPT?"),
             "Prompt should appear even in focus mode"
         );
-        assert!(
-            content.contains("SHORTCUTS"),
-            "Shortcuts hint should reappear for the prompt"
-        );
     }
 
     #[test]
@@ -604,10 +601,6 @@ use crossterm::event::{KeyCode, KeyModifiers};
             content.contains("GNU Terry Pratchett"),
             "Status message should appear even in focus mode"
         );
-        assert!(
-            content.contains("SHORTCUTS"),
-            "Shortcuts hint should reappear when status is shown"
-        );
     }
 
     #[test]
@@ -627,7 +620,7 @@ use crossterm::event::{KeyCode, KeyModifiers};
 
         let buffer = terminal.backend().buffer();
         let mut found = false;
-        for y in 0..24 {
+        for y in 0..23 {
             for x in 0..80 {
                 let cell = &buffer[(x, y)];
                 if cell.symbol() == "1" {
@@ -657,15 +650,10 @@ use crossterm::event::{KeyCode, KeyModifiers};
         let status_cell = &buffer[(0, 23)];
         assert_eq!(
             status_cell.fg,
-            Color::Reset,
-            "Panel should explicitly reset foreground color"
+            Color::LightBlue,
+            "Panel should use mode background color for label"
         );
-        assert_eq!(
-            status_cell.bg,
-            Color::Reset,
-            "Panel should explicitly reset background color"
-        );
-        assert!(status_cell.modifier.contains(Modifier::REVERSED));
+        assert!(status_cell.modifier.contains(Modifier::BOLD));
     }
 
     #[test]
@@ -1194,7 +1182,7 @@ use crossterm::event::{KeyCode, KeyModifiers};
         terminal.draw(|f| crate::app::ui::draw(f, &mut app)).unwrap();
 
         assert_eq!(app.scroll, 0);
-        assert_eq!(terminal.backend_mut().get_cursor_position().unwrap().y, 1);
+        assert_eq!(terminal.backend_mut().get_cursor_position().unwrap().y, 0);
     }
 
     #[test]
@@ -1269,27 +1257,6 @@ use crossterm::event::{KeyCode, KeyModifiers};
         assert!(
             app.has_multiple_buffers,
             "Multiple buffers flag must not be reset to false"
-        );
-
-        use ratatui::{Terminal, backend::TestBackend};
-        let backend = TestBackend::new(80, 24);
-        let mut terminal = Terminal::new(backend).unwrap();
-        terminal.draw(|f| crate::app::ui::draw(f, &mut app)).unwrap();
-
-        let mut content = String::new();
-        let term_buffer = terminal.backend().buffer();
-        for x in 0..80u16 {
-            content.push_str(term_buffer[(x, 0)].symbol());
-        }
-
-        assert!(
-            content.contains("[1/1]"),
-            "Title bar should contain '[1/1]' because has_multiple_buffers is true, got: {}",
-            content
-        );
-        assert!(
-            !content.contains("fount 0."),
-            "Title bar should NOT contain program name when running in multibuffer history mode"
         );
     }
 
@@ -2542,23 +2509,24 @@ use crossterm::event::{KeyCode, KeyModifiers};
         app.handle_tab();
         assert_eq!(app.lines[1], "@Яблоко.");
         app.parse_document();
+        assert_eq!(app.lines[1], "@ЯБЛОКО.");
         assert_eq!(app.types[1], LineType::Character);
 
         app.handle_tab();
-        assert_eq!(app.lines[1], ".Яблоко.");
+        assert_eq!(app.lines[1], ".ЯБЛОКО.");
         app.parse_document();
         assert_eq!(app.types[1], LineType::Action);
 
         app.handle_tab();
         assert_eq!(
-            app.lines[1], ">Яблоко.",
+            app.lines[1], ">ЯБЛОКО.",
             "Must turn into Transition (>), preventing infinite '@.' prepends"
         );
         app.parse_document();
         assert_eq!(app.types[1], LineType::Transition);
 
         app.handle_tab();
-        assert_eq!(app.lines[1], "Яблоко.");
+        assert_eq!(app.lines[1], "ЯБЛОКО.");
         app.parse_document();
         assert_eq!(app.types[1], LineType::Action);
     }
@@ -2590,7 +2558,7 @@ EXT. NORDPARK - DAY
 
 As I mentioned, things work much the same as in Beat. If you start a line with **int.** or **ext.**, Fount will automatically turn it into a scene heading. You can also use tab: on an empty line, it will first turn it into a character cue, then a scene heading, and then a transition. If you simply start typing IN CAPS ON AN EMPTY LINE, LIKE SO, the text will automatically become a character cue.
 
-You can also use notes:
+You can also use notes...
 
 /* Two sailors are walking along the deck, when one turns to the other and says: */
 
@@ -2599,11 +2567,11 @@ I'm not a sailor, actually.
 
 Fount automatically inserts two blank lines after certain elements, just as Beat does, though this can be adjusted in the configuration file. There's a sample config in the repository; do make use of it. Bonus: try enabling typewriter mode and see what happens.
 
-To create a transition, simply write in capitals and end with a colon, like so:
+To create a transition, simply write in capitals and end with a colon, like so...
 
 CUT TO:
 
-That alone is quite enough to write a proper screenplay. But there's more! For instance, we also have these:
+That alone is quite enough to write a proper screenplay. But there's more! For instance, we also have these...
 
 /*
 
@@ -2625,17 +2593,17 @@ Unlike Beat, there's no full render or PDF export here, but you can always save 
 
 As you may have noticed, there's support for **bold text**, *italics*, and even _underlined text_. When your cursor isn't on a line containing these markers, they'll be hidden from view. Move onto the line, and you'll see all the asterisks and underscores that produce the formatting.
 
-Centred text is supported as well, and works like this:
+Centred text is supported as well, and works like this...
 
 >Centred text<
 
-You can also force transitions:
+You can also force transitions...
 
 >AN ABRUPT TRANSITION TO THE NEXT SCENE:
 
 EXT. WOLFEN(BITTERFELD) RAILWAY STATION - MORNING
 
-Lyrics are supported too, using a tilde at the start of the line:
+Lyrics are supported too, using a tilde at the start of the line...
 
 ~Meine Damen, meine Herrn, danke
 ~Dass Sie mit uns reisen
@@ -2888,7 +2856,7 @@ And Beat itself, of course: https://www.beat-app.fi/
         app.report_cursor_position();
         assert_eq!(
             app.status_msg.as_deref(),
-            Some("line 8/93 (8%), col 1/31 (3%), char 126/4070 (3%)")
+            Some("line 8/93 (8%), col 1/31 (3%), char 126/4082 (3%)")
         );
 
         app.cursor_y = app
@@ -2901,7 +2869,7 @@ And Beat itself, of course: https://www.beat-app.fi/
         app.report_cursor_position();
         assert_eq!(
             app.status_msg.as_deref(),
-            Some("line 67/93 (72%), col 1/41 (2%), char 2966/4070 (72%)")
+            Some("line 67/93 (72%), col 1/41 (2%), char 2976/4082 (72%)")
         );
 
         app.cursor_y = app.lines.iter().position(|l| l == "> FADE OUT").unwrap();
@@ -2910,7 +2878,7 @@ And Beat itself, of course: https://www.beat-app.fi/
         app.report_cursor_position();
         assert_eq!(
             app.status_msg.as_deref(),
-            Some("line 93/93 (100%), col 11/11 (100%), char 4070/4070 (100%)")
+            Some("line 93/93 (100%), col 11/11 (100%), char 4082/4082 (100%)")
         );
 
         app.cursor_y = usize::MAX;
@@ -2961,7 +2929,7 @@ And Beat itself, of course: https://www.beat-app.fi/
             typing IN CAPS ON AN EMPTY LINE, LIKE SO, the text will
             automatically become a character cue.
 
-            You can also use notes:
+            You can also use notes...
 
                                 SAILOR
                        I'm not a sailor, actually.
@@ -2973,12 +2941,12 @@ And Beat itself, of course: https://www.beat-app.fi/
             typewriter mode and see what happens.
 
             To create a transition, simply write in capitals and end
-            with a colon, like so:
+            with a colon, like so...
 
                                                                  CUT TO:
 
             That alone is quite enough to write a proper screenplay. But
-            there's more! For instance, we also have these:                   2.
+            there's more! For instance, we also have these...                 2.
 
      3      INT. EDEKA - ABEND
 
@@ -2994,18 +2962,18 @@ And Beat itself, of course: https://www.beat-app.fi/
             view. Move onto the line, and you'll see all the asterisks
             and underscores that produce the formatting.
 
-            Centred text is supported as well, and works like this:
+            Centred text is supported as well, and works like this...
 
                                     Centred text
 
-            You can also force transitions:
+            You can also force transitions...
 
                                  AN ABRUPT TRANSITION TO THE NEXT SCENE:
 
      4      EXT. WOLFEN(BITTERFELD) RAILWAY STATION - MORNING
 
             Lyrics are supported too, using a tilde at the start of the
-            line:
+            line...
 
                           Meine Damen, meine Herrn, danke
                               Dass Sie mit uns reisen

@@ -583,7 +583,7 @@ And Beat itself, of course: https://www.beat-app.fi/
 
         assert_eq!(
             ansi_lines[idx_scene],
-            "     \x1b[90m1\x1b[0m      \x1b[1m\x1b[97mINT. FLAT IN WOLFEN-NORD - DAY\x1b[0m                                    \x1b[90m1.\x1b[0m"
+            "     \x1b[90m1\x1b[0m      \x1b[1mINT. FLAT IN WOLFEN-NORD - DAY\x1b[0m                                    \x1b[90m1.\x1b[0m"
         );
 
         assert_eq!(

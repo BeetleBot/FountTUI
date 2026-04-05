@@ -39,7 +39,7 @@ pub trait Exporter {
 /// # Usage
 /// This trait must be in scope to use its methods:
 /// ```
-/// use rustwell::ExporterExt;
+/// use fount::pdf::ExporterExt;
 /// ```
 pub trait ExporterExt: Exporter {
     /// Exports the screenplay to stdout.
