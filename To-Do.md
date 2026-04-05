@@ -1,6 +1,12 @@
 # Fount: To-Do
 
 ### In the Works
+- [ ] **Stability**: Eradicate the "Panics" (The `unwrap()` Problem).
+    - **Context**: The codebase currently relies heavily on `.unwrap()` in application logic (parsing, PDF export, layout). If a regex fails or a weird character is encountered, the app hard crashes.
+    - **Goal**: Refactor `.unwrap()` calls into proper error handling (e.g., `Result`, `Option`, or graceful fallbacks) so the editor degrades gracefully and shows error popups instead of kicking the user to the bash prompt.
+- [ ] **Aesthetics**: Cinematic Transitions & Themes.
+    - **Context**: The current TUI is functional and clean, but can be pushed further to feel like a premium, native application.
+    - **Goal**: Implement customizable theme files (e.g., `.toml` or `.json` for colors like "Solarized" or "Paper") and soft UI popups with drop-shadows (using Ratatui's `Clear` widget and block borders) for the command palette (`/`) and settings (`Ctrl+P`).
 - [ ] **Release Automation (GitHub Actions)**: Get `.msi`/`.exe` and `.dmg` installers ready for future releases. Tentative timing. 
 - [ ] **Home Page**: A simple landing area when opening without a file. (New, Open, Tutorial, Exit).
 - [ ] **PDF Export**: The big one—implementing a clean PDF generator.

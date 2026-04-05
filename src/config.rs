@@ -382,7 +382,7 @@ impl Default for Config {
             auto_contd: true,
             auto_paragraph_breaks: true,
             auto_title_page: false,
-            typewriter_mode: false,
+            typewriter_mode: true,
             strict_typewriter_mode: true,
             focus_mode: false,
             break_actions: true,

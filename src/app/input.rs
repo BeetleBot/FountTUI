@@ -591,9 +591,26 @@ impl App {
                                     }
                                 }
                                 2 => {
-                                    // Tutorial — placeholder
+                                    // Tutorial
+                                    let tutorial_text = include_str!("../../assets/tutorial.fountain");
+                                    let lines: Vec<String> = tutorial_text.lines().map(|s| s.to_string()).collect();
+                                    let new_buf = crate::app::BufferState {
+                                        lines,
+                                        file: None,
+                                        is_tutorial: true,
+                                        ..Default::default()
+                                    };
+                                    self.buffers.push(new_buf);
+                                    let new_idx = self.buffers.len() - 1;
+                                    self.has_multiple_buffers = self.buffers.len() > 1;
+                                    self.switch_buffer(new_idx);
+                                    self.parse_document();
+                                    self.update_autocomplete();
+                                    self.update_layout();
                                     self.mode = AppMode::Normal;
-                                    self.set_status("Tutorial coming soon!");
+                                    self.set_status("Tutorial loaded! Enjoy the show.");
+                                    *text_changed = true;
+                                    *cursor_moved = true;
                                 }
                                 3 => {
                                     // Exit
@@ -688,7 +705,7 @@ impl App {
                     match key.code {
                         KeyCode::Esc => {}
                         KeyCode::Char('x') if ctrl => {
-                            if self.dirty {
+                            if self.dirty && !self.is_tutorial {
                                 self.exit_after_save = true;
                                 self.mode = AppMode::PromptSave;
                             } else if self.close_current_buffer() {

@@ -678,7 +678,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let menu = vec![
             ("New Script", "N", "Start a blank fountain screenplay"),
             ("Open File", "O", "Browse for a .fountain script"),
-            ("Tutorial", "T", "Getting started guide (soon)"),
+            ("Tutorial", "T", "Getting started guide"),
             ("Exit", "Q", "Quit Fount"),
         ];
 

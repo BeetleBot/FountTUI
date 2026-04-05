@@ -1,0 +1,131 @@
+Title: The Fount Protocol
+Author: Nirmal
+Draft date: 2026-04-05
+Contact:
+    writingnirmal@gmail.com
+
+
+
+# ACT I: THE DISCOVERY
+
+INT. BEETLE'S APARTMENT - LATE NIGHT
+[[red]]
+
+=this is synopsis. this won't be in the final pdf output but will be displayed in the scene navigator menu. Where is the scene navigator menu? Wait for it!
+
+A ceiling fan clicks overhead. The air is thick with the humidity of Chennai.
+
+BEETLE (20s, a screenwriter whose glasses are held together by sheer willpower and tape) stares blankly at a complex, heavily customized Vim setup.
+
+His girlfriend, BEE (20s, a sharp, pragmatic film writer who actually finishes her scripts), walks in holding two tumblers of filter coffee.
+
+BEE
+Still fighting with your plugins? Just use a normal app, babe. I sent you a Final Draft file three hours ago.
+
+Beetle takes the coffee.
+
+BEETLE
+I refuse to leave the terminal. It's my zen zone. But... you're right. My setup broke again. So I found something new.
+
+Beetle hits a few keys. The screen clears. A beautiful, minimalist interface appears. It adapts perfectly to his terminal's background.
+
+BEE
+(squinting)
+What is that?
+
+BEETLE
+It's called Fount. It's a dedicated Fountain editor. No mouse required. Watch this.
+
+Beetle presses `F1`. A clean SHORTCUTS LEGEND slides out on the right.
+
+BEETLE (CONT'D)
+Everything I need to know. `Ctrl+S` to save, `Ctrl+X` to exit. And if I want to configure the environment...
+
+He hits `Ctrl+P`. The SETTINGS PANE appears.
+
+BEE
+Okay, but how do you actually format anything?
+
+BEETLE
+You don't. That's the beauty of Fountain syntax. You just write. Scene headings start with INT or EXT, or you can force them with a dot.
+
+.LIKE THIS
+
+BEETLE (CONT'D)
+Characters are just all caps. Dialogue goes underneath. Fount handles the margins automatically when you export.
+
+
+# ACT II: NAVIGATION
+
+INT. BEETLE'S APARTMENT - LATER
+[[yellow]]
+Bee is now sitting in the chair, leaning closer to the monitor.
+
+BEE
+Alright, the typing is smooth. But I have 120 pages. How do I find anything? In a GUI, I have a sidebar.
+
+BEETLE
+Press `Ctrl+H`.
+
+Bee hits the keys. The SCENE NAVIGATOR slides out from the left. It lists every scene heading.
+
+BEE
+Whoa.
+
+BEETLE
+You can use the arrow keys to scroll through the scenes, and hit `Enter` to jump straight to one. It even picks up color markers. See those [[red]], [[yellow]] and [[blue]] tags in the scenes, and the Navigator colors the scene heading with those colors.
+
+BEE
+What if I need to jump to a specific line number?
+
+BEETLE
+For that, we use the Command Palette. Just type `/`.
+
+Bee presses `/`. A command bar appears at the bottom.
+
+BEETLE (CONT'D)
+Now type `150` and hit enter. It takes you straight to line 150. Or type `s5` to jump to scene 5.
+
+BEE
+(impressed)
+That's actually faster than clicking.
+
+
+# ACT III: THE FINAL DRAFT
+
+EXT. BESANT NAGAR BEACH - DAWN
+[[green]]
+
+The sun rises over the Bay of Bengal. Beetle and Bee are sitting on the sand with a laptop.
+
+BEE
+Okay, the interface is zen. The "Strict Typewriter Mode" keeps my eyes focused. But what happens when the producer asks for a PDF?
+
+Beetle smiles.
+
+BEETLE
+Fount has a built-in layout engine. Open the command palette with `/` and type `export`.
+
+BEE
+Wait, I don't need a separate converter?
+
+BEETLE
+Nope. It renders a perfect, industry-standard PDF right from the terminal. It handles page breaks, scene numbers, the title page... everything.
+
+BEE
+What about locking the script for production?
+
+BEETLE
+Also in the command palette. Just type `/locknum` and it assigns permanent scene numbers to every heading.
+
+Bee stares at the ocean, processing this information.
+
+BEE (CONT'D)
+It's just text. But it's everything.
+
+BEETLE
+Exactly. It's just text. Now, let's write a movie.
+
+> FADE OUT.
+
+[End of Tutorial. Press `Ctrl+X` to close this buffer and return to your own script!]

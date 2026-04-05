@@ -126,6 +126,10 @@ impl App {
     }
 
     pub fn save(&mut self) -> io::Result<()> {
+        if self.is_tutorial {
+            self.set_status("Cannot save the tutorial buffer. Press Ctrl+X to exit.");
+            return Ok(());
+        }
         if let Some(ref p) = self.file {
             let mut content = self.lines.join("\n");
             if !content.ends_with('\n') {

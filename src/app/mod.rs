@@ -74,6 +74,8 @@ pub struct BufferState {
     pub file: Option<PathBuf>,
 
     pub dirty: bool,
+    
+    pub is_tutorial: bool,
 
     pub cursor_y: usize,
 
@@ -112,6 +114,8 @@ pub struct App {
     pub file: Option<PathBuf>,
 
     pub dirty: bool,
+    
+    pub is_tutorial: bool,
 
     pub cursor_y: usize,
 
@@ -266,6 +270,7 @@ impl App {
             layout: Vec::new(),
             file: None,
             dirty: false,
+            is_tutorial: false,
             cursor_y: 0,
             cursor_x: 0,
             target_visual_x: 0,
@@ -323,6 +328,7 @@ impl App {
         std::mem::swap(&mut self.layout, &mut other.layout);
         std::mem::swap(&mut self.file, &mut other.file);
         std::mem::swap(&mut self.dirty, &mut other.dirty);
+        std::mem::swap(&mut self.is_tutorial, &mut other.is_tutorial);
         std::mem::swap(&mut self.cursor_y, &mut other.cursor_y);
         std::mem::swap(&mut self.cursor_x, &mut other.cursor_x);
         std::mem::swap(&mut self.target_visual_x, &mut other.target_visual_x);
@@ -1215,6 +1221,10 @@ impl App {
 
     /// Helper to save the current buffer to a new path.
     pub fn save_as(&mut self, path: PathBuf) -> io::Result<()> {
+        if self.is_tutorial {
+            self.set_status("Cannot save the tutorial buffer. Press Ctrl+X to exit.");
+            return Ok(());
+        }
         let content = self.lines.join("\n");
         fs::write(&path, content)?;
         self.file = Some(path);
@@ -1264,7 +1274,7 @@ impl App {
                 }
             }
             "q" => {
-                if self.dirty {
+                if self.dirty && !self.is_tutorial {
                     self.set_error("Unsaved changes. Use :q! or :wq");
                 } else if self.close_current_buffer() {
                     return Ok(true);
