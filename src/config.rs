@@ -251,6 +251,10 @@ pub struct Cli {
     /// Export scene headings in bold
     #[arg(long)]
     pub export_bold_scene_headings: bool,
+
+    /// Include title page in exports
+    #[arg(long)]
+    pub include_title_page: bool,
 }
 
 
@@ -357,6 +361,12 @@ pub struct Config {
     /// Selected export format
     pub export_format: String,
 
+    /// Selected report format
+    pub report_format: String,
+
+    /// Include title page in PDF/Fountain exports
+    pub include_title_page: bool,
+
     /// When ON, scene numbers in text are frozen — no automatic re-indexing.
     pub production_lock: bool,
 }
@@ -397,6 +407,8 @@ impl Default for Config {
             force_scene_numbers: false,
             export_bold_scene_headings: true,
             export_format: "pdf".to_string(),
+            report_format: "csv_scene".to_string(),
+            include_title_page: true,
             production_lock: false,
         }
     }
@@ -465,9 +477,10 @@ impl Config {
                         "force_ascii" => self.force_ascii = true,
                         "force_ansi" => self.force_ansi = true,
                         "paper_size" => self.paper_size = val,
-                        "force_scene_numbers" => self.force_scene_numbers = true,
                         "export_bold_scene_headings" => self.export_bold_scene_headings = true,
                         "export_format" => self.export_format = val,
+                        "report_format" => self.report_format = val,
+                        "include_title_page" => self.include_title_page = true,
                         _ => {}
                     }
                 } else if cmd == "unset" {
@@ -492,6 +505,7 @@ impl Config {
                         "force_ansi" => self.force_ansi = false,
                         "force_scene_numbers" => self.force_scene_numbers = false,
                         "export_bold_scene_headings" => self.export_bold_scene_headings = false,
+                        "include_title_page" => self.include_title_page = false,
                         _ => {}
                     }
                 }
@@ -575,6 +589,7 @@ impl Config {
         config.goto_end |= cli.goto_end;
         config.force_scene_numbers |= cli.force_scene_numbers;
         config.export_bold_scene_headings |= cli.export_bold_scene_headings;
+        config.include_title_page |= cli.include_title_page;
         
         if config.export_format == "" {
             config.export_format = "pdf".to_string();

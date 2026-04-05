@@ -7,7 +7,6 @@ pub use self::screenplay::Screenplay;
 
 pub use self::export::Exporter;
 pub use self::export::ExporterExt;
-pub use self::export::html::HtmlExporter;
 pub use self::export::pdf::A4;
 pub use self::export::pdf::LETTER;
 pub use self::export::pdf::PaperSize;
@@ -39,16 +38,6 @@ pub fn export_to_pdf(
     let exporter = PdfExporter {
         paper_size,
         bold_scene_headings,
-        ..Default::default()
-    };
-    exporter.export_to_file(&screenplay, path)
-}
-
-/// Exports Fountain text to an HTML file.
-pub fn export_to_html(fountain_text: &str, path: &std::path::Path) -> std::io::Result<()> {
-    let screenplay = parse(fountain_text);
-    let exporter = HtmlExporter {
-        standalone: true,
         ..Default::default()
     };
     exporter.export_to_file(&screenplay, path)

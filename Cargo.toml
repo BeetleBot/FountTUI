@@ -36,6 +36,7 @@ supports-color = "3.0.2"
 krilla = "0.7.0"
 bitflags = "2"
 unicode-properties = "0.1.4"
+rfd = "0.17.2"
 
 [dev-dependencies]
 criterion = "0.5.1"

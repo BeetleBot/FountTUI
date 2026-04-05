@@ -27,6 +27,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             AppMode::ExportPane => (" EXPORT ", Color::LightCyan),
             AppMode::Shortcuts => (" LEGEND ", Color::LightCyan),
             AppMode::Search => (" SEARCH ", Color::LightMagenta),
+            AppMode::Home => (" HOME ", Color::LightGreen),
             _ => (" PROMPT ", Color::LightRed),
         };
 
@@ -36,7 +37,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     let show_bottom = !app.config.focus_mode || is_prompt || has_status;
 
-    let in_command_mode = app.mode == AppMode::Command;
+    let _in_command_mode = app.mode == AppMode::Command;
     let footer_height = if show_bottom { 1 } else { 0 };
 
     let chunks = Layout::default()
@@ -84,7 +85,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     let page_w = PAGE_WIDTH.min(text_area.width);
     let global_pad = text_area.width.saturating_sub(page_w) / 2;
 
-    let (vis_row, vis_x) = find_visual_cursor(&app.layout, app.cursor_y, app.cursor_x);
+    let (vis_row, _vis_x) = find_visual_cursor(&app.layout, app.cursor_y, app.cursor_x);
 
     let mut pad_top = 0;
 
@@ -393,31 +394,53 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     if app.mode == AppMode::ExportPane {
-        let export_options = vec![
-            format!(" Format: {}", app.config.export_format.to_uppercase()),
-            format!(" Paper: {}", app.config.paper_size.to_uppercase()),
-            format!(" Bold Headings: {}", if app.config.export_bold_scene_headings { "[X]" } else { "[ ]" }),
-            " [ EXPORT ]".to_string(),
-        ];
+        let format_label = match app.config.export_format.as_str() {
+            "pdf" => "PDF",
+            "fountain" => "Fountain",
+            "fdx" => "FDX (Coming Soon)",
+            _ => "PDF"
+        };
+        
+        let report_label = match app.config.report_format.as_str() {
+            "csv_scene" => "Scene List (CSV)",
+            "csv_char" => "Character Report (CSV)",
+            _ => "Scene List (CSV)"
+        };
 
-        let items: Vec<ListItem> = export_options
-            .into_iter()
-            .enumerate()
-            .map(|(i, label)| {
-                let is_selected = i == app.selected_export_option;
-                let style = if is_selected {
-                    Style::default().fg(Color::Black).bg(mode_bg).add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default()
-                };
-                ListItem::new(Line::from(vec![
-                    Span::styled(if is_selected { " ⟫ " } else { "   " }, style),
-                    Span::styled(label, style),
-                ]))
-            })
-            .collect();
+        let header_style = Style::default().fg(mode_bg).add_modifier(Modifier::BOLD);
+        
+        let mut visual_items = Vec::new();
 
-        let list = List::new(items);
+        let render_item = |idx: usize, label: &str, app: &App| -> ListItem {
+            let is_selected = idx == app.selected_export_option;
+            let style = if is_selected {
+                Style::default().fg(Color::Black).bg(mode_bg).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            ListItem::new(Line::from(vec![
+                Span::styled(if is_selected { " ⟫ " } else { "   " }, style),
+                Span::styled(label.to_string(), style),
+            ]))
+        };
+
+        visual_items.push(ListItem::new(Line::from(vec![Span::styled("  ── SCREENPLAY EXPORT ──", header_style)])));
+        visual_items.push(render_item(0, &format!(" Format: {}", format_label), app));
+        
+        visual_items.push(render_item(1, &format!(" Paper: {}", app.config.paper_size.to_uppercase()), app));
+        visual_items.push(render_item(2, &format!(" Bold Headings: {}", if app.config.export_bold_scene_headings { "[X]" } else { "[ ]" }), app));
+        
+        visual_items.push(ListItem::new(Line::from(vec![Span::raw("")])));
+        visual_items.push(render_item(3, " [ EXPORT SCREENPLAY ]", app));
+        
+        visual_items.push(ListItem::new(Line::from(vec![Span::raw("")])));
+        visual_items.push(ListItem::new(Line::from(vec![Span::styled("  ── PRODUCTION REPORTS ──", header_style)])));
+        visual_items.push(render_item(4, &format!(" Type: {}", report_label), app));
+        
+        visual_items.push(ListItem::new(Line::from(vec![Span::raw("")])));
+        visual_items.push(render_item(5, " [ EXPORT REPORT ]", app));
+
+        let list = List::new(visual_items);
         f.render_widget(list, app.settings_area.inner(ratatui::layout::Margin { horizontal: 0, vertical: 1 }));
     }
 
@@ -477,14 +500,11 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     // ── Footer rendering ──────────────────────────────────────────────────
     if footer_area.height > 0 {
-        // ── Single-line "Pure" Status Bar ─────────────────────────────────
         let mut spans = Vec::new();
 
-        // 1. Mode (Accented)
         spans.push(Span::styled(mode_str, Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)));
         spans.push(Span::raw(" │ "));
 
-        // 2. Filename (Accented)
         let fname = app.file.as_ref()
             .and_then(|p| p.file_name())
             .map(|n| n.to_string_lossy().into_owned())
@@ -493,7 +513,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         spans.push(Span::styled(format!("{}{}", fname, dirty_str), Style::default().fg(mode_bg)));
         spans.push(Span::raw(" │ "));
 
-        // 3. Center Section: Command Input OR Status Message OR Hints
         if app.mode == AppMode::Command {
             let cmd_style = if app.command_error {
                 Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
@@ -525,12 +544,10 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 }
                 AppMode::PromptSave => spans.push(Span::raw("SAVE MODIFIED SCRIPT? (Y/N/C) ")),
                 AppMode::PromptFilename => spans.push(Span::raw(format!("FILENAME: {} ", app.filename_input))),
-                AppMode::PromptExportFilename => spans.push(Span::raw(format!("EXPORT {}: {} ", app.config.export_format.to_uppercase(), app.filename_input))),
                 _ => spans.push(Span::styled("COMMANDS [F1]", Style::default().fg(Color::DarkGray))),
             }
         }
 
-        // 4. Right Side: Counts & Cursor (Plain text)
         let word_count = app.total_word_count();
         let line_count = app.lines.len();
         let pos_str = format!("{}:{}", app.cursor_y + 1, app.cursor_x + 1);
@@ -551,7 +568,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         }
         
         spans.extend(right_spans);
-
         f.render_widget(Paragraph::new(Line::from(spans)), footer_area);
 
         if app.mode == AppMode::Command {
@@ -562,52 +578,124 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         }
     }
 
-    // ── Cursor for non-command modes ──────────────────────────────────────
-    if !in_command_mode {
+    // -- Cursor Handling --
+    if app.mode != AppMode::Command && app.mode != AppMode::Home {
+        let (vis_row, vis_x) = find_visual_cursor(&app.layout, app.cursor_y, app.cursor_x);
+        let global_pad = if app.config.show_scene_numbers { 4 } else { 0 };
+        let pad_top = if !app.config.focus_mode { 1 } else { 0 };
+
         match app.mode {
+            AppMode::Normal => {
+                let cur_screen_y = text_area.y + pad_top as u16 + (vis_row.saturating_sub(app.scroll)) as u16;
+                let cur_screen_x = text_area.x + global_pad + vis_x;
+                if cur_screen_y < text_area.y + text_area.height {
+                    f.set_cursor_position((cur_screen_x, cur_screen_y));
+                }
+            }
             AppMode::Search if footer_area.height > 0 => {
                 let prompt_base = if app.last_search.is_empty() {
                     "Search: ".to_string()
                 } else {
                     format!("Search [{}]: ", app.last_search)
                 };
-                let query_w = UnicodeWidthStr::width(prompt_base.as_str())
-                    + UnicodeWidthStr::width(app.search_query.as_str());
+                let query_w = unicode_width::UnicodeWidthStr::width(prompt_base.as_str())
+                    + unicode_width::UnicodeWidthStr::width(app.search_query.as_str());
                 let center_start = (footer_area.width as usize).saturating_sub(query_w) / 2;
-                let cur_screen_x = footer_area.x
-                    + center_start as u16
-                    + UnicodeWidthStr::width(prompt_base.as_str()) as u16;
+                let cur_screen_x = footer_area.x + center_start as u16 + unicode_width::UnicodeWidthStr::width(prompt_base.as_str()) as u16;
                 f.set_cursor_position((cur_screen_x, footer_area.y));
             }
-            AppMode::PromptFilename if footer_area.height > 0 => {
-                let prompt_base = "File Name to Write: ";
-                let query_w = UnicodeWidthStr::width(prompt_base)
-                    + UnicodeWidthStr::width(app.filename_input.as_str());
+            AppMode::PromptSave | AppMode::PromptFilename if footer_area.height > 0 => {
+                let prompt_base = if app.mode == AppMode::PromptSave { "Save changes? (y/n): " } else { "File Name to Write: " };
+                let input = if app.mode == AppMode::PromptSave { "" } else { app.filename_input.as_str() };
+                let query_w = unicode_width::UnicodeWidthStr::width(prompt_base) + unicode_width::UnicodeWidthStr::width(input);
                 let center_start = (footer_area.width as usize).saturating_sub(query_w) / 2;
-                let cur_screen_x = footer_area.x
-                    + center_start as u16
-                    + UnicodeWidthStr::width(prompt_base) as u16;
+                let cur_screen_x = footer_area.x + center_start as u16 + unicode_width::UnicodeWidthStr::width(prompt_base) as u16;
                 f.set_cursor_position((cur_screen_x, footer_area.y));
-            }
-            AppMode::PromptExportFilename if footer_area.height > 0 => {
-                let prompt_base = format!("EXPORT {}: ", app.config.export_format.to_uppercase());
-                let query_w = UnicodeWidthStr::width(prompt_base.as_str())
-                    + UnicodeWidthStr::width(app.filename_input.as_str());
-                let center_start = (footer_area.width as usize).saturating_sub(query_w) / 2;
-                let cur_screen_x = footer_area.x
-                    + center_start as u16
-                    + UnicodeWidthStr::width(prompt_base.as_str()) as u16;
-                f.set_cursor_position((cur_screen_x, footer_area.y));
-            }
-            AppMode::Normal => {
-                let cur_screen_y =
-                    text_area.y + pad_top as u16 + (vis_row.saturating_sub(app.scroll)) as u16;
-                let cur_screen_x = text_area.x + global_pad + vis_x;
-                if cur_screen_y < text_area.y + text_area.height {
-                    f.set_cursor_position((cur_screen_x, cur_screen_y));
-                }
             }
             _ => {}
         }
+    }
+
+    // -- Floating Home Screen --
+    if app.mode == AppMode::Home {
+        let panel_w = 66u16;
+        let panel_h = 24u16;
+        let x = area.x + area.width.saturating_sub(panel_w) / 2;
+        let y = area.y + area.height.saturating_sub(panel_h) / 2;
+        let panel = Rect { x, y, width: panel_w.min(area.width), height: panel_h.min(area.height) };
+
+        f.render_widget(ratatui::widgets::Clear, panel);
+
+        let outer_block = Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::DarkGray));
+        f.render_widget(outer_block, panel);
+
+        let inner = Rect {
+            x: panel.x + 1,
+            y: panel.y + 1,
+            width: panel.width.saturating_sub(2),
+            height: panel.height.saturating_sub(2),
+        };
+
+        let w = inner.width as usize;
+        let accent = Color::LightCyan;
+        let dim = Color::DarkGray;
+        let sel_bg = mode_bg;
+
+        let logo_style = Style::default().fg(accent).add_modifier(Modifier::BOLD);
+        let dim_style = Style::default().fg(dim);
+        
+        let center = |text: &str| -> String {
+            let text_w = unicode_width::UnicodeWidthStr::width(text);
+            let pad = (w.saturating_sub(text_w)) / 2;
+            format!("{}{}", " ".repeat(pad), text)
+        };
+
+        let mut home_lines = Vec::new();
+        home_lines.push(Line::from(""));
+
+        for row in &[
+            "\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2557} \u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2557} \u{2588}\u{2588}\u{2557}   \u{2588}\u{2588}\u{2557}\u{2588}\u{2588}\u{2588}\u{2557}   \u{2588}\u{2588}\u{2557}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2557}",
+            "\u{2588}\u{2588}\u{2554}\u{2550}\u{2550}\u{2550}\u{2550}\u{255d}\u{2588}\u{2588}\u{2554}\u{2550}\u{2550}\u{2550}\u{2588}\u{2588}\u{2557}\u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}\u{2588}\u{2588}\u{2588}\u{2588}\u{2557}  \u{2588}\u{2588}\u{2551}\u{255a}\u{2550}\u{2550}\u{2588}\u{2588}\u{2554}\u{2550}\u{2550}\u{255d}",
+            "\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2557}  \u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}\u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}\u{2588}\u{2588}\u{2554}\u{2588}\u{2588}\u{2557} \u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}   ",
+            "\u{2588}\u{2588}\u{2554}\u{2550}\u{2550}\u{255d}  \u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}\u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}\u{2588}\u{2588}\u{2551}\u{255a}\u{2588}\u{2588}\u{2557}\u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}   ",
+            "\u{2588}\u{2588}\u{2551}     \u{255a}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2554}\u{255d}\u{255a}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2554}\u{255d}\u{2588}\u{2588}\u{2551} \u{255a}\u{2588}\u{2588}\u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}   ",
+            "\u{255a}\u{2550}\u{255d}      \u{255a}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{255d}  \u{255a}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{255d} \u{255a}\u{2550}\u{255d}  \u{255a}\u{2550}\u{2550}\u{2550}\u{255d}   \u{255a}\u{2550}\u{255d}   ",
+        ] {
+            home_lines.push(Line::from(Span::styled(center(row), logo_style)));
+        }
+
+        home_lines.push(Line::from(""));
+        home_lines.push(Line::from(Span::styled(center("Screenwriting in the terminal. Distraction-free."), dim_style)));
+        home_lines.push(Line::from(""));
+        home_lines.push(Line::from(Span::styled(center(&"\u{2500}".repeat(42)), dim_style)));
+        home_lines.push(Line::from(""));
+
+        let menu = vec![
+            ("New Script", "N", "Start a blank fountain screenplay"),
+            ("Open File", "O", "Browse for a .fountain script"),
+            ("Tutorial", "T", "Getting started guide (soon)"),
+            ("Exit", "Q", "Quit Fount"),
+        ];
+
+        for (i, (label, key, hint)) in menu.iter().enumerate() {
+            let is_sel = i == app.home_selected;
+            let display = format!("[{}]  {:<12} \u{2014}  {}", key, label, hint);
+            let centered = center(&display);
+            if is_sel {
+                let s = Style::default().fg(Color::Black).bg(sel_bg).add_modifier(Modifier::BOLD);
+                home_lines.push(Line::from(Span::styled(centered, s)));
+            } else {
+                home_lines.push(Line::from(Span::styled(centered, dim_style)));
+            }
+            home_lines.push(Line::from(""));
+        }
+
+        home_lines.push(Line::from(Span::styled(center(&"\u{2500}".repeat(42)), dim_style)));
+        home_lines.push(Line::from(""));
+        home_lines.push(Line::from(Span::styled(center("github.com/BeetleBot/Fount"), Style::default().fg(dim).add_modifier(Modifier::DIM))));
+
+        f.render_widget(Paragraph::new(home_lines), inner);
     }
 }

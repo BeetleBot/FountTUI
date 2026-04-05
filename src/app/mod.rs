@@ -58,8 +58,9 @@ pub enum AppMode {
 
     ExportPane,
 
-    PromptExportFilename,
     Command,
+
+    Home,
 }
 
 #[derive(Clone, Default)]
@@ -171,6 +172,8 @@ pub struct App {
     pub command_error: bool,
 
     pub selection_anchor: Option<(usize, usize)>,
+
+    pub home_selected: usize,
 }
 
 impl Drop for App {
@@ -295,6 +298,7 @@ impl App {
             command_input: String::new(),
             command_error: false,
             selection_anchor: None,
+            home_selected: 0,
         };
 
         let mut first_buf = std::mem::take(&mut app.buffers[0]);
@@ -304,6 +308,12 @@ impl App {
         app.update_autocomplete();
         app.update_layout();
         app.target_visual_x = app.current_visual_x();
+
+        // Show home screen if opened without a file argument
+        if cli.files.is_empty() {
+            app.mode = AppMode::Home;
+        }
+
         app
     }
 
@@ -1407,12 +1417,159 @@ impl App {
                 self.select_all();
                 *cursor_moved = true;
             }
+            "home" => {
+                self.mode = AppMode::Home;
+                self.home_selected = 0;
+            }
+            "newfile" | "new" => {
+                let new_buf = BufferState {
+                    lines: vec![String::new()],
+                    ..Default::default()
+                };
+                self.buffers.push(new_buf);
+                let new_idx = self.buffers.len() - 1;
+                self.has_multiple_buffers = true;
+                self.switch_buffer(new_idx);
+                self.set_status("New buffer opened");
+                *text_changed = true;
+                *cursor_moved = true;
+            }
             _ => {
                 self.set_error(&format!("Unknown command: /{}", cmd));
             }
         }
 
         Ok(false)
+    }
+
+    pub fn export_fountain(&self, path: &std::path::Path) -> std::io::Result<()> {
+        let content = self.lines.join("\n");
+        std::fs::write(path, content)
+    }
+
+    pub fn export_scene_csv(&self, path: &std::path::Path) -> std::io::Result<()> {
+        let mut csv = String::new();
+        csv.push_str("Scene Number,Int/Ext,Location,Time,Estimated Length (8ths)\n");
+
+        let mut current_scene = None;
+        let mut scene_lines = 0;
+        let mut scenes_data = Vec::new();
+
+        for row in &self.layout {
+            if row.line_type == crate::types::LineType::SceneHeading {
+                if let Some((s_num, heading)) = current_scene.take() {
+                    scenes_data.push((s_num, heading, scene_lines));
+                }
+                
+                let s_num = row.scene_num.clone().unwrap_or_default();
+                let heading = crate::layout::strip_sigils(&row.raw_text, row.line_type).to_string();
+                current_scene = Some((s_num, heading));
+                scene_lines = 1;
+            } else if current_scene.is_some() {
+                scene_lines += 1;
+            }
+        }
+        
+        if let Some((s_num, heading)) = current_scene.take() {
+            scenes_data.push((s_num, heading, scene_lines));
+        }
+
+        for (s_num, heading, visual_lines) in scenes_data {
+            let eights_total = visual_lines as f32 / 7.0;
+            let eights_rounded = eights_total.round() as usize;
+            
+            let full_pages = eights_rounded / 8;
+            let remaining_eighths = eights_rounded % 8;
+            
+            let length_str = if full_pages > 0 && remaining_eighths > 0 {
+                format!("{} {}/8", full_pages, remaining_eighths)
+            } else if full_pages > 0 {
+                format!("{}", full_pages)
+            } else if remaining_eighths > 0 {
+                format!("{}/8", remaining_eighths)
+            } else {
+                "1/8".to_string() 
+            };
+
+            let mut int_ext = String::new();
+            let loc;
+            let mut time = String::new();
+            let h = heading.to_uppercase();
+            if let Some((ie, rest)) = h.split_once('.') {
+                int_ext = ie.trim().to_string();
+                if let Some((l, t)) = rest.split_once('-') {
+                    loc = l.trim().to_string();
+                    time = t.trim().to_string();
+                } else {
+                    loc = rest.trim().to_string();
+                }
+            } else {
+                loc = h;
+            }
+
+            csv.push_str(&format!("\"{}\",\"{}\",\"{}\",\"{}\",\"{}\"\n", s_num, int_ext, loc, time, length_str));
+        }
+
+        std::fs::write(path, csv)
+    }
+
+    pub fn export_character_csv(&self, path: &std::path::Path) -> std::io::Result<()> {
+        let mut csv = String::new();
+        csv.push_str("Character,Dialogue Words,Scenes\n");
+
+        let mut char_word_counts = std::collections::HashMap::new();
+        let mut char_scenes = std::collections::HashMap::new();
+
+        let mut current_scene = String::new();
+        let mut current_char = String::new();
+
+        for row in &self.layout {
+            match row.line_type {
+                crate::types::LineType::SceneHeading => {
+                    if let Some(snum) = &row.scene_num {
+                        current_scene = snum.clone();
+                    } else {
+                        current_scene = String::new();
+                    }
+                }
+                crate::types::LineType::Character | crate::types::LineType::DualDialogueCharacter => {
+                    let mut name = crate::layout::strip_sigils(&row.raw_text, row.line_type).trim().to_string();
+                    if let Some(idx) = name.find('(') {
+                        name = name[..idx].trim().to_string(); // Strip (V.O.) and (CONT'D)
+                    }
+                    current_char = name.to_uppercase();
+                    if !current_scene.is_empty() {
+                        let scenes: &mut std::collections::HashSet<String> = char_scenes.entry(current_char.clone()).or_default();
+                        scenes.insert(current_scene.clone());
+                    }
+                }
+                crate::types::LineType::Dialogue => {
+                    let text = crate::layout::strip_sigils(&row.raw_text, row.line_type);
+                    if !current_char.is_empty() {
+                        let words = text.split_whitespace().count();
+                        *char_word_counts.entry(current_char.clone()).or_insert(0) += words;
+                    }
+                }
+                _ => {
+                    if row.line_type != crate::types::LineType::Parenthetical {
+                        current_char = String::new();
+                    }
+                }
+            }
+        }
+
+        let mut sorted_chars: Vec<_> = char_word_counts.into_iter().collect();
+        sorted_chars.sort_by(|a, b| b.1.cmp(&a.1));
+
+        for (ch, words) in sorted_chars {
+            let scenes = char_scenes.get(&ch).cloned().unwrap_or_default();
+            let mut scene_list: Vec<_> = scenes.into_iter().collect();
+            scene_list.sort();
+            let scenes_str = scene_list.join(", ");
+            csv.push_str(&format!("\"{}\",{},\"{}\"\n", ch, words, scenes_str));
+        }
+
+        std::fs::write(path, csv)
     }
 
     fn set_error(&mut self, msg: &str) {

@@ -313,7 +313,7 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::ExportPane => {
-                    let options_count = 4;
+                    let options_count = 6;
                     match key.code {
                         KeyCode::Esc => {
                             self.mode = AppMode::Normal;
@@ -334,8 +334,9 @@ impl App {
                         KeyCode::Enter | KeyCode::Char(' ') => {
                             match self.selected_export_option {
                                 0 => {
-                                    if self.config.export_format == "pdf" {
-                                        self.config.export_format = "html".to_string();
+                                    let formats = ["pdf", "fountain", "fdx"];
+                                    if let Some(idx) = formats.iter().position(|&x| x == self.config.export_format.as_str()) {
+                                        self.config.export_format = formats[(idx + 1) % formats.len()].to_string();
                                     } else {
                                         self.config.export_format = "pdf".to_string();
                                     }
@@ -349,66 +350,78 @@ impl App {
                                 }
                                 2 => self.config.export_bold_scene_headings = !self.config.export_bold_scene_headings,
                                 3 => {
-                                    self.filename_input = self
-                                        .file
-                                        .as_ref()
-                                        .map(|p| p.with_extension(&self.config.export_format).to_string_lossy().into_owned())
-                                        .unwrap_or_else(|| format!("screenplay.{}", self.config.export_format));
-                                    self.mode = AppMode::PromptExportFilename;
+                                    let (ext, default_name) = match self.config.export_format.as_str() {
+                                        "pdf" => ("pdf", "screenplay.pdf"),
+                                        "fountain" => ("fountain", "screenplay.fountain"),
+                                        "fdx" => {
+                                            self.set_status("FDX export is coming soon.");
+                                            return Ok(false);
+                                        },
+                                        _ => ("pdf", "screenplay.pdf"),
+                                    };
+
+                                    if let Some(path) = rfd::FileDialog::new()
+                                        .set_file_name(default_name)
+                                        .add_filter(ext, &[ext][..])
+                                        .save_file()
+                                    {
+                                        let fountain_text = self.lines.join("\n");
+                                        let result = match self.config.export_format.as_str() {
+                                            "fountain" => self.export_fountain(&path),
+                                            _ => {
+                                                let paper_size = if self.config.paper_size.to_lowercase() == "letter" {
+                                                    crate::pdf::LETTER
+                                                } else {
+                                                    crate::pdf::A4
+                                                };
+                                                crate::pdf::export_to_pdf(&fountain_text, &path, paper_size, self.config.export_bold_scene_headings)
+                                            }
+                                        };
+
+                                        match result {
+                                            Ok(_) => self.set_status(&format!("Exported to {}", path.display())),
+                                            Err(e) => self.set_status(&format!("Error exporting: {}", e)),
+                                        }
+                                        self.mode = AppMode::Normal;
+                                    } else {
+                                        self.set_status("Export cancelled.");
+                                    }
+                                }
+                                4 => {
+                                    let formats = ["csv_scene", "csv_char"];
+                                    if let Some(idx) = formats.iter().position(|&x| x == self.config.report_format.as_str()) {
+                                        self.config.report_format = formats[(idx + 1) % formats.len()].to_string();
+                                    } else {
+                                        self.config.report_format = "csv_scene".to_string();
+                                    }
+                                }
+                                5 => {
+                                    let (ext, default_name) = match self.config.report_format.as_str() {
+                                        "csv_scene" => ("csv", "scene_list.csv"),
+                                        "csv_char" => ("csv", "character_report.csv"),
+                                        _ => ("csv", "report.csv"),
+                                    };
+
+                                    if let Some(path) = rfd::FileDialog::new()
+                                        .set_file_name(default_name)
+                                        .add_filter(ext, &[ext][..])
+                                        .save_file()
+                                    {
+                                        let result = match self.config.report_format.as_str() {
+                                            "csv_char" => self.export_character_csv(&path),
+                                            _ => self.export_scene_csv(&path),
+                                        };
+                                        match result {
+                                            Ok(_) => self.set_status(&format!("Exported to {}", path.display())),
+                                            Err(e) => self.set_status(&format!("Error exporting: {}", e)),
+                                        }
+                                        self.mode = AppMode::Normal;
+                                    } else {
+                                        self.set_status("Export cancelled.");
+                                    }
                                 }
                                 _ => {}
                             }
-                        }
-                        _ => {}
-                    }
-                    return Ok(false);
-                }
-                AppMode::PromptExportFilename => {
-                    match key.code {
-                        KeyCode::Esc => {
-                            self.mode = AppMode::ExportPane;
-                            self.set_status("Cancelled");
-                        }
-                        KeyCode::Char('c') | KeyCode::Char('g') if ctrl => {
-                            self.mode = AppMode::Normal;
-                            self.set_status("Cancelled");
-                        }
-                        KeyCode::Enter => {
-                            if !self.filename_input.trim().is_empty() {
-                                let export_path = std::path::PathBuf::from(self.filename_input.trim());
-                                let fountain_text = self.lines.join("\n");
-                                
-                                let result = if self.config.export_format == "html" {
-                                    crate::pdf::export_to_html(&fountain_text, &export_path)
-                                } else {
-                                    let paper_size = if self.config.paper_size.to_lowercase() == "letter" {
-                                        crate::pdf::LETTER
-                                    } else {
-                                        crate::pdf::A4
-                                    };
-                                    crate::pdf::export_to_pdf(&fountain_text, &export_path, paper_size, self.config.export_bold_scene_headings)
-                                };
-
-                                match result {
-                                    Ok(_) => {
-                                        self.set_status(&format!("Exported to {}", export_path.display()));
-                                        self.mode = AppMode::Normal;
-                                    }
-                                    Err(e) => {
-                                        self.set_status(&format!("Error exporting: {}", e));
-                                        self.mode = AppMode::Normal;
-                                    }
-                                }
-                            } else {
-                                self.set_status("Cancelled");
-                                self.mode = AppMode::Normal;
-                            }
-                        }
-                        KeyCode::Backspace => {
-                            self.filename_input.pop();
-                        }
-                        KeyCode::Char(c) if !ctrl => {
-                            self.filename_input.push(c);
                         }
                         _ => {}
                     }
@@ -508,6 +521,91 @@ impl App {
                     }
                     return Ok(false);
                 }
+                AppMode::Home => {
+                    const HOME_ITEMS: usize = 4;
+                    match key.code {
+                        KeyCode::Esc => {
+                            // If there's an actual file loaded, dismiss home
+                            if self.file.is_some() || !self.lines.iter().all(|l| l.is_empty()) {
+                                self.mode = AppMode::Normal;
+                            }
+                        }
+                        KeyCode::Char('c') | KeyCode::Char('g') if ctrl => {
+                            // Ctrl+C/G always dismisses
+                            self.mode = AppMode::Normal;
+                        }
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            self.home_selected = self.home_selected.saturating_sub(1);
+                        }
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            self.home_selected = (self.home_selected + 1).min(HOME_ITEMS - 1);
+                        }
+                        KeyCode::Enter | KeyCode::Char(' ') => {
+                            match self.home_selected {
+                                0 => {
+                                    // New File
+                                    let new_buf = crate::app::BufferState {
+                                        lines: vec![String::new()],
+                                        ..Default::default()
+                                    };
+                                    self.buffers.push(new_buf);
+                                    let new_idx = self.buffers.len() - 1;
+                                    self.has_multiple_buffers = self.buffers.len() > 1;
+                                    self.switch_buffer(new_idx);
+                                    self.mode = AppMode::Normal;
+                                    self.set_status("New buffer");
+                                    *text_changed = true;
+                                    *cursor_moved = true;
+                                }
+                                1 => {
+                                    // Open File via native picker
+                                    if let Some(path) = rfd::FileDialog::new()
+                                        .add_filter("Fountain scripts", &["fountain"][..])
+                                        .pick_file()
+                                    {
+                                        let content = std::fs::read_to_string(&path)
+                                            .unwrap_or_default()
+                                            .replace('\t', "    ");
+                                        let lines: Vec<String> = if content.trim().is_empty() {
+                                            vec![String::new()]
+                                        } else {
+                                            content.lines().map(str::to_string).collect()
+                                        };
+                                        let new_buf = crate::app::BufferState {
+                                            lines,
+                                            file: Some(path.clone()),
+                                            ..Default::default()
+                                        };
+                                        self.buffers.push(new_buf);
+                                        let new_idx = self.buffers.len() - 1;
+                                        self.has_multiple_buffers = self.buffers.len() > 1;
+                                        self.switch_buffer(new_idx);
+                                        self.parse_document();
+                                        self.update_autocomplete();
+                                        self.update_layout();
+                                        self.mode = AppMode::Normal;
+                                        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                                        self.set_status(&format!("Opened: {}", name));
+                                        *text_changed = true;
+                                        *cursor_moved = true;
+                                    }
+                                }
+                                2 => {
+                                    // Tutorial — placeholder
+                                    self.mode = AppMode::Normal;
+                                    self.set_status("Tutorial coming soon!");
+                                }
+                                3 => {
+                                    // Exit
+                                    return Ok(true);
+                                }
+                                _ => {}
+                            }
+                        }
+                        _ => {}
+                    }
+                    return Ok(false);
+                }
                 AppMode::Command => {
                     match key.code {
                         KeyCode::Esc => {
@@ -522,6 +620,7 @@ impl App {
                                 "set", "search",
                                 "u", "undo", "redo", "copy", "cut", "paste", "pos",
                                 "injectnum", "selectall", "s",
+                                "home", "new",
                             ];
                             let matches: Vec<&&str> = commands.iter()
                                 .filter(|c| c.starts_with(&self.command_input))
