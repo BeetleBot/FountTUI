@@ -549,15 +549,26 @@ impl App {
                             match self.selected_setting {
                                 0 => {
                                     self.config.strict_typewriter_mode =
-                                        !self.config.strict_typewriter_mode
+                                        !self.config.strict_typewriter_mode;
+                                    let _ = crate::config::Config::save_setting("strict_typewriter_mode", self.config.strict_typewriter_mode);
                                 }
-                                1 => self.config.auto_save = !self.config.auto_save,
-                                2 => self.config.autocomplete = !self.config.autocomplete,
+                                1 => {
+                                    self.config.auto_save = !self.config.auto_save;
+                                    let _ = crate::config::Config::save_setting("auto_save", self.config.auto_save);
+                                }
+                                2 => {
+                                    self.config.autocomplete = !self.config.autocomplete;
+                                    let _ = crate::config::Config::save_setting("autocomplete", self.config.autocomplete);
+                                }
                                 3 => {
                                     self.config.auto_paragraph_breaks =
-                                        !self.config.auto_paragraph_breaks
+                                        !self.config.auto_paragraph_breaks;
+                                    let _ = crate::config::Config::save_setting("auto_paragraph_breaks", self.config.auto_paragraph_breaks);
                                 }
-                                4 => self.config.focus_mode = !self.config.focus_mode,
+                                4 => {
+                                    self.config.focus_mode = !self.config.focus_mode;
+                                    let _ = crate::config::Config::save_setting("focus_mode", self.config.focus_mode);
+                                }
                                 _ => {}
                             }
                             *text_changed = true;

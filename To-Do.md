@@ -18,7 +18,7 @@
 - [ ] **Word-Count Sprint Timer**:
     - **Context**: Many professional writers use "sprints" or timed goals to maintain momentum and combat writer's block.
     - **Goal**: Add a `/sprint [minutes]` or `/goal [words]` command. Implement a subtle visual progress bar in the status bar that tracks time or word count in real-time, providing low-friction motivation directly in the TUI environment.
-- [ ] **Settings Fix**: Ensure settings changed in the pane actually save back to the config file.
+
 
 ### Already Done
 - [x] **v0.5.0: The Structural Release**:
@@ -63,3 +63,4 @@
 - [x] **Command Legend Pane**:
     - Replaced the old shortcut pane with a categorized Command Legend (`F1` to toggle).
     - Cleaned up the UI by removing the legacy Format Pane and migrating actions to commands.
+- [x] **Settings Fix**: Ensure settings changed in the pane actually save back to the config file.

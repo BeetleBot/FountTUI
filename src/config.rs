@@ -525,29 +525,74 @@ impl Config {
     
     
     
+    pub fn config_path() -> Option<PathBuf> {
+        #[cfg(windows)]
+        {
+            directories::ProjectDirs::from("", "", "Fount")
+                .map(|proj_dirs| proj_dirs.config_dir().join("fount.conf"))
+        }
+        #[cfg(not(windows))]
+        {
+            let config_dir = std::env::var_os("XDG_CONFIG_HOME")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|| {
+                    directories::BaseDirs::new()
+                        .map(|base| base.home_dir().join(".config"))
+                        .unwrap_or_default()
+                });
+
+            Some(config_dir.join("fount").join("fount.conf"))
+        }
+    }
+
+    pub fn save_setting(key: &str, value: bool) -> std::io::Result<()> {
+        let path = Self::config_path().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::NotFound, "Config path not found")
+        })?;
+        if !path.exists() {
+            return Ok(());
+        }
+
+        let content = std::fs::read_to_string(&path)?;
+        let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+        let mut found = false;
+
+        let search_prefix_set = format!("set {}", key);
+        let search_prefix_unset = format!("unset {}", key);
+
+        let new_line = if value {
+            format!("set {}", key)
+        } else {
+            format!("unset {}", key)
+        };
+
+        for i in 0..lines.len() {
+            let trimmed = lines[i].trim();
+            // Match exact `set key` or `unset key` or starting with `set key ` (e.g. if it had value like `set paper_size "a4"`)
+            if trimmed == search_prefix_set
+                || trimmed == search_prefix_unset
+                || trimmed.starts_with(&format!("{} ", search_prefix_set))
+            {
+                // We keep indentation? Not super necessary, usually it's none
+                lines[i] = new_line.clone();
+                found = true;
+                break;
+            }
+        }
+
+        if !found {
+            lines.push(new_line);
+        }
+
+        std::fs::write(&path, lines.join("\n"))?;
+        Ok(())
+    }
+
     pub fn load(cli: &Cli) -> Self {
         let mut config = Self::default();
 
         let is_custom_path = cli.config.is_some();
-        let config_path = cli.config.clone().or_else(|| {
-            #[cfg(windows)]
-            {
-                directories::ProjectDirs::from("", "", "Fount")
-                    .map(|proj_dirs| proj_dirs.config_dir().join("fount.conf"))
-            }
-            #[cfg(not(windows))]
-            {
-                let config_dir = std::env::var_os("XDG_CONFIG_HOME")
-                    .map(std::path::PathBuf::from)
-                    .unwrap_or_else(|| {
-                        directories::BaseDirs::new()
-                            .map(|base| base.home_dir().join(".config"))
-                            .unwrap_or_default()
-                    });
-
-                Some(config_dir.join("fount").join("fount.conf"))
-            }
-        });
+        let config_path = cli.config.clone().or_else(|| Self::config_path());
 
         if let Some(path) = config_path {
             if !is_custom_path && !path.exists() {
