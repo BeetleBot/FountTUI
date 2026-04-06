@@ -369,6 +369,9 @@ pub struct Config {
 
     /// When ON, scene numbers in text are frozen — no automatic re-indexing.
     pub production_lock: bool,
+
+    /// Selected theme name
+    pub theme: String,
 }
 
 impl Default for Config {
@@ -410,6 +413,7 @@ impl Default for Config {
             report_format: "csv_scene".to_string(),
             include_title_page: true,
             production_lock: false,
+            theme: "Adaptive".to_string(),
         }
     }
 }
@@ -481,6 +485,7 @@ impl Config {
                         "export_format" => self.export_format = val,
                         "report_format" => self.report_format = val,
                         "include_title_page" => self.include_title_page = true,
+                        "theme" => self.theme = val,
                         _ => {}
                     }
                 } else if cmd == "unset" {
@@ -574,6 +579,38 @@ impl Config {
                 || trimmed.starts_with(&format!("{} ", search_prefix_set))
             {
                 // We keep indentation? Not super necessary, usually it's none
+                lines[i] = new_line.clone();
+                found = true;
+                break;
+            }
+        }
+
+        if !found {
+            lines.push(new_line);
+        }
+
+        std::fs::write(&path, lines.join("\n"))?;
+        Ok(())
+    }
+
+    pub fn save_string_setting(key: &str, value: &str) -> std::io::Result<()> {
+        let path = Self::config_path().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::NotFound, "Config path not found")
+        })?;
+        if !path.exists() {
+            return Ok(());
+        }
+
+        let content = std::fs::read_to_string(&path)?;
+        let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+        let mut found = false;
+
+        let search_prefix = format!("set {}", key);
+        let new_line = format!("set {} \"{}\"", key, value);
+
+        for i in 0..lines.len() {
+            let trimmed = lines[i].trim();
+            if trimmed.starts_with(&search_prefix) {
                 lines[i] = new_line.clone();
                 found = true;
                 break;

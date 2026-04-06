@@ -18,6 +18,7 @@ use crossterm::event::{KeyCode, KeyModifiers};
         app.switch_buffer(0);
         
         app.mode = AppMode::Normal;
+        app.theme = crate::theme::Theme::adaptive();
         app.update_layout();
         app
     }
@@ -666,7 +667,7 @@ use crossterm::event::{KeyCode, KeyModifiers};
         let status_cell = &buffer[(0, 23)];
         assert_eq!(
             status_cell.fg,
-            Color::LightBlue,
+            Color::Blue,
             "Panel should use mode background color for label"
         );
         assert!(status_cell.modifier.contains(Modifier::BOLD));
@@ -2877,7 +2878,7 @@ And Beat itself, of course: https://www.beat-app.fi/
         app.cursor_y = usize::MAX;
         app.update_layout();
 
-        let render = crate::export::export_document(&app.layout, &app.lines, &app.config, false);
+        let render = crate::export::export_document(&app.layout, &app.lines, &app.config, &app.theme, false);
 
         let reference_render = r#"                      Fount Tutorial
                       Credit: Written by

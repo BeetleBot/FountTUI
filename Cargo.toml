@@ -36,6 +36,8 @@ supports-color = "3.0.2"
 krilla = "0.7.0"
 bitflags = "2"
 unicode-properties = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
 # rfd is removed for build performance
 
 [dev-dependencies]

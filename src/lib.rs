@@ -41,3 +41,4 @@ pub mod parser;
 
 pub mod pdf;
 pub mod types;
+pub mod theme;

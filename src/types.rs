@@ -1,4 +1,5 @@
 use crate::config::Config;
+use crate::theme::Theme;
 use ratatui::style::{Color, Modifier, Style};
 
 
@@ -190,7 +191,7 @@ impl LineType {
 
 
 
-pub fn base_style(lt: LineType, config: &Config) -> Style {
+pub fn base_style(lt: LineType, config: &Config, theme: &Theme) -> Style {
     let mut style = match lt {
         LineType::SceneHeading => {
             let mut s = Style::default();
@@ -199,6 +200,9 @@ pub fn base_style(lt: LineType, config: &Config) -> Style {
             }
             if config.heading_style.contains("underline") {
                 s = s.add_modifier(Modifier::UNDERLINED);
+            }
+            if let Some(c) = &theme.syntax.scene_heading {
+                s = s.fg(c.clone().into());
             }
             s
         }
@@ -210,27 +214,104 @@ pub fn base_style(lt: LineType, config: &Config) -> Style {
             if config.shot_style.contains("underline") {
                 s = s.add_modifier(Modifier::UNDERLINED);
             }
+            if let Some(c) = &theme.syntax.shot {
+                s = s.fg(c.clone().into());
+            }
             s
         }
         LineType::Character | LineType::DualDialogueCharacter => {
-            Style::default().add_modifier(Modifier::BOLD)
+            let mut s = Style::default().add_modifier(Modifier::BOLD);
+            if let Some(c) = &theme.syntax.character {
+                s = s.fg(c.clone().into());
+            }
+            s
         }
         LineType::Parenthetical => {
-            Style::default().add_modifier(Modifier::DIM) // Removed hardcoded Gray color for better light mode contrast
+            let mut s = Style::default();
+            if theme.syntax.parenthetical.is_none() {
+                s = s.add_modifier(Modifier::DIM);
+            }
+            if let Some(c) = &theme.syntax.parenthetical {
+                s = s.fg(c.clone().into());
+            }
+            s
         }
-        LineType::Dialogue => Style::default(),
-        LineType::Transition => Style::default(),
-        LineType::Centered => Style::default(),
-        LineType::Lyrics => Style::default().add_modifier(Modifier::ITALIC),
-        LineType::Section | LineType::Synopsis => Style::default().fg(Color::Green),
-        LineType::Note | LineType::Boneyard => Style::default()
-            .fg(Color::Green)
-            .add_modifier(Modifier::ITALIC),
+        LineType::Dialogue => {
+            let mut s = Style::default();
+            if let Some(c) = &theme.syntax.dialogue {
+                s = s.fg(c.clone().into());
+            }
+            s
+        }
+        LineType::Transition => {
+            let mut s = Style::default();
+            if let Some(c) = &theme.syntax.transition {
+                s = s.fg(c.clone().into());
+            }
+            s
+        }
+        LineType::Centered => {
+            let mut s = Style::default();
+            if let Some(c) = &theme.syntax.centered {
+                s = s.fg(c.clone().into());
+            }
+            s
+        }
+        LineType::Lyrics => {
+            Style::default().add_modifier(Modifier::ITALIC)
+        }
+        LineType::Section | LineType::Synopsis => {
+            let mut s = Style::default();
+            let color = if lt == LineType::Section { &theme.syntax.section } else { &theme.syntax.synopsis };
+            if let Some(c) = color {
+                s = s.fg(c.clone().into());
+            }
+            s
+        }
+        LineType::Note | LineType::Boneyard => {
+            let mut s = Style::default();
+            if let Some(c) = &theme.syntax.note {
+                s = s.fg(c.clone().into());
+            }
+            s.add_modifier(Modifier::ITALIC)
+        }
         LineType::MetadataTitle | LineType::MetadataKey | LineType::MetadataValue => {
-            Style::default()
+            let mut s = Style::default();
+            match lt {
+                LineType::MetadataTitle => {
+                    s = s.add_modifier(Modifier::BOLD);
+                    if let Some(c) = &theme.ui.foreground {
+                        s = s.fg(c.clone().into());
+                    }
+                }
+                LineType::MetadataKey => {
+                    if let Some(c) = theme.syntax.metadata_key.clone() {
+                        s = s.fg(c.into());
+                    }
+                }
+                LineType::MetadataValue => {
+                    if let Some(c) = theme.syntax.metadata_val.clone() {
+                        s = s.fg(c.into());
+                    }
+                }
+                _ => {}
+            }
+            s
         }
-        LineType::PageBreak => Style::default().fg(Color::DarkGray).add_modifier(Modifier::DIM),
-        LineType::Action | LineType::Empty => Style::default(),
+        LineType::PageBreak => {
+            let mut s = Style::default().add_modifier(Modifier::DIM);
+            if let Some(c) = &theme.syntax.page_break {
+                s = s.fg(c.clone().into());
+            }
+            s
+        }
+        LineType::Action | LineType::Empty => {
+            let mut s = Style::default();
+            if let Some(c) = theme.syntax.action.clone() {
+                s = s.fg(c.into());
+            }
+            s
+        }
     };
 
 
@@ -256,18 +337,56 @@ pub fn base_style(lt: LineType, config: &Config) -> Style {
 
 
 
-pub fn get_marker_color(note_text: &str) -> Option<Color> {
+pub fn get_marker_color(note_text: &str, theme: &Theme) -> Option<Color> {
     let mut words = note_text.split_whitespace();
     let first_word = words.next()?.to_lowercase();
 
+    let is_light = theme.is_light();
+
     let color_from_str = |w: &str| -> Option<Color> {
         match w {
-            "red" => Some(Color::Red),
-            "blue" => Some(Color::Blue),
-            "green" => Some(Color::Green),
-            "pink" | "magenta" => Some(Color::Magenta),
-            "cyan" | "teal" => Some(Color::Cyan),
-            "yellow" => Some(Color::Yellow), 
+            "red" => {
+                if is_light {
+                    Some(Color::Rgb(175, 0, 0))
+                } else {
+                    Some(Color::Red)
+                }
+            }
+            "blue" => {
+                if is_light {
+                    Some(Color::Rgb(0, 95, 135))
+                } else {
+                    Some(Color::Blue)
+                }
+            }
+            "green" => {
+                if is_light {
+                    Some(Color::Rgb(0, 135, 0))
+                } else {
+                    Some(Color::Green)
+                }
+            }
+            "pink" | "magenta" => {
+                if is_light {
+                    Some(Color::Rgb(135, 0, 135))
+                } else {
+                    Some(Color::Magenta)
+                }
+            }
+            "cyan" | "teal" => {
+                if is_light {
+                    Some(Color::Rgb(0, 135, 135))
+                } else {
+                    Some(Color::Cyan)
+                }
+            }
+            "yellow" => {
+                if is_light {
+                    Some(Color::Rgb(135, 135, 0))
+                } else {
+                    Some(Color::Yellow)
+                }
+            }
             "orange" | "brown" => Some(Color::Rgb(255, 165, 0)),
             "gray" | "grey" => Some(Color::Gray),
             _ => None,
@@ -333,7 +452,8 @@ mod types_tests {
     #[test]
     fn test_base_style_default_heading() {
         let config = Config::default();
-        let style = base_style(LineType::SceneHeading, &config);
+        let theme = Theme::default();
+        let style = base_style(LineType::SceneHeading, &config, &theme);
         assert_eq!(style.fg, None);
         assert!(style.add_modifier.contains(Modifier::BOLD));
         assert!(!style.add_modifier.contains(Modifier::UNDERLINED));
@@ -343,7 +463,8 @@ mod types_tests {
     fn test_base_style_custom_heading() {
         let mut config = Config::default();
         config.heading_style = "underline".to_string();
-        let style = base_style(LineType::SceneHeading, &config);
+        let theme = Theme::default();
+        let style = base_style(LineType::SceneHeading, &config, &theme);
         assert!(!style.add_modifier.contains(Modifier::BOLD));
         assert!(style.add_modifier.contains(Modifier::UNDERLINED));
     }
@@ -352,7 +473,8 @@ mod types_tests {
     fn test_base_style_custom_shot() {
         let mut config = Config::default();
         config.shot_style = "bold underline".to_string();
-        let style = base_style(LineType::Shot, &config);
+        let theme = Theme::default();
+        let style = base_style(LineType::Shot, &config, &theme);
         assert!(style.add_modifier.contains(Modifier::BOLD));
         assert!(style.add_modifier.contains(Modifier::UNDERLINED));
     }
@@ -360,7 +482,8 @@ mod types_tests {
     #[test]
     fn test_base_style_character() {
         let config = Config::default();
-        let style = base_style(LineType::Character, &config);
+        let theme = Theme::default();
+        let style = base_style(LineType::Character, &config, &theme);
         assert_eq!(style.fg, None);
         assert!(style.add_modifier.contains(Modifier::BOLD));
     }
@@ -368,14 +491,16 @@ mod types_tests {
     #[test]
     fn test_base_style_lyrics() {
         let config = Config::default();
-        let style = base_style(LineType::Lyrics, &config);
+        let theme = Theme::default();
+        let style = base_style(LineType::Lyrics, &config, &theme);
         assert!(style.add_modifier.contains(Modifier::ITALIC));
     }
 
     #[test]
     fn test_base_style_action_explicit_reset() {
         let config = Config::default();
-        let style = base_style(LineType::Action, &config);
+        let theme = Theme::default();
+        let style = base_style(LineType::Action, &config, &theme);
         assert_eq!(style.fg, None);
     }
 
@@ -412,10 +537,11 @@ mod types_tests {
     fn test_base_style_no_color_strips_color_only() {
         let mut config = Config::default();
         config.no_color = true;
+        let theme = Theme::default();
 
-        let style_heading = base_style(LineType::SceneHeading, &config);
-        let style_char = base_style(LineType::Character, &config);
-        let style_lyrics = base_style(LineType::Lyrics, &config);
+        let style_heading = base_style(LineType::SceneHeading, &config, &theme);
+        let style_char = base_style(LineType::Character, &config, &theme);
+        let style_lyrics = base_style(LineType::Lyrics, &config, &theme);
 
         assert_eq!(style_heading.fg, None);
         assert_eq!(style_char.fg, None);
@@ -430,10 +556,11 @@ mod types_tests {
     fn test_base_style_no_formatting_strips_modifiers() {
         let mut config = Config::default();
         config.no_formatting = true;
+        let theme = Theme::default();
 
-        let style_heading = base_style(LineType::SceneHeading, &config);
-        let style_char = base_style(LineType::Character, &config);
-        let style_lyrics = base_style(LineType::Lyrics, &config);
+        let style_heading = base_style(LineType::SceneHeading, &config, &theme);
+        let style_char = base_style(LineType::Character, &config, &theme);
+        let style_lyrics = base_style(LineType::Lyrics, &config, &theme);
 
         assert!(!style_heading.add_modifier.contains(Modifier::BOLD));
         assert!(!style_char.add_modifier.contains(Modifier::BOLD));
@@ -449,10 +576,11 @@ mod types_tests {
         let mut config = Config::default();
         config.no_color = true;
         config.no_formatting = true;
+        let theme = Theme::default();
 
-        let style_heading = base_style(LineType::SceneHeading, &config);
-        let style_char = base_style(LineType::Character, &config);
-        let style_lyrics = base_style(LineType::Lyrics, &config);
+        let style_heading = base_style(LineType::SceneHeading, &config, &theme);
+        let style_char = base_style(LineType::Character, &config, &theme);
+        let style_lyrics = base_style(LineType::Lyrics, &config, &theme);
 
         assert_eq!(style_heading, Style::default());
         assert_eq!(style_char, Style::default());

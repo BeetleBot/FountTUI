@@ -1,17 +1,17 @@
-use std::{collections::HashSet, fs, io, path::{Path, PathBuf}};
-
-use ratatui::{
-    layout::Rect,
-    style::Color,
-    widgets::ListState,
+use std::{
+    collections::HashSet,
+    fs, io,
+    path::{Path, PathBuf},
 };
 
+use ratatui::{layout::Rect, style::Color, widgets::ListState};
 
 use crate::{
     config::{Cli, Config},
     formatting::StringCaseExt,
     layout::{VisualRow, build_layout, find_visual_cursor, strip_sigils},
     parser::Parser,
+    theme::{Theme, ThemeManager},
     types::LineType,
 };
 
@@ -37,9 +37,9 @@ pub struct CharacterItem {
 
 #[derive(Clone, Debug)]
 pub enum EnsembleItem {
-    CharacterHeader(usize), // index into character_stats
+    CharacterHeader(usize),             // index into character_stats
     Stat(String, Option<String>, bool), // (Text, Hint, is_last_in_tree)
-    SceneLink(String, usize, bool), // (Text, line_idx, is_last_in_tree)
+    SceneLink(String, usize, bool),     // (Text, line_idx, is_last_in_tree)
     Separator,
 }
 
@@ -122,7 +122,7 @@ pub struct BufferState {
     pub file: Option<PathBuf>,
 
     pub dirty: bool,
-    
+
     pub is_tutorial: bool,
 
     pub cursor_y: usize,
@@ -162,7 +162,7 @@ pub struct App {
     pub file: Option<PathBuf>,
 
     pub dirty: bool,
-    
+
     pub is_tutorial: bool,
 
     pub cursor_y: usize,
@@ -228,7 +228,7 @@ pub struct App {
     pub settings_area: Rect,
 
     pub navigator_state: ListState,
-    
+
     pub shortcuts_state: ListState,
 
     pub command_input: String,
@@ -239,6 +239,9 @@ pub struct App {
 
     pub home_selected: usize,
     pub file_picker: Option<FilePickerState>,
+
+    pub theme: Theme,
+    pub theme_manager: ThemeManager,
 }
 
 impl Drop for App {
@@ -318,7 +321,11 @@ impl App {
 
         let has_multiple_buffers = buffers.len() > 1;
 
-        let initial_mode = if buffers.is_empty() { AppMode::Home } else { AppMode::Normal };
+        let initial_mode = if buffers.is_empty() {
+            AppMode::Home
+        } else {
+            AppMode::Normal
+        };
 
         let mut app = Self {
             config,
@@ -372,7 +379,16 @@ impl App {
             selection_anchor: None,
             home_selected: 0,
             file_picker: None,
+
+            theme: Theme::default(),
+            theme_manager: ThemeManager::new(),
         };
+
+        app.theme_manager.load_user_themes();
+        if !app.config.theme.is_empty() {
+            app.theme_manager.set_theme(&app.config.theme);
+            app.theme = app.theme_manager.current_theme.clone();
+        }
 
         if !app.buffers.is_empty() {
             let mut first_buf = std::mem::take(&mut app.buffers[0]);
@@ -542,9 +558,7 @@ impl App {
                 .and_then(|p| p.parent())
                 .filter(|p| !p.as_os_str().is_empty())
                 .map(|p| p.to_path_buf())
-                .unwrap_or_else(|| {
-                    std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
-                });
+                .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
 
             let base_name = file
                 .as_ref()
@@ -681,7 +695,9 @@ impl App {
                 if let Some(s) = current_scene.take() {
                     self.scenes.push(s);
                 }
-                let label = strip_sigils(&row.raw_text, row.line_type).trim().to_string();
+                let label = strip_sigils(&row.raw_text, row.line_type)
+                    .trim()
+                    .to_string();
                 self.scenes.push(NavigatorItem {
                     line_idx: row.line_idx,
                     label,
@@ -720,7 +736,10 @@ impl App {
                     }
                 }
                 last_color = None;
-            } else if !matches!(row.line_type, LineType::Empty | LineType::Note | LineType::Synopsis) {
+            } else if !matches!(
+                row.line_type,
+                LineType::Empty | LineType::Note | LineType::Synopsis
+            ) {
                 last_color = None;
             }
 
@@ -775,14 +794,24 @@ impl App {
             }
 
             if row.line_type == LineType::Character {
-                let name = strip_sigils(&row.raw_text, row.line_type).trim().to_uppercase_1to1();
-                let entry = stats_map.entry(name.clone()).or_insert_with(|| CharacterItem {
-                    name: name.clone(),
-                    ..Default::default()
-                });
+                let name = strip_sigils(&row.raw_text, row.line_type)
+                    .trim()
+                    .to_uppercase_1to1();
+                let entry = stats_map
+                    .entry(name.clone())
+                    .or_insert_with(|| CharacterItem {
+                        name: name.clone(),
+                        ..Default::default()
+                    });
                 entry.dialogue_blocks += 1;
-                if !entry.appears_in_scenes.iter().any(|(s, _)| s == &current_scene) {
-                    entry.appears_in_scenes.push((current_scene.clone(), row.line_idx));
+                if !entry
+                    .appears_in_scenes
+                    .iter()
+                    .any(|(s, _)| s == &current_scene)
+                {
+                    entry
+                        .appears_in_scenes
+                        .push((current_scene.clone(), row.line_idx));
                     entry.scenes_count += 1;
                 }
                 current_character = Some(name);
@@ -800,8 +829,10 @@ impl App {
 
         let mut stats: Vec<CharacterItem> = stats_map.into_values().collect();
         // Sort by dialogue prominence
-        stats.sort_by(|a, b| (b.dialogue_blocks * 10 + b.word_count).cmp(&(a.dialogue_blocks * 10 + a.word_count)));
-        
+        stats.sort_by(|a, b| {
+            (b.dialogue_blocks * 10 + b.word_count).cmp(&(a.dialogue_blocks * 10 + a.word_count))
+        });
+
         self.character_stats = stats;
         self.selected_character = 0;
         self.refresh_ensemble_list();
@@ -814,32 +845,48 @@ impl App {
         self.ensemble_items.clear();
         for i in 0..self.character_stats.len() {
             let item = self.character_stats[i].clone();
-            
+
             // Character Header
             self.ensemble_items.push(EnsembleItem::CharacterHeader(i));
-            
+
             // Stat: Scenes (with Hint)
             let scene_hint = if item.is_expanded {
                 Some("(Cast in Scenes ↓)".to_string())
             } else {
                 Some("(Tab to show)".to_string())
             };
-            self.ensemble_items.push(EnsembleItem::Stat(format!("Scenes: {}", item.scenes_count), scene_hint, false));
-            
+            self.ensemble_items.push(EnsembleItem::Stat(
+                format!("Scenes: {}", item.scenes_count),
+                scene_hint,
+                false,
+            ));
+
             // Scene Links (if expanded)
             if item.is_expanded {
                 for (j, (scene_name, line_idx)) in item.appears_in_scenes.iter().enumerate() {
                     let is_last_scene = j == item.appears_in_scenes.len() - 1;
-                    self.ensemble_items.push(EnsembleItem::SceneLink(scene_name.clone(), *line_idx, is_last_scene));
+                    self.ensemble_items.push(EnsembleItem::SceneLink(
+                        scene_name.clone(),
+                        *line_idx,
+                        is_last_scene,
+                    ));
                 }
             }
-            
+
             // Stat: Dialogues
-            self.ensemble_items.push(EnsembleItem::Stat(format!("Dialogues: {}", item.dialogue_blocks), None, false));
-            
+            self.ensemble_items.push(EnsembleItem::Stat(
+                format!("Dialogues: {}", item.dialogue_blocks),
+                None,
+                false,
+            ));
+
             // Stat: Words (Last stat in tree)
-            self.ensemble_items.push(EnsembleItem::Stat(format!("Words: {}", item.word_count), None, true));
-            
+            self.ensemble_items.push(EnsembleItem::Stat(
+                format!("Words: {}", item.word_count),
+                None,
+                true,
+            ));
+
             // Separator
             self.ensemble_items.push(EnsembleItem::Separator);
         }
@@ -1197,19 +1244,17 @@ impl App {
             }
 
             // Find the previous numbered scene (walking backwards)
-            let prev_base = (0..pos)
-                .rev()
-                .find_map(|j| {
-                    scene_tags[j].1.as_ref().and_then(|t| {
-                        // Extract the integer base from the tag
-                        let digits: String = t.chars().take_while(|c| c.is_ascii_digit()).collect();
-                        if digits.is_empty() {
-                            None
-                        } else {
-                            Some((j, digits.parse::<usize>().unwrap_or(0), t.clone()))
-                        }
-                    })
-                });
+            let prev_base = (0..pos).rev().find_map(|j| {
+                scene_tags[j].1.as_ref().and_then(|t| {
+                    // Extract the integer base from the tag
+                    let digits: String = t.chars().take_while(|c| c.is_ascii_digit()).collect();
+                    if digits.is_empty() {
+                        None
+                    } else {
+                        Some((j, digits.parse::<usize>().unwrap_or(0), t.clone()))
+                    }
+                })
+            });
 
             // Determine the base number to suffix from
             let base_num = if let Some((_, num, _)) = prev_base {
@@ -1274,11 +1319,17 @@ impl App {
             let existing: Option<&str> = {
                 let t = self.lines[i].trim_end();
                 if t.ends_with('#') {
-                    t[..t.len()-1].rfind('#').and_then(|o| {
-                        let inner = &t[o+1..t.len()-1];
-                        if !inner.is_empty() && !inner.contains(' ') { Some(inner) } else { None }
+                    t[..t.len() - 1].rfind('#').and_then(|o| {
+                        let inner = &t[o + 1..t.len() - 1];
+                        if !inner.is_empty() && !inner.contains(' ') {
+                            Some(inner)
+                        } else {
+                            None
+                        }
                     })
-                } else { None }
+                } else {
+                    None
+                }
             };
             if i == target_line_idx {
                 // If the existing tag is non-integer (custom lock like 14B) keep count as-is
@@ -1320,13 +1371,20 @@ impl App {
             let existing_custom: Option<String> = {
                 let t = self.lines[i].trim_end();
                 if t.ends_with('#') {
-                    t[..t.len()-1].rfind('#').and_then(|o| {
-                        let inner = &t[o+1..t.len()-1];
-                        if !inner.is_empty() && !inner.contains(' ') && !inner.chars().all(|c| c.is_ascii_digit()) {
+                    t[..t.len() - 1].rfind('#').and_then(|o| {
+                        let inner = &t[o + 1..t.len() - 1];
+                        if !inner.is_empty()
+                            && !inner.contains(' ')
+                            && !inner.chars().all(|c| c.is_ascii_digit())
+                        {
                             Some(inner.to_string())
-                        } else { None }
+                        } else {
+                            None
+                        }
                     })
-                } else { None }
+                } else {
+                    None
+                }
             };
 
             let new_line = if let Some(custom) = existing_custom {
@@ -1352,7 +1410,7 @@ impl App {
     /// Injects or updates the scene number **only for the line the cursor is on**.
     /// Does nothing if the current line is not a scene heading.
     /// Respects `production_lock`: if locked, this call is still allowed (it's
-    /// triggered explicitly by the user). 
+    /// triggered explicitly by the user).
     /// Unlike `renumber_all_scenes`, this only touches one line.
     pub fn inject_current_scene_number(&mut self) {
         self.inject_scene_number_tag(None);
@@ -1373,13 +1431,20 @@ impl App {
             let existing_custom: Option<String> = {
                 let t = self.lines[y].trim_end();
                 if t.ends_with('#') {
-                    t[..t.len()-1].rfind('#').and_then(|o| {
-                        let inner = &t[o+1..t.len()-1];
-                        if !inner.is_empty() && !inner.contains(' ') && !inner.chars().all(|c| c.is_ascii_digit()) {
+                    t[..t.len() - 1].rfind('#').and_then(|o| {
+                        let inner = &t[o + 1..t.len() - 1];
+                        if !inner.is_empty()
+                            && !inner.contains(' ')
+                            && !inner.chars().all(|c| c.is_ascii_digit())
+                        {
                             Some(inner.to_string())
-                        } else { None }
+                        } else {
+                            None
+                        }
                     })
-                } else { None }
+                } else {
+                    None
+                }
             };
             existing_custom.unwrap_or_else(|| self.compute_scene_number_for(y).to_string())
         };
@@ -1468,7 +1533,13 @@ impl App {
     }
 
     pub fn update_layout(&mut self) {
-        self.layout = build_layout(&self.lines, &self.types, self.cursor_y, &self.config);
+        self.layout = build_layout(
+            &self.lines,
+            &self.types,
+            self.cursor_y,
+            &self.config,
+            &self.theme,
+        );
     }
 
     // ── Selection Helpers ────────────────────────────────────────────────────
@@ -1623,12 +1694,13 @@ impl App {
         fs::write(&path, content)?;
         self.file = Some(path);
         self.dirty = false;
-        self.set_status(&format!("Saved as {}", self.file.as_ref().unwrap().display()));
+        self.set_status(&format!(
+            "Saved as {}",
+            self.file.as_ref().unwrap().display()
+        ));
         Ok(())
     }
 
-    /// Central dispatcher for the ":" command palette.
-    /// Returns Ok(true) if the command should trigger an application exit.
     pub fn execute_command(
         &mut self,
         text_changed: &mut bool,
@@ -1658,6 +1730,23 @@ impl App {
         let args = &parts[1..];
 
         match cmd {
+            "theme" | "t" => {
+                let themes_list = self.theme_manager.list_themes();
+                if let Some(name) = args.get(0) {
+                    if self.theme_manager.set_theme(name) {
+                        self.theme = self.theme_manager.current_theme.clone();
+                        self.config.theme = self.theme.name.clone();
+                        let _ = crate::config::Config::save_string_setting("theme", &self.theme.name);
+                        self.set_status(&format!("Theme set to {}", self.theme.name));
+                        self.update_layout();
+                    } else {
+                        self.set_error(&format!("Theme not found: {}", name));
+                    }
+                } else {
+                    let themes_str = themes_list.join(", ");
+                    self.set_status(&format!("Available themes: {}", themes_str));
+                }
+            }
             "w" => {
                 if let Some(path_str) = args.get(0) {
                     self.save_as(PathBuf::from(path_str))?;
@@ -1668,12 +1757,18 @@ impl App {
                 }
             }
             "ww" => {
-                let default_name = self.file.as_ref()
+                let default_name = self
+                    .file
+                    .as_ref()
                     .and_then(|p| p.file_name())
                     .map(|n| n.to_string_lossy().into_owned())
                     .unwrap_or_else(|| "unnamed.fountain".to_string());
-                
-                self.open_file_picker(FilePickerAction::Save, vec!["fountain".to_string()], Some(default_name));
+
+                self.open_file_picker(
+                    FilePickerAction::Save,
+                    vec!["fountain".to_string()],
+                    Some(default_name),
+                );
             }
             "q" => {
                 if self.dirty && !self.is_tutorial {
@@ -1709,15 +1804,15 @@ impl App {
                     let val_str = args[1].to_lowercase();
                     let val = val_str == "on" || val_str == "true";
                     match opt {
-                        "markup"       => self.config.hide_markup = !val,
-                        "pagenums"     => self.config.show_page_numbers = val,
-                        "scenenums"    => self.config.show_scene_numbers = val,
-                        "contd"        => self.config.auto_contd = val,
-                        "typewriter"   => self.config.strict_typewriter_mode = val,
-                        "autosave"     => self.config.auto_save = val,
+                        "markup" => self.config.hide_markup = !val,
+                        "pagenums" => self.config.show_page_numbers = val,
+                        "scenenums" => self.config.show_scene_numbers = val,
+                        "contd" => self.config.auto_contd = val,
+                        "typewriter" => self.config.strict_typewriter_mode = val,
+                        "autosave" => self.config.auto_save = val,
                         "autocomplete" => self.config.autocomplete = val,
-                        "autobreaks"   => self.config.auto_paragraph_breaks = val,
-                        "focus"        => self.config.focus_mode = val,
+                        "autobreaks" => self.config.auto_paragraph_breaks = val,
+                        "focus" => self.config.focus_mode = val,
                         _ => self.set_error(&format!("Unknown option: {}", opt)),
                     }
                     *text_changed = true;
@@ -1725,15 +1820,23 @@ impl App {
                     // Toggle syntax: :set focus
                     let opt = args[0];
                     match opt {
-                        "markup"       => self.config.hide_markup = !self.config.hide_markup,
-                        "pagenums"     => self.config.show_page_numbers = !self.config.show_page_numbers,
-                        "scenenums"    => self.config.show_scene_numbers = !self.config.show_scene_numbers,
-                        "contd"        => self.config.auto_contd = !self.config.auto_contd,
-                        "typewriter"   => self.config.strict_typewriter_mode = !self.config.strict_typewriter_mode,
-                        "autosave"     => self.config.auto_save = !self.config.auto_save,
+                        "markup" => self.config.hide_markup = !self.config.hide_markup,
+                        "pagenums" => {
+                            self.config.show_page_numbers = !self.config.show_page_numbers
+                        }
+                        "scenenums" => {
+                            self.config.show_scene_numbers = !self.config.show_scene_numbers
+                        }
+                        "contd" => self.config.auto_contd = !self.config.auto_contd,
+                        "typewriter" => {
+                            self.config.strict_typewriter_mode = !self.config.strict_typewriter_mode
+                        }
+                        "autosave" => self.config.auto_save = !self.config.auto_save,
                         "autocomplete" => self.config.autocomplete = !self.config.autocomplete,
-                        "autobreaks"   => self.config.auto_paragraph_breaks = !self.config.auto_paragraph_breaks,
-                        "focus"        => self.config.focus_mode = !self.config.focus_mode,
+                        "autobreaks" => {
+                            self.config.auto_paragraph_breaks = !self.config.auto_paragraph_breaks
+                        }
+                        "focus" => self.config.focus_mode = !self.config.focus_mode,
                         _ => self.set_error(&format!("Unknown option: {}", opt)),
                     }
                     *text_changed = true;
@@ -1789,7 +1892,10 @@ impl App {
                 let scene_num_str = &s[1..];
                 if let Ok(num) = scene_num_str.parse::<usize>() {
                     if let Some(pos) = self.scenes.iter().position(|item| {
-                        item.scene_num.as_ref().map(|n: &String| n.trim_matches('#').parse::<usize>().unwrap_or(0)) == Some(num)
+                        item.scene_num
+                            .as_ref()
+                            .map(|n: &String| n.trim_matches('#').parse::<usize>().unwrap_or(0))
+                            == Some(num)
                     }) {
                         let line_idx = self.scenes[pos].line_idx;
                         self.cursor_y = line_idx;
@@ -1876,9 +1982,17 @@ impl App {
                     let path_ref: &Path = path.as_ref();
                     match std::fs::read_to_string::<&Path>(path_ref) {
                         Ok(content) => {
-                            let lines: Vec<String> = content.replace('\t', "    ").lines().map(str::to_string).collect();
+                            let lines: Vec<String> = content
+                                .replace('\t', "    ")
+                                .lines()
+                                .map(str::to_string)
+                                .collect();
                             let new_buf = crate::app::BufferState {
-                                lines: if lines.is_empty() { vec![String::new()] } else { lines },
+                                lines: if lines.is_empty() {
+                                    vec![String::new()]
+                                } else {
+                                    lines
+                                },
                                 file: Some(path.clone()),
                                 ..Default::default()
                             };
@@ -1889,7 +2003,10 @@ impl App {
                             self.parse_document();
                             self.update_autocomplete();
                             self.update_layout();
-                            let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                            let name = path
+                                .file_name()
+                                .map(|n| n.to_string_lossy().into_owned())
+                                .unwrap_or_default();
                             self.set_status(&format!("Opened: {}", name));
                             *text_changed = true;
                             *cursor_moved = true;
@@ -1898,7 +2015,11 @@ impl App {
                     }
                 } else {
                     // Open picker if no path provided
-                    self.open_file_picker(FilePickerAction::Open, vec!["fountain".to_string()], None);
+                    self.open_file_picker(
+                        FilePickerAction::Open,
+                        vec!["fountain".to_string()],
+                        None,
+                    );
                 }
             }
             "bn" => {
@@ -1956,7 +2077,7 @@ impl App {
                 if let Some((s_num, heading)) = current_scene.take() {
                     scenes_data.push((s_num, heading, scene_lines));
                 }
-                
+
                 let s_num = row.scene_num.clone().unwrap_or_default();
                 let heading = crate::layout::strip_sigils(&row.raw_text, row.line_type).to_string();
                 current_scene = Some((s_num, heading));
@@ -1965,7 +2086,7 @@ impl App {
                 scene_lines += 1;
             }
         }
-        
+
         if let Some((s_num, heading)) = current_scene.take() {
             scenes_data.push((s_num, heading, scene_lines));
         }
@@ -1973,10 +2094,10 @@ impl App {
         for (s_num, heading, visual_lines) in scenes_data {
             let eights_total = visual_lines as f32 / 7.0;
             let eights_rounded = eights_total.round() as usize;
-            
+
             let full_pages = eights_rounded / 8;
             let remaining_eighths = eights_rounded % 8;
-            
+
             let length_str = if full_pages > 0 && remaining_eighths > 0 {
                 format!("{} {}/8", full_pages, remaining_eighths)
             } else if full_pages > 0 {
@@ -1984,7 +2105,7 @@ impl App {
             } else if remaining_eighths > 0 {
                 format!("{}/8", remaining_eighths)
             } else {
-                "1/8".to_string() 
+                "1/8".to_string()
             };
 
             let mut int_ext = String::new();
@@ -2003,7 +2124,10 @@ impl App {
                 loc = h;
             }
 
-            csv.push_str(&format!("\"{}\",\"{}\",\"{}\",\"{}\",\"{}\"\n", s_num, int_ext, loc, time, length_str));
+            csv.push_str(&format!(
+                "\"{}\",\"{}\",\"{}\",\"{}\",\"{}\"\n",
+                s_num, int_ext, loc, time, length_str
+            ));
         }
 
         std::fs::write(path, csv)
@@ -2028,14 +2152,18 @@ impl App {
                         current_scene = String::new();
                     }
                 }
-                crate::types::LineType::Character | crate::types::LineType::DualDialogueCharacter => {
-                    let mut name = crate::layout::strip_sigils(&row.raw_text, row.line_type).trim().to_string();
+                crate::types::LineType::Character
+                | crate::types::LineType::DualDialogueCharacter => {
+                    let mut name = crate::layout::strip_sigils(&row.raw_text, row.line_type)
+                        .trim()
+                        .to_string();
                     if let Some(idx) = name.find('(') {
                         name = name[..idx].trim().to_string(); // Strip (V.O.) and (CONT'D)
                     }
                     current_char = name.to_uppercase();
                     if !current_scene.is_empty() {
-                        let scenes: &mut std::collections::HashSet<String> = char_scenes.entry(current_char.clone()).or_default();
+                        let scenes: &mut std::collections::HashSet<String> =
+                            char_scenes.entry(current_char.clone()).or_default();
                         scenes.insert(current_scene.clone());
                     }
                 }
@@ -2074,10 +2202,10 @@ impl App {
     }
 }
 
-pub mod ui;
 pub mod editor;
-pub mod input;
 pub mod file_picker;
+pub mod input;
+pub mod ui;
 
 #[cfg(test)]
 mod tests;

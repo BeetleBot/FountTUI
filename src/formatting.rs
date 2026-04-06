@@ -166,7 +166,7 @@ fn find_pairs(
     }
 }
 
-pub fn parse_formatting(text: &str) -> LineFormatting {
+pub fn parse_formatting(text: &str, theme: &crate::theme::Theme) -> LineFormatting {
     if !has_markup_bytes(text) {
         return LineFormatting::default();
     }
@@ -209,7 +209,7 @@ pub fn parse_formatting(text: &str) -> LineFormatting {
         true,
         &mut |start, end, f| {
             let content: String = chars[start + 2..end].iter().collect();
-            let color = get_marker_color(&content);
+            let color = get_marker_color(&content, theme);
             for i in start..(end + 2) {
                 f.note.insert(i);
                 if let Some(c) = color {
@@ -457,7 +457,7 @@ mod formatting_tests {
 
     #[test]
     fn test_parse_formatting_bold() {
-        let fmt = parse_formatting("This is **bold** text.");
+        let fmt = parse_formatting("This is **bold** text.", &crate::theme::Theme::adaptive());
         assert!(!fmt.bold.contains(&7));
         assert!(!fmt.bold.contains(&8));
         assert!(fmt.bold.contains(&10));
@@ -474,7 +474,7 @@ mod formatting_tests {
 
     #[test]
     fn test_parse_formatting_italic() {
-        let fmt = parse_formatting("An *italic* word.");
+        let fmt = parse_formatting("An *italic* word.", &crate::theme::Theme::adaptive());
         assert!(fmt.italic.contains(&4));
         assert!(fmt.italic.contains(&9));
         assert!(fmt.hidden_chars.contains(&3));
@@ -483,7 +483,7 @@ mod formatting_tests {
 
     #[test]
     fn test_parse_formatting_underline() {
-        let fmt = parse_formatting("An _underlined_ word.");
+        let fmt = parse_formatting("An _underlined_ word.", &crate::theme::Theme::adaptive());
         assert!(fmt.underlined.contains(&4));
         assert!(fmt.underlined.contains(&13));
         assert!(fmt.hidden_chars.contains(&3));
@@ -492,7 +492,7 @@ mod formatting_tests {
 
     #[test]
     fn test_parse_formatting_bold_italic() {
-        let fmt = parse_formatting("Some ***bold italic*** text.");
+        let fmt = parse_formatting("Some ***bold italic*** text.", &crate::theme::Theme::adaptive());
         assert!(fmt.bold.contains(&8));
         assert!(fmt.italic.contains(&8));
         assert!(fmt.bold.contains(&18));
@@ -507,7 +507,7 @@ mod formatting_tests {
 
     #[test]
     fn test_parse_formatting_escaped() {
-        let fmt = parse_formatting("Not \\*italic\\*.");
+        let fmt = parse_formatting("Not \\*italic\\*.", &crate::theme::Theme::adaptive());
         assert!(fmt.italic.is_empty());
         assert!(fmt.hidden_chars.contains(&4));
         assert!(fmt.hidden_chars.contains(&12));
@@ -515,7 +515,7 @@ mod formatting_tests {
 
     #[test]
     fn test_parse_formatting_boneyard() {
-        let fmt = parse_formatting("/*hidden*/");
+        let fmt = parse_formatting("/*hidden*/", &crate::theme::Theme::adaptive());
         assert!(fmt.boneyard.contains(&0));
         assert!(fmt.boneyard.contains(&1));
         assert!(fmt.boneyard.contains(&2));
@@ -526,7 +526,7 @@ mod formatting_tests {
 
     #[test]
     fn test_parse_formatting_notes() {
-        let fmt = parse_formatting("[[note text]]");
+        let fmt = parse_formatting("[[note text]]", &crate::theme::Theme::adaptive());
         assert!(fmt.note.contains(&0));
         assert!(fmt.note.contains(&2));
         assert!(fmt.note.contains(&11));
@@ -536,14 +536,14 @@ mod formatting_tests {
 
     #[test]
     fn test_parse_formatting_notes_with_color() {
-        let fmt = parse_formatting("[[yellow note]]");
+        let fmt = parse_formatting("[[yellow note]]", &crate::theme::Theme::adaptive());
         assert!(fmt.note.contains(&5));
         assert_eq!(fmt.note_color.get(&5), Some(&ratatui::style::Color::Yellow));
     }
 
     #[test]
     fn test_render_inline_no_markdown_skip() {
-        let fmt = parse_formatting("**bold**");
+        let fmt = parse_formatting("**bold**", &crate::theme::Theme::adaptive());
         let cfg = RenderConfig {
             skip_markdown: true,
             ..Default::default()
@@ -557,7 +557,7 @@ mod formatting_tests {
 
     #[test]
     fn test_render_inline_reveal_markup() {
-        let fmt = parse_formatting("**bold**");
+        let fmt = parse_formatting("**bold**", &crate::theme::Theme::adaptive());
         let cfg = RenderConfig {
             reveal_markup: true,
             ..Default::default()
@@ -571,7 +571,7 @@ mod formatting_tests {
 
     #[test]
     fn test_render_inline_hide_markup() {
-        let fmt = parse_formatting("**bold**");
+        let fmt = parse_formatting("**bold**", &crate::theme::Theme::adaptive());
         let hl = HashSet::new();
         let spans = render_inline(
             "**bold**",
@@ -602,7 +602,7 @@ mod formatting_tests {
 
     #[test]
     fn test_render_inline_no_color_only() {
-        let fmt = parse_formatting("**bold text** with [[yellow note]]");
+        let fmt = parse_formatting("**bold text** with [[yellow note]]", &crate::theme::Theme::adaptive());
         let cfg = RenderConfig {
             reveal_markup: true,
             no_color: true,
@@ -646,7 +646,7 @@ mod formatting_tests {
 
     #[test]
     fn test_render_inline_no_formatting_only() {
-        let fmt = parse_formatting("**bold text** with [[yellow note]]");
+        let fmt = parse_formatting("**bold text** with [[yellow note]]", &crate::theme::Theme::adaptive());
         let cfg = RenderConfig {
             reveal_markup: true,
             no_color: false,
@@ -686,7 +686,7 @@ mod formatting_tests {
 
     #[test]
     fn test_render_inline_no_color_and_no_formatting() {
-        let fmt = parse_formatting("**bold text** with [[yellow note]]");
+        let fmt = parse_formatting("**bold text** with [[yellow note]]", &crate::theme::Theme::adaptive());
         let cfg = RenderConfig {
             reveal_markup: true,
             no_color: true,
@@ -821,7 +821,7 @@ mod formatting_tests {
 
     #[test]
     fn test_render_inline_exclude_comments() {
-        let fmt = parse_formatting("Action /* hidden */");
+        let fmt = parse_formatting("Action /* hidden */", &crate::theme::Theme::adaptive());
         let mut cfg = RenderConfig::default();
         cfg.exclude_comments = true;
         let hl = HashSet::new();
@@ -833,7 +833,7 @@ mod formatting_tests {
 
     #[test]
     fn test_render_inline_boneyard_color() {
-        let fmt = parse_formatting("/* boneyard */");
+        let fmt = parse_formatting("/* boneyard */", &crate::theme::Theme::adaptive());
         let cfg = RenderConfig::default();
         let hl = HashSet::new();
 
@@ -843,20 +843,20 @@ mod formatting_tests {
 
     #[test]
     fn test_parse_formatting_notes_with_strict_colors() {
-        let fmt1 = parse_formatting("[[yellow note]]");
+        let fmt1 = parse_formatting("[[yellow note]]", &crate::theme::Theme::adaptive());
         assert_eq!(
             fmt1.note_color.get(&5),
             Some(&ratatui::style::Color::Yellow),
             "Yellow note must be mapped to Yellow color"
         );
 
-        let fmt2 = parse_formatting("[[this is yellow]]");
+        let fmt2 = parse_formatting("[[this is yellow]]", &crate::theme::Theme::adaptive());
         assert!(
             fmt2.note_color.is_empty(),
             "Color word inside the note text must be ignored"
         );
 
-        let fmt3 = parse_formatting("[[marker red]]");
+        let fmt3 = parse_formatting("[[marker red]]", &crate::theme::Theme::adaptive());
         assert_eq!(
             fmt3.note_color.get(&5),
             Some(&ratatui::style::Color::Red),

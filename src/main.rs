@@ -61,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         app.cursor_y = usize::MAX;
         app.update_layout();
 
-        let output = export::export_document(&app.layout, &app.lines, &app.config, with_ansi);
+        let output = export::export_document(&app.layout, &app.lines, &app.config, &app.theme, with_ansi);
 
         if export_path.as_os_str() == "-" {
             print!("{}", output);

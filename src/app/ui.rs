@@ -8,28 +8,37 @@ use ratatui::{
 use std::collections::HashSet;
 use unicode_width::UnicodeWidthStr;
 use crate::{
-    app::{App, AppMode, LineType, EnsembleItem},
+    app::{App, AppMode, EnsembleItem},
     formatting::{RenderConfig, StringCaseExt, render_inline},
     layout::{find_visual_cursor, strip_sigils},
-    types::{PAGE_WIDTH, base_style},
+    types::{PAGE_WIDTH, base_style, LineType},
+    theme::{HexColor},
 };
 
 pub fn draw(f: &mut Frame, app: &mut App) {
     let area = f.area();
+    let theme = &app.theme;
 
-    f.render_widget(ratatui::widgets::Clear, area);
+    let mut base_ui_style = Style::default();
+    if let Some(bg) = &theme.ui.background {
+        base_ui_style = base_ui_style.bg(Color::from(bg.clone()));
+    }
+    if let Some(fg) = &theme.ui.foreground {
+        base_ui_style = base_ui_style.fg(Color::from(fg.clone()));
+    }
+    f.render_widget(Block::default().style(base_ui_style), area);
 
         let (mode_str, mode_bg) = match app.mode {
-            AppMode::Normal => (" NORMAL ", Color::LightBlue),
-            AppMode::Command => (" COMMAND ", Color::Yellow),
-            AppMode::SceneNavigator => (" NAVIGATOR ", Color::LightCyan),
-            AppMode::SettingsPane => (" SETTINGS ", Color::LightCyan),
-            AppMode::ExportPane => (" EXPORT ", Color::LightCyan),
-            AppMode::Shortcuts => (" LEGEND ", Color::LightCyan),
-            AppMode::Search => (" SEARCH ", Color::LightMagenta),
-            AppMode::Home => (" HOME ", Color::LightGreen),
-            AppMode::FilePicker => (" FILE ", Color::LightMagenta),
-            _ => (" PROMPT ", Color::LightRed),
+            AppMode::Normal => (" NORMAL ", Color::from(theme.ui.normal_mode_bg.clone())),
+            AppMode::Command => (" COMMAND ", Color::from(theme.ui.command_mode_bg.clone())),
+            AppMode::SceneNavigator => (" NAVIGATOR ", Color::from(theme.ui.navigator_mode_bg.clone())),
+            AppMode::SettingsPane => (" SETTINGS ", Color::from(theme.ui.settings_mode_bg.clone())),
+            AppMode::ExportPane => (" EXPORT ", Color::from(theme.ui.normal_mode_bg.clone())),
+            AppMode::Shortcuts => (" LEGEND ", Color::from(theme.ui.normal_mode_bg.clone())),
+            AppMode::Search => (" SEARCH ", Color::from(theme.ui.search_mode_bg.clone())),
+            AppMode::Home => (" HOME ", Color::from(theme.ui.normal_mode_bg.clone())),
+            AppMode::FilePicker => (" FILE ", Color::from(theme.ui.normal_mode_bg.clone())),
+            _ => (" PROMPT ", Color::from(theme.ui.command_mode_bg.clone())),
         };
 
 
@@ -55,30 +64,40 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     if app.mode == AppMode::SceneNavigator || app.mode == AppMode::CharacterNavigator {
         let side_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Length(42), Constraint::Min(0)])
+            .constraints([Constraint::Length(41), Constraint::Length(1), Constraint::Min(0)])
             .split(text_area);
         app.sidebar_area = side_chunks[0];
-        text_area = side_chunks[1];
+        let shadow_area = side_chunks[1];
+        text_area = side_chunks[2];
+
+        // Draw shadow
+        let shadow_color = theme.ui.shadow_color.clone().unwrap_or(HexColor("black".into()));
+        f.render_widget(Block::default().style(Style::default().bg(Color::from(shadow_color))), shadow_area);
 
         let sidebar_block = Block::default()
             .borders(Borders::RIGHT)
-            .border_style(Style::default().fg(Color::DarkGray).add_modifier(Modifier::DIM));
+            .border_style(Style::default().fg(Color::from(theme.ui.dim.clone())));
         f.render_widget(sidebar_block, app.sidebar_area);
     }
 
     app.settings_area = Rect::default();
     if app.mode == AppMode::SettingsPane || app.mode == AppMode::Shortcuts || app.mode == AppMode::ExportPane {
-        let side_width = if app.mode == AppMode::Shortcuts { 42 } else { 35 };
+        let side_width = if app.mode == AppMode::Shortcuts { 41 } else { 34 };
         let side_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(0), Constraint::Length(side_width)])
+            .constraints([Constraint::Min(0), Constraint::Length(1), Constraint::Length(side_width)])
             .split(text_area);
         text_area = side_chunks[0];
-        app.settings_area = side_chunks[1];
+        let shadow_area = side_chunks[1];
+        app.settings_area = side_chunks[2];
+
+        // Draw shadow (left of panel)
+        let shadow_color = theme.ui.shadow_color.clone().unwrap_or(HexColor("black".into()));
+        f.render_widget(Block::default().style(Style::default().bg(Color::from(shadow_color))), shadow_area);
 
         let settings_block = Block::default()
             .borders(Borders::LEFT)
-            .border_style(Style::default().fg(mode_bg).add_modifier(Modifier::DIM));
+            .border_style(Style::default().fg(mode_bg));
         f.render_widget(settings_block, app.settings_area);
     }
 
@@ -115,7 +134,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     let mut dark_gray_style = Style::default();
     if !app.config.no_color {
-        dark_gray_style = dark_gray_style.add_modifier(Modifier::DIM);
+        dark_gray_style = dark_gray_style.fg(Color::from(theme.ui.dim.clone()));
     }
 
     let mut sug_style = Style::default();
@@ -125,7 +144,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     let mut page_num_style = Style::default();
     if !app.config.no_color {
-        page_num_style = page_num_style.add_modifier(Modifier::DIM);
+        page_num_style = page_num_style.fg(Color::from(theme.ui.dim.clone()));
     }
 
     let mut visible: Vec<Line> = Vec::new();
@@ -163,7 +182,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
                 spans.push(Span::raw(" ".repeat(row.indent as usize)));
 
-                let mut bst = base_style(row.line_type, &app.config);
+                let mut bst = base_style(row.line_type, &app.config, &app.theme);
                 if let Some(c) = row.override_color
                     && !app.config.no_color
                 {
@@ -298,6 +317,12 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     f.render_widget(Paragraph::new(visible), text_area);
 
     if app.mode == AppMode::SceneNavigator {
+        let border_color = theme.sidebar.border.clone().map(Color::from).unwrap_or(Color::DarkGray);
+        let selected_bg = theme.sidebar.item_selected_bg.clone().map(Color::from).unwrap_or(mode_bg);
+        let selected_fg = theme.sidebar.item_selected_fg.clone().map(Color::from).unwrap_or(Color::Black);
+        let dim_color = theme.sidebar.item_dimmed.clone().map(Color::from).unwrap_or(Color::DarkGray);
+        let header_color = theme.sidebar.section_header.clone().map(Color::from).unwrap_or(mode_bg);
+
         let items: Vec<ListItem> = app
             .scenes
             .iter()
@@ -306,15 +331,14 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 let is_selected = i == app.selected_scene;
                 let mut lines = Vec::new();
                 
-
-                let line_style = Style::default().fg(Color::DarkGray).add_modifier(Modifier::DIM);
+                let line_style = Style::default().fg(border_color).add_modifier(Modifier::DIM);
 
                 if item.is_section {
                     // Section Header (ACT I, etc.)
                     let style = if is_selected {
-                        Style::default().fg(Color::Black).bg(Color::LightCyan).add_modifier(Modifier::BOLD)
+                        Style::default().fg(selected_fg).bg(selected_bg).add_modifier(Modifier::BOLD)
                     } else {
-                        Style::default().fg(Color::LightCyan).add_modifier(Modifier::BOLD)
+                        Style::default().fg(header_color).add_modifier(Modifier::BOLD)
                     };
                     
                     let prefix = if is_selected { " ⟫ " } else { "   " };
@@ -335,19 +359,27 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 } else {
                     // Scene Item
                     let mut base_style = if is_selected {
-                        Style::default().add_modifier(Modifier::REVERSED)
+                        Style::default().fg(selected_fg).bg(selected_bg).add_modifier(Modifier::BOLD)
                     } else {
                         Style::default()
                     };
+                    
+                    if let Some(c) = &theme.ui.foreground {
+                        if !is_selected {
+                            base_style = base_style.fg(Color::from(c.clone()));
+                        }
+                    }
 
                     if let Some(c) = item.color {
-                        base_style.fg = Some(c);
+                        if !is_selected {
+                            base_style = base_style.fg(c);
+                        }
                     }
                     
                     let dim_style = if is_selected {
                         base_style
                     } else {
-                        Style::default().add_modifier(Modifier::DIM)
+                        Style::default().fg(dim_color).add_modifier(Modifier::DIM)
                     };
 
                     let prefix = if is_selected { " ⟫ " } else { "   " };
@@ -430,6 +462,12 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     if app.mode == AppMode::CharacterNavigator {
+        let border_color = theme.sidebar.border.clone().map(Color::from).unwrap_or(Color::DarkGray);
+        let selected_bg = theme.sidebar.item_selected_bg.clone().map(Color::from).unwrap_or(mode_bg);
+        let selected_fg = theme.sidebar.item_selected_fg.clone().map(Color::from).unwrap_or(Color::Black);
+        let dim_color = theme.sidebar.item_dimmed.clone().map(Color::from).unwrap_or(Color::DarkGray);
+        let header_color = theme.sidebar.section_header.clone().map(Color::from).unwrap_or(mode_bg);
+
         let items: Vec<ListItem> = app
             .ensemble_items
             .iter()
@@ -438,16 +476,16 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 let is_selected = i == app.selected_ensemble_idx;
                 let mut lines = Vec::new();
                 
-                let line_style = Style::default().fg(Color::DarkGray).add_modifier(Modifier::DIM);
+                let line_style = Style::default().fg(border_color).add_modifier(Modifier::DIM);
                 let base_style = if is_selected {
-                    Style::default().add_modifier(Modifier::REVERSED)
+                    Style::default().fg(selected_fg).bg(selected_bg).add_modifier(Modifier::BOLD)
                 } else {
                     Style::default()
                 };
                 let dim_style = if is_selected {
                     base_style
                 } else {
-                    Style::default().add_modifier(Modifier::DIM)
+                    Style::default().fg(dim_color).add_modifier(Modifier::DIM)
                 };
 
                 let prefix = if is_selected { " ⟫ " } else { "   " };
@@ -456,8 +494,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     EnsembleItem::CharacterHeader(char_idx) => {
                         let char_item = &app.character_stats[*char_idx];
                         lines.push(Line::from(vec![
-                            Span::styled(prefix, base_style.add_modifier(Modifier::BOLD)),
-                            Span::styled(char_item.name.clone(), base_style.add_modifier(Modifier::BOLD)),
+                            Span::styled(prefix, base_style),
+                            Span::styled(char_item.name.clone(), Style::default().fg(header_color).add_modifier(Modifier::BOLD)),
                         ]));
                     }
                     EnsembleItem::Stat(text, hint, is_last) => {
@@ -509,7 +547,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
 
-
     if app.mode == AppMode::SettingsPane {
         let settings = vec![
             ("Typewriter Mode", &app.config.strict_typewriter_mode),
@@ -517,8 +554,10 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             ("Autocomplete", &app.config.autocomplete),
             ("Auto-Breaks", &app.config.auto_paragraph_breaks),
             ("Focus Mode", &app.config.focus_mode),
+            ("Theme", &false), // Not a toggle
         ];
 
+        let theme_name = &app.config.theme;
         let items: Vec<ListItem> = settings
             .into_iter()
             .enumerate()
@@ -530,17 +569,29 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     Style::default()
                 };
                 
-                let (icon, icon_style) = if *value { 
+                let (icon, icon_style) = if label == "Theme" {
+                    ("󰔎 ", Style::default().fg(Color::from(theme.ui.normal_mode_bg.clone())))
+                } else if *value { 
                     ("󰄬 ", Style::default().fg(Color::Green)) 
                 } else { 
                     ("󰄱 ", Style::default().fg(Color::DarkGray)) 
                 };
 
-                ListItem::new(Line::from(vec![
-                    Span::styled(if is_selected { " ⟫ " } else { "   " }, style),
-                    Span::styled(icon, if is_selected { style } else { icon_style }),
-                    Span::styled(label, style),
-                ]))
+                let line = if label == "Theme" {
+                    Line::from(vec![
+                        Span::styled(if is_selected { " ⟫ " } else { "   " }, style),
+                        Span::styled(icon, if is_selected { style } else { icon_style }),
+                        Span::styled(format!("{}: {}", label, theme_name), style),
+                    ])
+                } else {
+                    Line::from(vec![
+                        Span::styled(if is_selected { " ⟫ " } else { "   " }, style),
+                        Span::styled(icon, if is_selected { style } else { icon_style }),
+                        Span::styled(label, style),
+                    ])
+                };
+
+                ListItem::new(line)
             })
             .collect();
 

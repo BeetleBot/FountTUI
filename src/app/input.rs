@@ -526,7 +526,7 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::SettingsPane => {
-                    let settings_count = 5;
+                    let settings_count = 6;
                     match key.code {
                         KeyCode::Esc => {
                             self.mode = AppMode::Normal;
@@ -568,6 +568,32 @@ impl App {
                                 4 => {
                                     self.config.focus_mode = !self.config.focus_mode;
                                     let _ = crate::config::Config::save_setting("focus_mode", self.config.focus_mode);
+                                }
+                                5 => {
+                                    let themes = self.theme_manager.list_themes();
+                                    if let Some(pos) = themes.iter().position(|t| t == &self.config.theme) {
+                                        let next = (pos + 1) % themes.len();
+                                        let name = &themes[next];
+                                        if self.theme_manager.set_theme(name) {
+                                            self.theme = self.theme_manager.current_theme.clone();
+                                            self.config.theme = self.theme.name.clone();
+                                            let _ = crate::config::Config::save_string_setting("theme", &self.theme.name);
+                                            self.set_status(&format!("Theme set to {}", self.theme.name));
+                                            self.update_layout();
+                                        }
+                                    } else {
+                                        // Fallback if current theme name is not in list for some reason
+                                        if !themes.is_empty() {
+                                            let name = &themes[0];
+                                            if self.theme_manager.set_theme(name) {
+                                                self.theme = self.theme_manager.current_theme.clone();
+                                                self.config.theme = self.theme.name.clone();
+                                                let _ = crate::config::Config::save_string_setting("theme", &self.theme.name);
+                                                self.set_status(&format!("Theme set to {}", self.theme.name));
+                                                self.update_layout();
+                                            }
+                                        }
+                                    }
                                 }
                                 _ => {}
                             }
