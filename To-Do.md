@@ -3,11 +3,8 @@
 ### In the Works
 - [ ] **Aesthetics**: Cinematic Transitions & Themes.
     - **Context**: The current TUI is functional and clean, but can be pushed further to feel like a premium, native application.
-    - **Goal**: Implement customizable theme files (e.g., `.toml` or `.json` for colors like "Solarized" or "Paper") and soft UI popups with drop-shadows (using Ratatui's `Clear` widget and block borders) for the command palette (`/`) and settings (`Ctrl+P`).
+    - **Goal**: Implement customizable theme files (e.g., `.toml` or `.json` for colors like "Solarized" or "Paper") and soft UI with drop-shadows.
 - [ ] **Release Automation (GitHub Actions)**: Get `.msi`/`.exe` and `.dmg` installers ready for future releases. Tentative timing. 
-- [ ] **Structural Locking (Production Mode)**: 
-    - **Context**: Essential for professional production where scene numbers must remain static even when new scenes are added.
-    - **Goal**: Implement a `/lock` command that freezes current numbering. Any scenes inserted between locked numbers (e.g., between 21 and 22) will be automatically designated with alphabetical suffixes (21A, 21B) to preserve the original production breakdown.
 - [ ] **Session Snapshots (Auto-Versioning)**:
     - **Context**: Writers often "over-edit" and lose a phrase or beat that worked in an earlier draft, but full Git is too heavy for casual use.
     - **Goal**: Automatically save a copy of the current buffer to the system's temporary folder (e.g., `/tmp` or `%TEMP%`) every time a session is closed or a major milestone is reached. Include a `/snapshots` interface to browse, diff, and restore these temporary versions without cluttering the project directory.
@@ -64,3 +61,6 @@
     - Replaced the old shortcut pane with a categorized Command Legend (`F1` to toggle).
     - Cleaned up the UI by removing the legacy Format Pane and migrating actions to commands.
 - [x] **Settings Fix**: Ensure settings changed in the pane actually save back to the config file.
+- [x] **Structural Locking (Production Mode)**: 
+    - **Context**: Essential for professional production where scene numbers must remain static even when new scenes are added.
+    - **Goal**: Implement a `/lock` command that freezes current numbering. Any scenes inserted between locked numbers (e.g., between 21 and 22) will be automatically designated with alphabetical suffixes (21A, 21B) to preserve the original production breakdown.
