@@ -506,31 +506,31 @@ mod types_tests {
 
     #[test]
     fn test_get_marker_color_basic() {
-        assert_eq!(get_marker_color("red"), Some(Color::Red));
-        assert_eq!(get_marker_color("blue text"), Some(Color::Blue));
-        assert_eq!(get_marker_color("green background"), Some(Color::Green));
-        assert_eq!(get_marker_color("magenta note"), Some(Color::Magenta));
-        assert_eq!(get_marker_color("cyan marker"), Some(Color::Cyan));
-        assert_eq!(get_marker_color("yellow"), Some(Color::Yellow));
-        assert_eq!(get_marker_color("gray area"), Some(Color::Gray));
+        assert_eq!(get_marker_color("red", &Theme::adaptive()), Some(Color::Red));
+        assert_eq!(get_marker_color("blue text", &Theme::adaptive()), Some(Color::Blue));
+        assert_eq!(get_marker_color("green background", &Theme::adaptive()), Some(Color::Green));
+        assert_eq!(get_marker_color("magenta note", &Theme::adaptive()), Some(Color::Magenta));
+        assert_eq!(get_marker_color("cyan marker", &Theme::adaptive()), Some(Color::Cyan));
+        assert_eq!(get_marker_color("yellow", &Theme::adaptive()), Some(Color::Yellow));
+        assert_eq!(get_marker_color("gray area", &Theme::adaptive()), Some(Color::Gray));
     }
 
     #[test]
     fn test_get_marker_color_aliases() {
-        assert_eq!(get_marker_color("pink box"), Some(Color::Magenta));
-        assert_eq!(get_marker_color("teal"), Some(Color::Cyan));
-        assert_eq!(get_marker_color("orange"), Some(Color::Rgb(255, 165, 0)));
-        assert_eq!(get_marker_color("brown"), Some(Color::Rgb(255, 165, 0)));
-        assert_eq!(get_marker_color("grey"), Some(Color::Gray));
+        assert_eq!(get_marker_color("pink box", &Theme::adaptive()), Some(Color::Magenta));
+        assert_eq!(get_marker_color("teal", &Theme::adaptive()), Some(Color::Cyan));
+        assert_eq!(get_marker_color("orange", &Theme::adaptive()), Some(Color::Rgb(255, 165, 0)));
+        assert_eq!(get_marker_color("brown", &Theme::adaptive()), Some(Color::Rgb(255, 165, 0)));
+        assert_eq!(get_marker_color("grey", &Theme::adaptive()), Some(Color::Gray));
     }
 
     #[test]
     fn test_get_marker_color_fallback() {
         assert_eq!(
-            get_marker_color("marker custom"),
+            get_marker_color("marker custom", &Theme::adaptive()),
             Some(Color::Rgb(255, 165, 0))
         );
-        assert_eq!(get_marker_color("just a plain note"), None);
+        assert_eq!(get_marker_color("just a plain note", &Theme::adaptive()), None);
     }
 
     #[test]
@@ -602,34 +602,34 @@ mod types_tests {
 
     #[test]
     fn test_get_marker_color_strict_first_word() {
-        assert_eq!(get_marker_color("red"), Some(Color::Red));
-        assert_eq!(get_marker_color("red text here"), Some(Color::Red));
-        assert_eq!(get_marker_color("blue background"), Some(Color::Blue));
-        assert_eq!(get_marker_color("  green  "), Some(Color::Green));
-        assert_eq!(get_marker_color("magenta note"), Some(Color::Magenta));
-        assert_eq!(get_marker_color("cyan marker"), Some(Color::Cyan));
-        assert_eq!(get_marker_color("yellow"), Some(Color::Yellow));
-        assert_eq!(get_marker_color("gray area"), Some(Color::Gray));
+        assert_eq!(get_marker_color("red", &Theme::adaptive()), Some(Color::Red));
+        assert_eq!(get_marker_color("red text here", &Theme::adaptive()), Some(Color::Red));
+        assert_eq!(get_marker_color("blue background", &Theme::adaptive()), Some(Color::Blue));
+        assert_eq!(get_marker_color("  green  ", &Theme::adaptive()), Some(Color::Green));
+        assert_eq!(get_marker_color("magenta note", &Theme::adaptive()), Some(Color::Magenta));
+        assert_eq!(get_marker_color("cyan marker", &Theme::adaptive()), Some(Color::Cyan));
+        assert_eq!(get_marker_color("yellow", &Theme::adaptive()), Some(Color::Yellow));
+        assert_eq!(get_marker_color("gray area", &Theme::adaptive()), Some(Color::Gray));
     }
 
     #[test]
     fn test_get_marker_color_ignores_inner_words() {
-        assert_eq!(get_marker_color("this is red"), None);
-        assert_eq!(get_marker_color("a blue note"), None);
-        assert_eq!(get_marker_color("please make this green"), None);
-        assert_eq!(get_marker_color("just a plain note"), None);
+        assert_eq!(get_marker_color("this is red", &Theme::adaptive()), None);
+        assert_eq!(get_marker_color("a blue note", &Theme::adaptive()), None);
+        assert_eq!(get_marker_color("please make this green", &Theme::adaptive()), None);
+        assert_eq!(get_marker_color("just a plain note", &Theme::adaptive()), None);
     }
 
     #[test]
     fn test_get_marker_color_marker_prefix() {
-        assert_eq!(get_marker_color("marker"), Some(Color::Rgb(255, 165, 0)));
+        assert_eq!(get_marker_color("marker", &Theme::adaptive()), Some(Color::Rgb(255, 165, 0)));
         assert_eq!(
-            get_marker_color("marker custom text"),
+            get_marker_color("marker custom text", &Theme::adaptive()),
             Some(Color::Rgb(255, 165, 0))
         );
-        assert_eq!(get_marker_color("marker red"), Some(Color::Red));
-        assert_eq!(get_marker_color("marker blue text"), Some(Color::Blue));
-        assert_eq!(get_marker_color("marker teal something"), Some(Color::Cyan));
-        assert_eq!(get_marker_color("  marker   pink  "), Some(Color::Magenta));
+        assert_eq!(get_marker_color("marker red", &Theme::adaptive()), Some(Color::Red));
+        assert_eq!(get_marker_color("marker blue text", &Theme::adaptive()), Some(Color::Blue));
+        assert_eq!(get_marker_color("marker teal something", &Theme::adaptive()), Some(Color::Cyan));
+        assert_eq!(get_marker_color("  marker   pink  ", &Theme::adaptive()), Some(Color::Magenta));
     }
 }
