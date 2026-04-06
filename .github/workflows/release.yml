@@ -25,44 +25,46 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-  build:
-    name: Build Windows MSI
+  upload-assets:
+    name: ${{ matrix.target }}
     needs: publish-crates-io
     strategy:
       matrix:
-        os: [windows-latest]
         include:
-          - os: windows-latest
-            artifact_name: Fount_Windows_${{ github.ref_name }}.msi
-            target: x86_64-pc-windows-msvc
-
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: universal-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install System Dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libdbus-1-dev libgtk-3-dev pkg-config musl-tools
+      - name: Prepare README
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            cp docs/RELEASES/README_Linux.txt README_PLATFORM.txt
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+            cp docs/RELEASES/README_macOS.txt README_PLATFORM.txt
+          else
+            cp docs/RELEASES/README_Windows.txt README_PLATFORM.txt
+          fi
+        shell: bash
+      - name: Upload Binary
+        uses: taiki-e/upload-rust-binary-action@v1
         with:
-          targets: ${{ matrix.target }}
-
-
-      # Build Binary
-      - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }}
-
-      # Windows MSI Packaging
-      - name: Install cargo-wix
-        run: cargo install cargo-wix
-
-      - name: Build MSI
-        run: cargo wix --target ${{ matrix.target }} -o target/wix/Fount_Windows_${{ github.ref_name }}.msi
-
-
-      # Upload to Release
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            target/wix/Fount_Windows_${{ github.ref_name }}.msi
-          generate_release_notes: true
-          name: Fount v${{ github.ref_name }}
+          bin: fount
+          target: ${{ matrix.target }}
+          include: README_PLATFORM.txt,LICENSE,README.md
+          tar: all
+          zip: windows
+          token: ${{ secrets.GITHUB_TOKEN }}
