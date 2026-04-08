@@ -2,11 +2,13 @@ use std::{
     collections::HashSet,
     fs, io,
     path::{Path, PathBuf},
+    time::{Duration, Instant},
 };
 
 pub mod snapshot;
+pub mod sprint;
 
-use ratatui::{layout::Rect, style::Color, widgets::ListState};
+use ratatui::{layout::Rect, style::Color, widgets::{ListState, TableState}};
 
 use crate::{
     config::{Cli, Config},
@@ -95,14 +97,27 @@ pub enum AppMode {
     Home,
     FilePicker,
     Snapshots,
+    SprintStat,
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Default)]
 pub enum FilePickerAction {
+    #[default]
     Open,
     Save,
     ExportReport,
     ExportScript,
+    ExportSprints,
+}
+
+#[derive(Clone, Debug)]
+pub enum GoalType {
+    Sprint {
+        start_time: Instant,
+        duration: Duration,
+        start_words: usize,
+        start_lines: usize,
+    },
 }
 
 pub struct FilePickerState {
@@ -252,6 +267,13 @@ pub struct App {
     pub snapshots: Vec<snapshot::Snapshot>,
     pub snapshot_list_state: ListState,
     pub last_snapshot_time: Option<std::time::Instant>,
+
+    pub active_goal: Option<GoalType>,
+
+    pub sprint_manager: sprint::SprintManager,
+    pub sprint_history: Vec<sprint::SprintRecord>,
+    pub sprint_stats_state: TableState,
+    pub flash_timer: Option<Instant>,
 }
 
 impl Drop for App {
@@ -410,6 +432,11 @@ impl App {
             snapshots: Vec::new(),
             snapshot_list_state: ListState::default(),
             last_snapshot_time: None,
+            active_goal: None,
+            sprint_manager: sprint::SprintManager::new(),
+            sprint_history: Vec::new(),
+            sprint_stats_state: TableState::default(),
+            flash_timer: None,
         };
 
         app.theme_manager.load_user_themes();
@@ -2072,6 +2099,34 @@ impl App {
                 self.mode = AppMode::ExportPane;
                 self.selected_export_option = 0;
             }
+            "sprint" => {
+                if let Some(arg) = args.first() {
+                    if let Ok(minutes) = arg.parse::<u64>() {
+                        self.active_goal = Some(GoalType::Sprint {
+                            start_time: Instant::now(),
+                            duration: Duration::from_secs(minutes * 60),
+                            start_words: self.total_word_count(),
+                            start_lines: self.lines.len(),
+                        });
+                        self.set_status(&format!("Sprint started! ({} minutes)", minutes));
+                    } else {
+                        self.set_error("Usage: /sprint [minutes]");
+                    }
+                } else {
+                    self.set_error("Usage: /sprint [minutes]");
+                }
+            }
+            "cancelsprint" => {
+                if self.active_goal.is_some() {
+                    self.active_goal = None;
+                    self.set_status("Sprint cancelled");
+                } else {
+                    self.set_error("No active sprint to cancel");
+                }
+            }
+            "sprintstat" => {
+                self.open_sprint_stats();
+            }
             _ => {
                 self.set_error(&format!("Unknown command: /{}", cmd));
             }
@@ -2220,6 +2275,78 @@ impl App {
     fn set_error(&mut self, msg: &str) {
         self.status_msg = Some(msg.to_string());
         self.command_error = true;
+    }
+
+    pub fn check_goal(&mut self) {
+        if let Some(GoalType::Sprint {
+            start_time,
+            duration,
+            start_words,
+            start_lines,
+        }) = self.active_goal
+        {
+            if start_time.elapsed() >= duration {
+                let current_words = self.total_word_count();
+                let words_written = current_words.saturating_sub(start_words);
+                let current_lines = self.lines.len();
+                let lines_written = current_lines.saturating_sub(start_lines);
+
+                // Save record
+                let project_name = if let Some(path) = &self.file {
+                    path.file_stem()
+                        .map(|s| s.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| "unnamed".to_string())
+                } else {
+                    "unnamed".to_string()
+                };
+
+                let record = sprint::SprintRecord {
+                    project_name,
+                    timestamp: chrono::Local::now(),
+                    duration_mins: duration.as_secs() / 60,
+                    word_count: words_written,
+                    line_count: lines_written,
+                };
+                let _ = self.sprint_manager.save_record(record);
+
+                self.set_status(&format!(
+                    "Sprint finished! You wrote {} words and {} lines.",
+                    words_written, lines_written
+                ));
+                self.active_goal = None;
+                self.flash_timer = Some(Instant::now());
+            }
+        }
+
+        // Handle flash timer
+        if let Some(flash) = self.flash_timer {
+            if flash.elapsed() > Duration::from_millis(200) {
+                self.flash_timer = None;
+            }
+        }
+    }
+
+    pub fn open_sprint_stats(&mut self) {
+        if let Ok(records) = self.sprint_manager.get_records() {
+            self.sprint_history = records;
+            self.sprint_history.reverse(); // Newest first
+            self.mode = AppMode::SprintStat;
+            if !self.sprint_history.is_empty() {
+                self.sprint_stats_state.select(Some(0));
+            }
+        } else {
+            self.set_error("Could not load sprint history.");
+        }
+    }
+
+    pub fn export_sprint_data(&mut self) {
+        let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
+        let default_name = format!("sprint_report_{}.csv", timestamp);
+        self.open_file_picker(
+            FilePickerAction::ExportSprints,
+            vec!["csv".to_string()],
+            Some(default_name),
+        );
     }
 }
 

@@ -165,6 +165,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             app.trigger_snapshot();
         }
 
+        app.check_goal();
+
         if text_changed {
             app.parse_document();
         }

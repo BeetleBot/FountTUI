@@ -41,7 +41,7 @@ impl App {
                 let p = state.items[selected_idx].clone();
                 let is_d = p.is_dir();
                 (Some(p), state.action.clone(), is_d)
-            } else if (state.action == FilePickerAction::Save || state.action == FilePickerAction::ExportReport || state.action == FilePickerAction::ExportScript) 
+            } else if (state.action == FilePickerAction::Save || state.action == FilePickerAction::ExportReport || state.action == FilePickerAction::ExportScript || state.action == FilePickerAction::ExportSprints) 
                && !state.filename_input.is_empty() {
                 let p = state.current_dir.join(&state.filename_input);
                 (Some(p), state.action.clone(), false)
@@ -61,7 +61,7 @@ impl App {
                 }
                 Ok(false)
             } else {
-                if (action == FilePickerAction::Save || action == FilePickerAction::ExportReport || action == FilePickerAction::ExportScript)
+                if (action == FilePickerAction::Save || action == FilePickerAction::ExportReport || action == FilePickerAction::ExportScript || action == FilePickerAction::ExportSprints)
                     && let Some(ref mut state) = self.file_picker {
                         let selected_idx = state.list_state.selected().unwrap_or(0);
                         // If we clicked a file in save mode, fill the input
@@ -130,6 +130,13 @@ impl App {
                 match result {
                     Ok(_) => self.set_status(&format!("Exported to {}", path.display())),
                     Err(e) => self.set_status(&format!("Error exporting: {}", e)),
+                }
+            }
+            FilePickerAction::ExportSprints => {
+                if let Err(e) = self.sprint_manager.export_csv(&path) {
+                    self.set_error(&format!("Export failed: {}", e));
+                } else {
+                    self.set_status(&format!("Exported sprint data to {}", path.display()));
                 }
             }
         }

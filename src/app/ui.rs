@@ -3,12 +3,12 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Clear},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Clear, Table, Row, Cell},
 };
 use std::collections::HashSet;
 use unicode_width::UnicodeWidthStr;
 use crate::{
-    app::{App, AppMode, EnsembleItem},
+    app::{App, AppMode, EnsembleItem, GoalType},
     formatting::{RenderConfig, StringCaseExt, render_inline},
     layout::{find_visual_cursor, strip_sigils},
     types::{PAGE_WIDTH, base_style, LineType},
@@ -39,6 +39,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             AppMode::Home => (" HOME ", Color::from(theme.ui.normal_mode_bg.clone())),
             AppMode::FilePicker => (" FILE ", Color::from(theme.ui.normal_mode_bg.clone())),
             AppMode::Snapshots => (" SNAPSHOTS ", Color::from(theme.ui.navigator_mode_bg.clone())),
+            AppMode::SprintStat => (" SPRINTS ", Color::from(theme.ui.normal_mode_bg.clone())),
             _ => (" PROMPT ", Color::from(theme.ui.command_mode_bg.clone())),
         };
 
@@ -456,6 +457,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             })
             .collect();
 
+
         let list = List::new(items).highlight_style(Style::default());
         f.render_stateful_widget(list, app.sidebar_area.inner(ratatui::layout::Margin { horizontal: 0, vertical: 1 }), &mut app.navigator_state);
     }
@@ -781,6 +783,26 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         } else {
             spans.push(Span::styled("COMMANDS [F1]", Style::default().fg(Color::DarkGray)));
         }
+        
+        if let Some(GoalType::Sprint { start_time, duration, start_words, .. }) = &app.active_goal {
+            let elapsed = start_time.elapsed();
+            let pct = (elapsed.as_secs_f64() / duration.as_secs_f64()).min(1.0);
+            let bar_width = 8;
+            let filled = (pct * bar_width as f64) as usize;
+            let empty = bar_width - filled;
+            
+            let remaining = duration.saturating_sub(elapsed);
+            let rem_min = remaining.as_secs() / 60;
+            let rem_sec = remaining.as_secs() % 60;
+            
+            let current_words = app.total_word_count();
+            let words_written = current_words.saturating_sub(*start_words);
+            
+            let sprint_msg = format!(" │ SPRINT [{}{}] {:02}:{:02} ({}w)", 
+                "█".repeat(filled), "░".repeat(empty), 
+                rem_min, rem_sec, words_written);
+            spans.push(Span::styled(sprint_msg, Style::default().fg(mode_bg)));
+        }
 
         let word_count = app.total_word_count();
         let line_count = app.lines.len();
@@ -804,12 +826,21 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         spans.extend(right_spans);
         f.render_widget(Paragraph::new(Line::from(spans)), footer_area);
 
-        if app.mode == AppMode::Command {
-            let mode_w = UnicodeWidthStr::width(mode_str);
-            let fname_w = UnicodeWidthStr::width(fname.as_str()) + UnicodeWidthStr::width(dirty_str);
-            let cur_x = footer_area.x + (mode_w + 3 + fname_w + 3 + 1 + UnicodeWidthStr::width(app.command_input.as_str())) as u16;
-            f.set_cursor_position((cur_x, footer_area.y));
+        if app.mode == AppMode::Search && footer_area.height > 0 {
+            let prompt_base = if app.last_search.is_empty() {
+                "SEARCH: ".to_string()
+            } else {
+                format!("SEARCH [{}]: ", app.last_search)
+            };
+            let prompt_w = UnicodeWidthStr::width(prompt_base.as_str())
+                + UnicodeWidthStr::width(app.search_query.as_str());
+            f.set_cursor_position((footer_area.x + prompt_w as u16, footer_area.y));
         }
+    }
+
+    // -- Screen Blink Effect --
+    if app.flash_timer.is_some() {
+        f.render_widget(Block::default().style(Style::default().bg(Color::White)), area);
     }
 
     // -- Cursor Handling --
@@ -936,6 +967,57 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     if app.mode == AppMode::Snapshots {
         draw_snapshots(f, app);
     }
+
+    if app.mode == AppMode::SprintStat {
+        draw_sprint_stats(f, app);
+    }
+}
+
+pub fn draw_sprint_stats(f: &mut Frame, app: &mut App) {
+    let area = f.area();
+    let theme = &app.theme;
+    let mode_bg = Color::from(theme.ui.normal_mode_bg.clone());
+
+    let modal_area = centered_rect(80, 60, area);
+    f.render_widget(Clear, modal_area);
+
+    let history_block = Block::default()
+        .title(" EXPORT SPRINT DATA (E) | SPRINT HISTORY ")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(mode_bg));
+    
+    let inner_area = modal_area.inner(ratatui::layout::Margin { horizontal: 1, vertical: 1 });
+    
+    let header = Row::new(vec![
+        Cell::from("Project"),
+        Cell::from("Date"),
+        Cell::from("Time"),
+        Cell::from("Words"),
+        Cell::from("Lines"),
+    ]).style(Style::default().bg(mode_bg).fg(Color::Black).add_modifier(Modifier::BOLD));
+
+    let rows: Vec<Row> = app.sprint_history.iter().map(|s| {
+        Row::new(vec![
+            Cell::from(s.project_name.clone()),
+            Cell::from(s.timestamp.format("%Y-%m-%d").to_string()),
+            Cell::from(format!("{}m", s.duration_mins)),
+            Cell::from(s.word_count.to_string()),
+            Cell::from(s.line_count.to_string()),
+        ])
+    }).collect();
+
+    let table = Table::new(rows, [
+        Constraint::Percentage(30),
+        Constraint::Percentage(20),
+        Constraint::Percentage(15),
+        Constraint::Percentage(15),
+        Constraint::Percentage(20),
+    ])
+    .header(header)
+    .block(history_block)
+    .row_highlight_style(Style::default().bg(Color::DarkGray).fg(Color::White));
+
+    f.render_stateful_widget(table, inner_area, &mut app.sprint_stats_state);
 }
 
 fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
@@ -954,6 +1036,7 @@ fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
         crate::app::FilePickerAction::Save => " Save As ",
         crate::app::FilePickerAction::ExportReport => " Export Report ",
         crate::app::FilePickerAction::ExportScript => " Export Script ",
+        crate::app::FilePickerAction::ExportSprints => " Export Sprints ",
     };
 
     let block = Block::default()
