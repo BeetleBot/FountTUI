@@ -769,9 +769,13 @@ impl App {
                                 self.snapshot_list_state.select(Some(current + 1));
                             }
                         }
-                        KeyCode::Enter => {
+                        KeyCode::Enter | KeyCode::Char('r') => {
                             let selected = self.snapshot_list_state.selected().unwrap_or(0);
-                            self.restore_snapshot(selected)?;
+                            self.restore_snapshot(selected, false)?;
+                        }
+                        KeyCode::Char('o') => {
+                            let selected = self.snapshot_list_state.selected().unwrap_or(0);
+                            self.restore_snapshot(selected, true)?;
                         }
                         _ => {}
                     }

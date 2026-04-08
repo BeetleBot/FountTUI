@@ -17,6 +17,29 @@ impl Snapshot {
         let datetime: chrono::DateTime<chrono::Local> = self.timestamp.into();
         datetime.format("%Y-%m-%d %H:%M:%S").to_string()
     }
+
+    pub fn display_date(&self) -> String {
+        let datetime: chrono::DateTime<chrono::Local> = self.timestamp.into();
+        datetime.format("%Y-%m-%d").to_string()
+    }
+
+    pub fn display_time_only(&self) -> String {
+        let datetime: chrono::DateTime<chrono::Local> = self.timestamp.into();
+        datetime.format("%H:%M:%S").to_string()
+    }
+
+    pub fn display_stem(&self) -> String {
+        // Filename is "stemDD_MM_YYYY_HH_MM.fountain"
+        // We want to extract the stem.
+        // The timestamp suffix is 17 characters (DD_MM_YYYY_HH_MM) + 9 for ".fountain" NO, wait.
+        // DD_MM_YYYY_HH_MM is 2+1+2+1+4+1+2+1+2 = 16 characters.
+        // ".fountain" is 9. Total 25.
+        if self.filename.len() > 25 {
+            self.filename[..self.filename.len() - 25].to_string()
+        } else {
+            self.filename.clone()
+        }
+    }
 }
 
 pub struct SnapshotManager {

@@ -1134,27 +1134,40 @@ fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
 pub fn draw_snapshots(f: &mut Frame, app: &mut App) {
     let area = f.area();
     let theme = &app.theme;
+    let mode_bg = Color::from(theme.ui.normal_mode_bg.clone());
+
+    let modal_area = centered_rect(70, 60, area);
+    f.render_widget(Clear, modal_area);
 
     let block = Block::default()
+        .title(" (R/Enter) REPLACE CURRENT | (O) OPEN IN NEW | SNAPSHOTS ")
         .borders(Borders::ALL)
-        .title(" [ SESSION SNAPSHOTS ] ")
-        .border_style(Style::default().fg(Color::from(theme.ui.normal_mode_bg.clone())));
+        .border_style(Style::default().fg(mode_bg));
 
-    let snapshots: Vec<ListItem> = app.snapshots.iter().map(|s| {
-        ListItem::new(Line::from(vec![
-            Span::styled(" 󰄉 ", Style::default().fg(Color::Cyan)),
-            Span::raw(s.display_time()),
-        ]))
+    let header = Row::new(vec![
+        Cell::from("File Name"),
+        Cell::from("Date"),
+        Cell::from("Time"),
+    ]).style(Style::default().bg(mode_bg).fg(Color::Black).add_modifier(Modifier::BOLD));
+
+    let rows: Vec<Row> = app.snapshots.iter().map(|s| {
+        Row::new(vec![
+            Cell::from(s.display_stem()),
+            Cell::from(s.display_date()),
+            Cell::from(s.display_time_only()),
+        ])
     }).collect();
 
-    let list = List::new(snapshots)
-        .block(block)
-        .highlight_style(Style::default().bg(Color::Rgb(50, 50, 50)).add_modifier(Modifier::BOLD))
-        .highlight_symbol("⟫ ");
+    let table = Table::new(rows, [
+        Constraint::Percentage(50),
+        Constraint::Percentage(25),
+        Constraint::Percentage(25),
+    ])
+    .header(header)
+    .block(block)
+    .row_highlight_style(Style::default().bg(Color::Rgb(50, 50, 50)).add_modifier(Modifier::BOLD));
 
-    let popup_area = centered_rect(50, 60, area);
-    f.render_widget(Clear, popup_area);
-    f.render_stateful_widget(list, popup_area, &mut app.snapshot_list_state);
+    f.render_stateful_widget(table, modal_area, &mut app.snapshot_list_state);
 }
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {

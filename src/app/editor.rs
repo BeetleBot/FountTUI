@@ -155,7 +155,7 @@ impl App {
         }
     }
 
-    pub fn restore_snapshot(&mut self, index: usize) -> io::Result<()> {
+    pub fn restore_snapshot(&mut self, index: usize, in_new_buffer: bool) -> io::Result<()> {
         if index >= self.snapshots.len() {
             return Ok(());
         }
@@ -164,12 +164,10 @@ impl App {
         let snapshot_display_time = self.snapshots[index].display_time();
         let content = fs::read_to_string(&snapshot_path)?;
 
-        let lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
-        let lines = if lines.is_empty() {
-            vec![String::new()]
-        } else {
-            lines
-        };
+        let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+        if lines.is_empty() {
+            lines = vec![String::new()];
+        }
 
         let buf_name = if let Some(ref p) = self.file {
             p.file_name()
@@ -179,23 +177,36 @@ impl App {
             "unnamed".to_string()
         };
 
-        let new_buf = crate::app::BufferState {
-            lines,
-            dirty: true,
-            ..Default::default()
-        };
+        if in_new_buffer {
+            let new_buf = crate::app::BufferState {
+                lines,
+                dirty: true,
+                ..Default::default()
+            };
+            self.buffers.push(new_buf);
+            let new_idx = self.buffers.len() - 1;
+            self.has_multiple_buffers = true;
+            self.switch_buffer(new_idx);
+            self.set_status(&format!(
+                "Opened snapshot of {} from {} in a new buffer",
+                buf_name, snapshot_display_time
+            ));
+        } else {
+            self.save_state(true); // Save current for undo
+            self.lines = lines;
+            self.cursor_y = 0;
+            self.cursor_x = 0;
+            self.dirty = true;
+            self.parse_document();
+            self.update_autocomplete();
+            self.update_layout();
+            self.set_status(&format!(
+                "Replaced current buffer with snapshot from {}",
+                snapshot_display_time
+            ));
+        }
 
-        self.buffers.push(new_buf);
-        let new_idx = self.buffers.len() - 1;
-        self.has_multiple_buffers = true;
-        self.switch_buffer(new_idx);
-
-        self.set_status(&format!(
-            "Opened snapshot of {} from {}",
-            buf_name, snapshot_display_time
-        ));
         self.mode = AppMode::Normal;
-
         Ok(())
     }
 

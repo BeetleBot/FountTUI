@@ -265,7 +265,7 @@ pub struct App {
 
     pub snapshot_manager: snapshot::SnapshotManager,
     pub snapshots: Vec<snapshot::Snapshot>,
-    pub snapshot_list_state: ListState,
+    pub snapshot_list_state: TableState,
     pub last_snapshot_time: Option<std::time::Instant>,
 
     pub active_goal: Option<GoalType>,
@@ -430,7 +430,7 @@ impl App {
 
             snapshot_manager: snapshot::SnapshotManager::new(),
             snapshots: Vec::new(),
-            snapshot_list_state: ListState::default(),
+            snapshot_list_state: TableState::default(),
             last_snapshot_time: None,
             active_goal: None,
             sprint_manager: sprint::SprintManager::new(),
