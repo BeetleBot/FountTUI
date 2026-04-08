@@ -1,0 +1,23 @@
+{
+  "id": "screenplay_three_act",
+  "name": "Three-Act Structure",
+  "mediums": ["screenplay"],
+  "author": "Classical / Field",
+  "type": "beat_sheet",
+  "complexity": "beginner",
+  "description": "Standard 3-act structure with key plot points.",
+  "best_for": "Classic storytelling, clear act breaks.",
+  "avoid_if": "You prefer highly experimental narratives.",
+  "references": [{"label": "Three-act structure - Wikipedia", "url": "https://en.wikipedia.org/wiki/Three-act_structure"}],
+  "steps": [
+    {"id": "hook", "name": "Opening / Hook", "target": "p1-5", "prompt": "Hook the audience and introduce the status quo.", "content": "", "status": "empty"},
+    {"id": "inciting_incident", "name": "Inciting Incident", "target": "p10-15", "prompt": "What event starts the main action?", "content": "", "status": "empty"},
+    {"id": "first_plot_point", "name": "First Plot Point", "target": "p25-30", "prompt": "The protagonist commits to the journey, ending Act 1.", "content": "", "status": "empty"},
+    {"id": "first_pinch_point", "name": "First Pinch Point", "target": "p35-45", "prompt": "Stakes are raised or antagonist's power is shown.", "content": "", "status": "empty"},
+    {"id": "midpoint", "name": "Midpoint", "target": "p55-60", "prompt": "A major shift or reveal.", "content": "", "status": "empty"},
+    {"id": "second_pinch_point", "name": "Second Pinch Point", "target": "p70-80", "prompt": "Stakes rise further.", "content": "", "status": "empty"},
+    {"id": "second_plot_point", "name": "Second Plot Point", "target": "p85-90", "prompt": "The protagonist faces a low point and decides to solve the conflict, ending Act 2.", "content": "", "status": "empty"},
+    {"id": "climax", "name": "Climax", "target": "p95-105", "prompt": "The final showdown.", "content": "", "status": "empty"},
+    {"id": "resolution", "name": "Resolution", "target": "p110-120", "prompt": "The aftermath and new status quo.", "content": "", "status": "empty"}
+  ]
+}

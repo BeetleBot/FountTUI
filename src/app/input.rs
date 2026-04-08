@@ -617,16 +617,14 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::Home => {
-                    const HOME_ITEMS: usize = 4;
+                    const HOME_ITEMS: usize = 6;
                     match key.code {
                         KeyCode::Esc => {
-                            // If there's an actual file loaded, dismiss home
                             if self.file.is_some() || !self.lines.iter().all(|l| l.is_empty()) {
                                 self.mode = AppMode::Normal;
                             }
                         }
                         KeyCode::Char('c') | KeyCode::Char('g') if ctrl => {
-                            // Ctrl+C/G always dismisses
                             self.mode = AppMode::Normal;
                         }
                         KeyCode::Up | KeyCode::Char('k') => {
@@ -635,21 +633,10 @@ impl App {
                         KeyCode::Down | KeyCode::Char('j') => {
                             self.home_selected = (self.home_selected + 1).min(HOME_ITEMS - 1);
                         }
-                        KeyCode::Enter | KeyCode::Char(' ') | KeyCode::Char('\n') |
-                        KeyCode::Char('n') | KeyCode::Char('N') |
-                        KeyCode::Char('o') | KeyCode::Char('O') |
-                        KeyCode::Char('t') | KeyCode::Char('T') |
-                        KeyCode::Char('q') | KeyCode::Char('Q') => {
-                            match key.code {
-                                KeyCode::Char('n') | KeyCode::Char('N') => self.home_selected = 0,
-                                KeyCode::Char('o') | KeyCode::Char('O') => self.home_selected = 1,
-                                KeyCode::Char('t') | KeyCode::Char('T') => self.home_selected = 2,
-                                KeyCode::Char('q') | KeyCode::Char('Q') => self.home_selected = 3,
-                                _ => {},
-                            }
+                        KeyCode::Enter | KeyCode::Char(' ') | KeyCode::Char('\n') => {
                             match self.home_selected {
                                 0 => {
-                                    // New File
+                                    // New Screenplay
                                     let new_buf = crate::app::BufferState {
                                         lines: vec![String::new()],
                                         ..Default::default()
@@ -659,15 +646,24 @@ impl App {
                                     self.has_multiple_buffers = self.buffers.len() > 1;
                                     self.switch_buffer(new_idx);
                                     self.mode = AppMode::Normal;
-                                    self.set_status("New buffer");
+                                    self.set_status("New Screenplay (.fountain)");
                                     *text_changed = true;
                                     *cursor_moved = true;
                                 }
                                 1 => {
-                                    // Open File via TUI picker
+                                    // Open Screenplay
                                     self.open_file_picker(FilePickerAction::Open, vec!["fountain".to_string()], None);
                                 }
                                 2 => {
+                                    // New Story Structure
+                                    self.mode = AppMode::StructurePicker;
+                                    self.planning.selected_step_idx = 0; // Reuse for picker
+                                }
+                                3 => {
+                                    // Existing Story Structure
+                                    self.open_file_picker(FilePickerAction::Open, vec!["StoryStruct".to_string()], None);
+                                }
+                                4 => {
                                     // Tutorial
                                     let tutorial_text = include_str!("../../assets/tutorial.fountain");
                                     let lines: Vec<String> = tutorial_text.lines().map(|s| s.to_string()).collect();
@@ -681,16 +677,13 @@ impl App {
                                     let new_idx = self.buffers.len() - 1;
                                     self.has_multiple_buffers = self.buffers.len() > 1;
                                     self.switch_buffer(new_idx);
-                                    self.parse_document();
-                                    self.update_autocomplete();
-                                    self.update_layout();
                                     self.mode = AppMode::Normal;
-                                    self.set_status("Tutorial loaded! Enjoy the show.");
+                                    self.set_status("Tutorial loaded!");
                                     *text_changed = true;
                                     *cursor_moved = true;
                                 }
-                                3 => {
-                                    // Exit App
+                                5 => {
+                                    // Exit
                                     return Ok(true);
                                 }
                                 _ => {}
@@ -797,6 +790,79 @@ impl App {
                             }
                         }
                         KeyCode::Char('e') => self.export_sprint_data(),
+                        _ => {}
+                    }
+                    return Ok(false);
+                }
+                AppMode::StructurePicker => {
+                    let structures = self.planning.registry.as_ref().unwrap().get_all();
+                    match key.code {
+                        KeyCode::Esc => self.mode = AppMode::Home,
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            if self.planning.selected_step_idx > 0 {
+                                self.planning.selected_step_idx -= 1;
+                            }
+                        }
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            if self.planning.selected_step_idx + 1 < structures.len() {
+                                self.planning.selected_step_idx += 1;
+                            }
+                        }
+                        KeyCode::Enter => {
+                            let structure = &structures[self.planning.selected_step_idx];
+                            self.planning.project = Some(crate::app::planning::PlanningProject {
+                                id: format!("project_{}", chrono::Local::now().timestamp()),
+                                structure_id: structure.id.clone(),
+                                structure_name: structure.name.clone(),
+                                steps: structure.steps.clone(),
+                                title: "Untitled Story".to_string(),
+                                file_path: None,
+                                created_at: chrono::Local::now(),
+                                updated_at: chrono::Local::now(),
+                            });
+                            self.planning.selected_step_idx = 0;
+                            self.mode = AppMode::PlanningStudio;
+                        }
+                        _ => {}
+                    }
+                    return Ok(false);
+                }
+                AppMode::PlanningStudio => {
+                    let project = self.planning.project.as_mut().unwrap();
+                    match key.code {
+                        KeyCode::Esc => {
+                            // Prompt for save if dirty? For now, just exit to Home.
+                            self.mode = AppMode::Home;
+                        }
+                        KeyCode::Tab => {
+                            if project.steps.len() > 0 {
+                                self.planning.selected_step_idx = (self.planning.selected_step_idx + 1) % project.steps.len();
+                            }
+                        }
+                        KeyCode::BackTab => {
+                            if project.steps.len() > 0 {
+                                self.planning.selected_step_idx = if self.planning.selected_step_idx == 0 {
+                                    project.steps.len() - 1
+                                } else {
+                                    self.planning.selected_step_idx - 1
+                                };
+                            }
+                        }
+                        KeyCode::Char('s') if ctrl => {
+                            self.save_planning_project();
+                        }
+                        KeyCode::Char('f') if ctrl => {
+                            self.import_planning_to_fountain();
+                        }
+                        KeyCode::Enter => {
+                            project.steps[self.planning.selected_step_idx].content.push('\n');
+                        }
+                        KeyCode::Backspace => {
+                            project.steps[self.planning.selected_step_idx].content.pop();
+                        }
+                        KeyCode::Char(c) if !ctrl => {
+                            project.steps[self.planning.selected_step_idx].content.push(c);
+                        }
                         _ => {}
                     }
                     return Ok(false);

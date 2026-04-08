@@ -84,6 +84,10 @@ impl App {
 
         match action {
             FilePickerAction::Open => {
+                if path.extension().map(|s| s == "StoryStruct").unwrap_or(false) {
+                    self.load_planning_project(path);
+                    return Ok(false);
+                }
                 let content = std::fs::read_to_string(&path)?;
                 let lines: Vec<String> = content.replace('\t', "    ").lines().map(str::to_string).collect();
                 let new_buf = crate::app::BufferState {
@@ -102,6 +106,13 @@ impl App {
                 self.set_status(&format!("Opened: {}", name));
             }
             FilePickerAction::Save => {
+                if path.extension().map(|s| s == "StoryStruct").unwrap_or(false) {
+                    if let Some(ref mut project) = self.planning.project {
+                        project.file_path = Some(path);
+                        self.save_planning_project();
+                    }
+                    return Ok(false);
+                }
                 self.save_as(path)?;
             }
             FilePickerAction::ExportScript => {

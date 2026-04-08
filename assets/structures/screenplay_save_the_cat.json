@@ -1,0 +1,34 @@
+{
+  "id": "screenplay_save_the_cat",
+  "name": "Save the Cat",
+  "mediums": ["screenplay"],
+  "author": "Blake Snyder",
+  "type": "beat_sheet",
+  "complexity": "beginner",
+  "description": "15-beat commercial screenplay structure.",
+  "best_for": "Commercial films, clear turning points, tight pacing.",
+  "avoid_if": "You want a very loose or highly experimental process.",
+  "references": [
+    {
+      "label": "Official Save the Cat site",
+      "url": "https://savethecat.com/"
+    }
+  ],
+  "steps": [
+    {"id": "opening_image", "name": "Opening Image", "target": "p1", "prompt": "What opening image establishes the protagonist's world?", "content": "", "status": "empty"},
+    {"id": "theme_stated", "name": "Theme Stated", "target": "p5", "prompt": "What is the theme of the story?", "content": "", "status": "empty"},
+    {"id": "set_up", "name": "Set-Up", "target": "p1-10", "prompt": "Introduce the characters and their world.", "content": "", "status": "empty"},
+    {"id": "catalyst", "name": "Catalyst", "target": "p12", "prompt": "What life-changing event happens to the protagonist?", "content": "", "status": "empty"},
+    {"id": "debate", "name": "Debate", "target": "p12-25", "prompt": "The protagonist hesitates or debates the journey.", "content": "", "status": "empty"},
+    {"id": "break_into_two", "name": "Break into Two", "target": "p25", "prompt": "The protagonist chooses to start the journey.", "content": "", "status": "empty"},
+    {"id": "b_story", "name": "B Story", "target": "p30", "prompt": "A subplot starts, often a relationship.", "content": "", "status": "empty"},
+    {"id": "fun_and_games", "name": "Fun and Games", "target": "p30-55", "prompt": "The promise of the premise is explored.", "content": "", "status": "empty"},
+    {"id": "midpoint", "name": "Midpoint", "target": "p55", "prompt": "A major shift or false victory/defeat.", "content": "", "status": "empty"},
+    {"id": "bad_guys_close_in", "name": "Bad Guys Close In", "target": "p55-75", "prompt": "Stakes rise, and the protagonist's flaws are exposed.", "content": "", "status": "empty"},
+    {"id": "all_is_lost", "name": "All Is Lost", "target": "p75", "prompt": "A low point for the protagonist.", "content": "", "status": "empty"},
+    {"id": "dark_night_of_the_soul", "name": "Dark Night of the Soul", "target": "p75-85", "prompt": "The protagonist reflects and finds a new way.", "content": "", "status": "empty"},
+    {"id": "break_into_three", "name": "Break into Three", "target": "p85", "prompt": "The protagonist decides to solve the main conflict.", "content": "", "status": "empty"},
+    {"id": "finale", "name": "Finale", "target": "p85-110", "prompt": "The final showdown and climax.", "content": "", "status": "empty"},
+    {"id": "final_image", "name": "Final Image", "target": "p110", "prompt": "The closing image showing the new world.", "content": "", "status": "empty"}
+  ]
+}

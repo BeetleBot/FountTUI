@@ -15,6 +15,131 @@ use ratatui::{
 use std::collections::HashSet;
 use unicode_width::UnicodeWidthStr;
 
+pub fn draw_home(f: &mut Frame, app: &mut App, area: Rect) {
+    let panel_w = 70u16;
+    let panel_h = 24u16;
+    let x = area.x + area.width.saturating_sub(panel_w) / 2;
+    let y = area.y + area.height.saturating_sub(panel_h) / 2;
+    let panel = Rect {
+        x,
+        y,
+        width: panel_w.min(area.width),
+        height: panel_h.min(area.height),
+    };
+
+    f.render_widget(Clear, panel);
+
+    let theme = &app.theme;
+    let border_color = Color::from(theme.ui.dim.clone());
+    let accent = Color::from(theme.ui.normal_mode_bg.clone());
+    let sel_bg = accent;
+
+    f.render_widget(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(border_color)),
+        panel,
+    );
+
+    let inner = panel.inner(ratatui::layout::Margin {
+        horizontal: 2,
+        vertical: 1,
+    });
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(7), // Logo
+            Constraint::Min(0),    // Menu
+            Constraint::Length(3), // Footer
+        ])
+        .split(inner);
+
+    // 1. Logo
+    let mut logo_lines = Vec::new();
+    let logo_style = Style::default().fg(accent).add_modifier(Modifier::BOLD);
+    let logo_text = [
+        " █▀▀ █▀▀█ █  █ █▀▀▄ ▀▀█▀▀ ",
+        " █▀▀ █  █ █  █ █  █   █   ",
+        " ▀   ▀▀▀▀  ▀▀▀ ▀  ▀   ▀   ",
+    ];
+    for row in logo_text {
+        logo_lines.push(Line::from(Span::styled(row, logo_style)));
+    }
+    logo_lines.push(Line::from(Span::styled(
+        " Screenwriting Studio ",
+        Style::default().fg(border_color).add_modifier(Modifier::ITALIC),
+    )));
+    f.render_widget(Paragraph::new(logo_lines).centered(), chunks[0]);
+
+    // 2. Menu Sections
+    let menu_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(50),
+            Constraint::Percentage(50),
+        ])
+        .split(chunks[1]);
+
+    // Menu Item Helper
+    let render_menu_item = |idx: usize, label: &str, app: &App| -> ListItem<'static> {
+        let is_sel = idx == app.home_selected;
+        let style = if is_sel {
+            Style::default().bg(sel_bg).fg(Color::Black).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Color::White)
+        };
+        let prefix = if is_sel { " ⟫ " } else { "   " };
+        ListItem::new(Line::from(vec![
+            Span::styled(prefix.to_string(), style),
+            Span::styled(label.to_string(), style),
+        ]))
+    };
+
+    let sc_items = vec![
+        render_menu_item(0, "New Screenplay (.fountain)", app),
+        render_menu_item(1, "Open Screenplay (.fountain)", app),
+    ];
+    f.render_widget(
+        List::new(sc_items).block(Block::default().title(" SCREENPLAY ").title_style(Style::default().fg(border_color))),
+        menu_chunks[0].inner(ratatui::layout::Margin { horizontal: 1, vertical: 1 }),
+    );
+
+    let st_items = vec![
+        render_menu_item(2, "New Story Structure", app),
+        render_menu_item(3, "Existing Story Structure", app),
+    ];
+    f.render_widget(
+        List::new(st_items).block(Block::default().title(" STORY STRUCTURE ").title_style(Style::default().fg(border_color))),
+        menu_chunks[1].inner(ratatui::layout::Margin { horizontal: 1, vertical: 1 }),
+    );
+
+    let bottom_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Min(0),
+            Constraint::Length(4),
+        ])
+        .split(chunks[1]);
+
+    let common_items = vec![
+        render_menu_item(4, "Help & Tutorial", app),
+        render_menu_item(5, "Quit Fount", app),
+    ];
+    f.render_widget(
+        List::new(common_items),
+        bottom_chunks[1],
+    );
+
+    // 3. Footer
+    let footer_text = vec![
+        Line::from(vec![
+            Span::styled("github.com/BeetleBot/Fount", Style::default().fg(border_color).add_modifier(Modifier::DIM)),
+        ]),
+    ];
+    f.render_widget(Paragraph::new(footer_text).centered(), chunks[2]);
+}
+
 pub fn draw(f: &mut Frame, app: &mut App) {
     let area = f.area();
     let theme = &app.theme;
@@ -140,6 +265,21 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     let global_pad = text_area.width.saturating_sub(page_w) / 2;
 
     let mut pad_top = 0;
+
+    if app.mode == AppMode::Home {
+        draw_home(f, app, area);
+        return;
+    }
+
+    if app.mode == AppMode::StructurePicker {
+        draw_structure_picker(f, app);
+        return;
+    }
+
+    if app.mode == AppMode::PlanningStudio {
+        draw_planning_studio(f, app, area);
+        return;
+    }
 
     if app.mode != AppMode::Home {
         let (vis_row, _vis_x) = find_visual_cursor(&app.layout, app.cursor_y, app.cursor_x);
@@ -1152,105 +1292,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     // -- Floating Home Screen --
     if app.mode == AppMode::Home {
-        let panel_w = 66u16;
-        let panel_h = 24u16;
-        let x = area.x + area.width.saturating_sub(panel_w) / 2;
-        let y = area.y + area.height.saturating_sub(panel_h) / 2;
-        let panel = Rect {
-            x,
-            y,
-            width: panel_w.min(area.width),
-            height: panel_h.min(area.height),
-        };
-
-        f.render_widget(ratatui::widgets::Clear, panel);
-
-        let outer_block = Block::default()
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::DarkGray));
-        f.render_widget(outer_block, panel);
-
-        let inner = Rect {
-            x: panel.x + 1,
-            y: panel.y + 1,
-            width: panel.width.saturating_sub(2),
-            height: panel.height.saturating_sub(2),
-        };
-
-        let w = inner.width as usize;
-        let accent = Color::LightCyan;
-        let dim = Color::DarkGray;
-        let sel_bg = mode_bg;
-
-        let logo_style = Style::default().fg(accent).add_modifier(Modifier::BOLD);
-        let dim_style = Style::default().fg(dim);
-
-        let center = |text: &str| -> String {
-            let text_w = unicode_width::UnicodeWidthStr::width(text);
-            let pad = (w.saturating_sub(text_w)) / 2;
-            format!("{}{}", " ".repeat(pad), text)
-        };
-
-        let mut home_lines = Vec::new();
-        home_lines.push(Line::from(""));
-
-        for row in &[
-            "\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2557} \u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2557} \u{2588}\u{2588}\u{2557}   \u{2588}\u{2588}\u{2557}\u{2588}\u{2588}\u{2588}\u{2557}   \u{2588}\u{2588}\u{2557}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2557}",
-            "\u{2588}\u{2588}\u{2554}\u{2550}\u{2550}\u{2550}\u{2550}\u{255d}\u{2588}\u{2588}\u{2554}\u{2550}\u{2550}\u{2550}\u{2588}\u{2588}\u{2557}\u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}\u{2588}\u{2588}\u{2588}\u{2588}\u{2557}  \u{2588}\u{2588}\u{2551}\u{255a}\u{2550}\u{2550}\u{2588}\u{2588}\u{2554}\u{2550}\u{2550}\u{255d}",
-            "\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2557}  \u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}\u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}\u{2588}\u{2588}\u{2554}\u{2588}\u{2588}\u{2557} \u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}   ",
-            "\u{2588}\u{2588}\u{2554}\u{2550}\u{2550}\u{255d}  \u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}\u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}\u{2588}\u{2588}\u{2551}\u{255a}\u{2588}\u{2588}\u{2557}\u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}   ",
-            "\u{2588}\u{2588}\u{2551}     \u{255a}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2554}\u{255d}\u{255a}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2588}\u{2554}\u{255d}\u{2588}\u{2588}\u{2551} \u{255a}\u{2588}\u{2588}\u{2588}\u{2588}\u{2551}   \u{2588}\u{2588}\u{2551}   ",
-            "\u{255a}\u{2550}\u{255d}      \u{255a}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{255d}  \u{255a}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{255d} \u{255a}\u{2550}\u{255d}  \u{255a}\u{2550}\u{2550}\u{2550}\u{255d}   \u{255a}\u{2550}\u{255d}   ",
-        ] {
-            home_lines.push(Line::from(Span::styled(center(row), logo_style)));
-        }
-
-        home_lines.push(Line::from(""));
-        home_lines.push(Line::from(Span::styled(
-            center("Screenwriting in the terminal. Distraction-free."),
-            dim_style,
-        )));
-        home_lines.push(Line::from(""));
-        home_lines.push(Line::from(Span::styled(
-            center(&"\u{2500}".repeat(42)),
-            dim_style,
-        )));
-        home_lines.push(Line::from(""));
-
-        let menu = [
-            ("New Script", "N", "Start a blank fountain screenplay"),
-            ("Open File", "O", "Browse for a .fountain script"),
-            ("Tutorial", "T", "Getting started guide"),
-            ("Exit", "Q", "Quit Fount"),
-        ];
-
-        for (i, (label, key, hint)) in menu.iter().enumerate() {
-            let is_sel = i == app.home_selected;
-            let display = format!("[{}]  {:<12} \u{2014}  {}", key, label, hint);
-            let centered = center(&display);
-            if is_sel {
-                let s = Style::default()
-                    .fg(Color::Black)
-                    .bg(sel_bg)
-                    .add_modifier(Modifier::BOLD);
-                home_lines.push(Line::from(Span::styled(centered, s)));
-            } else {
-                home_lines.push(Line::from(Span::styled(centered, dim_style)));
-            }
-            home_lines.push(Line::from(""));
-        }
-
-        home_lines.push(Line::from(Span::styled(
-            center(&"\u{2500}".repeat(42)),
-            dim_style,
-        )));
-        home_lines.push(Line::from(""));
-        home_lines.push(Line::from(Span::styled(
-            center("github.com/BeetleBot/Fount"),
-            Style::default().fg(dim).add_modifier(Modifier::DIM),
-        )));
-
-        f.render_widget(Paragraph::new(home_lines), inner);
+        draw_home(f, app, area);
     }
 
     if app.mode == AppMode::FilePicker {
@@ -1564,4 +1606,128 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
             .as_ref(),
         )
         .split(popup_layout[1])[1]
+}
+
+
+pub fn draw_structure_picker(f: &mut Frame, app: &mut App) {
+    let area = f.area();
+    let theme = &app.theme;
+    let accent = Color::from(theme.ui.normal_mode_bg.clone());
+    
+    let modal_area = centered_rect(60, 50, area);
+    f.render_widget(Clear, modal_area);
+    
+    let block = Block::default()
+        .title(" CHOOSE STORY STRUCTURE ")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(accent));
+    
+    let items: Vec<ListItem> = app.planning.registry.as_ref().unwrap().get_all()
+        .iter()
+        .enumerate()
+        .map(|(i, s)| {
+            let is_sel = i == app.planning.selected_step_idx;
+            let style = if is_sel {
+                Style::default().bg(accent).fg(Color::Black).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::White)
+            };
+            ListItem::new(vec![
+                Line::from(vec![
+                    Span::styled(if is_sel { " ⟫ " } else { "   " }, style),
+                    Span::styled(s.name.clone(), style),
+                ]),
+                Line::from(vec![
+                    Span::styled(format!("     {}", s.description), Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC)),
+                ]),
+            ])
+        })
+        .collect();
+    
+    let list = List::new(items).block(block);
+    f.render_widget(list, modal_area);
+}
+
+pub fn draw_planning_studio(f: &mut Frame, app: &mut App, area: Rect) {
+    let project = match &app.planning.project {
+        Some(p) => p,
+        _ => return,
+    };
+    
+    let theme = &app.theme;
+    let accent = Color::from(theme.ui.normal_mode_bg.clone());
+    let dim = Color::from(theme.ui.dim.clone());
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Header
+            Constraint::Min(0),    // Editor
+            Constraint::Length(3), // Prompt
+        ])
+        .split(area);
+
+    let header_block = Block::default()
+        .borders(Borders::BOTTOM)
+        .border_style(Style::default().fg(dim));
+    let title = Line::from(vec![
+        Span::styled(" PLANNING STUDIO ", Style::default().bg(accent).fg(Color::Black).add_modifier(Modifier::BOLD)),
+        Span::raw(" "),
+        Span::styled(project.title.clone(), Style::default().add_modifier(Modifier::BOLD)),
+        Span::raw(" ("),
+        Span::styled(project.structure_name.clone(), Style::default().fg(accent)),
+        Span::raw(")"),
+    ]);
+    f.render_widget(Paragraph::new(title).block(header_block).centered(), chunks[0]);
+
+    let main_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(30),
+            Constraint::Percentage(70),
+        ])
+        .split(chunks[1]);
+
+    let items: Vec<ListItem> = project.steps.iter().enumerate().map(|(i, s)| {
+        let is_sel = i == app.planning.selected_step_idx;
+        let is_done = !s.content.trim().is_empty();
+        let style = if is_sel {
+            Style::default().bg(accent).fg(Color::Black).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(if is_done { Color::White } else { dim })
+        };
+        
+        let icon = if is_done { " ● " } else { " ○ " };
+        ListItem::new(Line::from(vec![
+            Span::styled(icon, style),
+            Span::styled(s.name.clone(), style),
+        ]))
+    }).collect();
+
+    let sidebar_block = Block::default()
+        .title(" STORY BEATS ")
+        .borders(Borders::RIGHT)
+        .border_style(Style::default().fg(dim));
+    f.render_widget(List::new(items).block(sidebar_block), main_chunks[0]);
+
+    let step = &project.steps[app.planning.selected_step_idx];
+    let editor_block = Block::default()
+        .title(format!(" {} ", step.name.to_uppercase()))
+        .title_style(Style::default().fg(accent).add_modifier(Modifier::BOLD))
+        .borders(Borders::NONE)
+        .padding(ratatui::widgets::Padding::uniform(2));
+    
+    f.render_widget(Paragraph::new(step.content.clone()).block(editor_block).wrap(ratatui::widgets::Wrap { trim: true }), main_chunks[1]);
+
+    let footer_block = Block::default()
+        .borders(Borders::TOP)
+        .border_style(Style::default().fg(dim));
+    let prompt = Line::from(vec![
+        Span::styled(" TARGET: ", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
+        Span::raw(step.target.clone()),
+        Span::raw("  |  "),
+        Span::styled(" PROMPT: ", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
+        Span::styled(step.prompt.clone(), Style::default().add_modifier(Modifier::ITALIC)),
+    ]);
+    f.render_widget(Paragraph::new(prompt).block(footer_block).centered(), chunks[2]);
 }

@@ -1,0 +1,22 @@
+{
+  "id": "screenplay_story_circle",
+  "name": "Dan Harmon Story Circle",
+  "mediums": ["screenplay"],
+  "author": "Dan Harmon",
+  "type": "beat_sheet",
+  "complexity": "beginner",
+  "description": "8-step circular journey focusing on change.",
+  "best_for": "Episodic storytelling, internal character change.",
+  "avoid_if": "You need precise page targets for a 120p script.",
+  "references": [{"label": "Story Structure 101 - Dan Harmon", "url": "https://channel101.fandom.com/wiki/Story_Structure_101:_Super_Basic_Shit"}],
+  "steps": [
+    {"id": "you", "name": "1. You", "target": "1/8th", "prompt": "A character is in a zone of comfort.", "content": "", "status": "empty"},
+    {"id": "need", "name": "2. Need", "target": "2/8th", "prompt": "But they want something.", "content": "", "status": "empty"},
+    {"id": "go", "name": "3. Go", "target": "3/8th", "prompt": "They enter an unfamiliar situation.", "content": "", "status": "empty"},
+    {"id": "search", "name": "4. Search", "target": "4/8th", "prompt": "Adapt to it.", "content": "", "status": "empty"},
+    {"id": "find", "name": "5. Find", "target": "5/8th", "prompt": "Get what they wanted.", "content": "", "status": "empty"},
+    {"id": "take", "name": "6. Take", "target": "6/8th", "prompt": "Pay a heavy price for it.", "content": "", "status": "empty"},
+    {"id": "return", "name": "7. Return", "target": "7/8th", "prompt": "Then return to their familiar situation.", "content": "", "status": "empty"},
+    {"id": "change", "name": "8. Change", "target": "8/8th", "prompt": "Having changed.", "content": "", "status": "empty"}
+  ]
+}
