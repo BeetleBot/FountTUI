@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-04-08
+
+### Added
+- **Sprint Tracking**: Professional timed writing goals with real-time status bar progress, persistent history, and CSV export functionality.
+- **Advanced Session Snapshots**: Redesigned session recovery with a table-based UI and dual restoration modes (Replace current or Open in new buffer).
+- **Theme Management System**: High-performance theme engine with dynamic swapping and persistent user themes support.
+- **Production Mode Scene Locking**: Industry-standard scene numbering system with auto-incrementing suffixes and production-safe locks.
+- **Enhanced Command Help**: Completely redesigned command pane with standardized `/` prefixes, clear categorization, and "one command per line" layout.
+
+### Changed
+- **Command Prefix Standardization**: Unified all Ex-style commands under the `/` prefix for consistent interaction.
+- **UI Architecture**: Refined the modal rendering stack to ensure consistent visibility across all application modes.
+
+### Fixed
+- **Snapshot State Handling**: Resolved type mismatch issue when navigating the upgraded snapshot table.
+- **Sprint Export Workflow**: Replaced legacy menu-based export with an interactive TUI file picker for custom save locations.
+
 ## [0.5.0] - 2026-04-06
 
 ### Added
