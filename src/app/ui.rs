@@ -974,6 +974,14 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             spans.push(Span::styled("/", cmd_style));
             spans.push(Span::styled(&app.command_input, cmd_style));
 
+            if !app.command_input.is_empty() && !app.command_error {
+                let commands = app.get_command_completions();
+                if let Some(first_match) = commands.iter().find(|&c| c.starts_with(&app.command_input) && c != &app.command_input) {
+                    let remainder = &first_match[app.command_input.len()..];
+                    spans.push(Span::styled(remainder.to_string(), Style::default().fg(Color::DarkGray)));
+                }
+            }
+
             if app.command_input.is_empty() && !app.command_error {
                 spans.push(Span::styled(
                     " type a command...",

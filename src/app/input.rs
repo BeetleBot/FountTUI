@@ -848,25 +848,26 @@ impl App {
                             self.command_error = false;
                         }
                         KeyCode::Tab => {
-                            let commands = vec![
-                                "w", "ww", "q", "q!", "wq", "ex",
-                                "renum", "clearnum", "locknum", "unlocknum", "injectnum",
-                                "set", "search", "export",
-                                "ud", "rd", "copy", "cut", "paste", "pos",
-                                "selectall", "home", "o", "bn", "bp", "new", "newfile", "addtitle",
-                                "snap", "sprint", "cancelsprint", "sprintstat",
-                            ];
-                            let matches: Vec<&&str> = commands.iter()
+                            let commands = self.get_command_completions();
+                            let matches: Vec<&String> = commands.iter()
                                 .filter(|c| c.starts_with(&self.command_input))
                                 .collect();
                             
                             if !matches.is_empty() {
                                 // Basic cycling
-                                let current = self.command_input.as_str();
-                                if let Some(pos) = matches.iter().position(|m| **m == current) {
+                                let current = &self.command_input;
+                                if let Some(pos) = matches.iter().position(|m| *m == current) {
                                     self.command_input = matches[(pos + 1) % matches.len()].to_string();
                                 } else {
                                     self.command_input = matches[0].to_string();
+                                }
+                            }
+                        }
+                        KeyCode::Right => {
+                            if !self.command_input.is_empty() {
+                                let commands = self.get_command_completions();
+                                if let Some(first_match) = commands.iter().find(|&c| c.starts_with(&self.command_input) && c != &self.command_input) {
+                                    self.command_input = first_match.to_string();
                                 }
                             }
                         }

@@ -716,6 +716,38 @@ impl App {
         self.set_status(&msg);
     }
     
+    pub fn get_command_completions(&self) -> Vec<String> {
+        let mut commands: Vec<String> = vec![
+            "w", "ww", "q", "q!", "wq", "ex",
+            "renum", "clearnum", "locknum", "unlocknum", "injectnum",
+            "search", "export",
+            "ud", "rd", "copy", "cut", "paste", "pos",
+            "selectall", "home", "o", "bn", "bp", "new", "newfile", "addtitle",
+            "snap", "sprint", "cancelsprint", "sprintstat",
+            "set", "theme", "t"
+        ]
+        .into_iter()
+        .map(String::from)
+        .collect();
+
+        let set_options = [
+            "markup", "pagenums", "scenenums", "contd", "typewriter", 
+            "autosave", "autocomplete", "autobreaks", "focus"
+        ];
+        for opt in set_options {
+            commands.push(format!("set {}", opt));
+        }
+
+        let themes = self.theme_manager.list_themes();
+        for t in themes {
+            commands.push(format!("theme {}", t));
+            commands.push(format!("t {}", t));
+        }
+
+        commands
+    }
+
+
     pub fn load_recent_files(&mut self) {
         if let Some(proj_dirs) = directories::ProjectDirs::from("", "", "Fount") {
             let path = proj_dirs.data_dir().join("recent.txt");
