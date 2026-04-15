@@ -2,7 +2,7 @@ Title: FOUNT: THE DEFINITIVE GUIDE
 Credit: Written by
 Author: Nirmal
 Source: Based on the Fount Screenwriting Software
-Draft date: April 5, 2026
+Draft date: April 15, 2026
 Contact:
     writingnirmal@gmail.com
 Notes:
@@ -140,13 +140,15 @@ Press `Ctrl+P`.
 A pane appears.
 
 BEETLE (CONT'D)
-The Settings Pane. You can toggle **Auto-Save**, **Autocomplete**, **Typewriter Mode** (which keeps your cursor centered vertically), and **Focus Mode** (which hides everything but the text).
+The Settings Pane. You can toggle **Auto-Save**, **Autocomplete**, **Typewriter Mode** (which keeps your cursor centered vertically), and **Focus Mode** (which hides everything but the text). Oh, and you can press `Enter` on the **Theme** option to cycle through gorgeous color palettes!
 
 BEE
-What about jumping around?
+What about jumping around? Searching?
 
 BEETLE
-Type `/`. That's the Command Palette. Type a number to jump to a line. Type "s" followed by a number to jump to a scene. Or type "/locknum" to freeze your scene numbers for production.
+Type `/`. That's the powerful Command Palette. Type `/[line]` to jump to a line, or `/s[num]` to jump to a scene.
+(beat)
+You can even do clipboard actions: `/copy`, `/cut`, `/paste`, `/selectall`. Or undo and redo with `/u` and `/rd`! 
 
 BEE
 Wait, autocomplete?
@@ -156,10 +158,40 @@ Start typing a character name or location and hit `Tab`. Fount learns as you wri
 
 
 
-# ACT IV: THE FINISHING TOUCHES
+# ACT IV: PRODUCTION MASTERY
+
+INT. THE EDIT BAY - NIGHT
+[[green]]
+
+= Word Sprints, Snapshots, and Global Search.
+
+Bee is frantically tapping on his keyboard. A timer ticks down in the status bar.
+
+BEE
+This Sprint Timer is amazing! How did you do it?
+
+BEETLE
+Simple. I just opened the command palette and typed `/sprint 15` for a 15-minute word-count dash. You can also view your history with `/sprintstat`, or cancel with `/cancelsprint`.
+
+BEE
+But what if I mess up my entire script during a sprint?!
+
+BEETLE
+(smirking)
+Automated Session Snapshots. Just run `/snap` to pull up your recent backups and restore the timeline. You're never going to lose your work.
+
+BEE
+And finding that one specific dialogue line I wrote yesterday?
+
+BEETLE
+Type `/search [query]`! Global search instantly finds what you need. Need a title page? `/addtitle`. It's all at your fingertips.
+
+
+
+# ACT V: THE FINISHING TOUCHES
 
 EXT. THE PRODUCTION SET - DAY
-[[green]]
+[[red]]
 
 = Scene numbers, manual page breaks, and the final Export Pane.
 
@@ -173,17 +205,18 @@ Beetle adds `#15#` to the end of a heading.
 .INT. THE VAULT - NIGHT #15#
 
 BEE
-You can also do it manually for any heading. And if you need a forced page break...
+You can also do it automatically! The command palette has `/renum`, `/clearnum`, `/injectnum`, and even `/locknum` for production lock.
 
-Beetle types:
+BEETLE
+Exactly! And if you need a forced page break...
 
 ===
 
-BEE (CONT'D)
+BEE
 That triple equals sign is a clean break.
 
 BEETLE
-Now for the magic. Press `Ctrl+E`.
+Now for the magic. Type `/export` or press `Ctrl+E`.
 
 The Export Pane appears. Beetle can choose between PDF, Scene List (CSV), or Character Reports.
 
@@ -195,4 +228,4 @@ It's Fount.
 
 > FADE OUT.
 
-[End of Tutorial. Use `Ctrl+X` to close this buffer. Happy writing!]
+[End of Tutorial. Use `/home` to go back to the start screen. Happy writing!]
