@@ -1538,9 +1538,13 @@ impl App {
 
     /// Inject a specific scene number tag `#tag#` or auto-compute one.
     pub fn inject_scene_number_tag(&mut self, tag: Option<&str>) {
-        let y = self.cursor_y;
+        let mut y = self.cursor_y.min(self.types.len().saturating_sub(1));
+        while y > 0 && self.types[y] != LineType::SceneHeading {
+            y -= 1;
+        }
+
         if y >= self.types.len() || self.types[y] != LineType::SceneHeading {
-            self.set_status("Not a scene heading");
+            self.set_status("No scene heading found");
             return;
         }
         let base = Self::strip_scene_number_from_line(&self.lines[y]).to_string();
@@ -1989,7 +1993,10 @@ impl App {
             }
             // :injectnum  (auto) or  :injectnum14B  (custom tag)
             s if s.starts_with("injectnum") => {
-                let tag_part = &s[9..];
+                let mut tag_part = &s[9..];
+                if tag_part.is_empty() && !args.is_empty() {
+                    tag_part = args[0];
+                }
                 if tag_part.is_empty() {
                     self.inject_scene_number_tag(None);
                 } else {
