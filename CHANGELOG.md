@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-04-17
+
+### Added
+- **Refined Buffer Tabs**: Implementation of a minimalist, adaptive tab bar that appears only when multiple scripts are open. Features high-contrast dynamic foreground detection and dirty state indicators.
+- **Buffer Switch Shortcuts**: New navigation keys for multi-buffer workflows: `Ctrl+PageUp` (Previous) and `Ctrl+PageDown` (Next).
+- **Interactive Save Prompt**: `/w` command now dynamically triggers the file picker when saving unnamed buffers, providing a seamless "Save As" experience.
+
+### Changed
+- **Streamlined Distribution**: Removed Windows MSI installers in favor of standardized, portable tarballs across all platforms.
+- **UI Aesthetic Polish**: Refined the tab bar with ` | ` separators, vibrant primary-colored delimiters, and subtle horizontal padding for a premium feel.
+- **Workflow Automation**: Simplified GitHub Actions release cycle by removing redundant platform-specific README documents.
+
+### Fixed
+- **Active Tab Contrast**: Resolved visibility issues in the "Adaptive" theme by using unified theme selection colors for the active tab.
+
 ## [0.6.0] - 2026-04-08
 
 ### Added
