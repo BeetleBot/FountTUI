@@ -5,7 +5,6 @@ use crate::{
     app::{App, AppMode, EnsembleItem, GoalType},
     formatting::{RenderConfig, StringCaseExt, render_inline},
     layout::{find_visual_cursor, strip_sigils},
-    theme::HexColor,
     types::{LineType, PAGE_WIDTH, base_style},
 };
 use ratatui::{
@@ -13,7 +12,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Tabs},
+    widgets::{Block, List, ListItem, Paragraph},
 };
 use std::collections::HashSet;
 use unicode_width::UnicodeWidthStr;
@@ -32,24 +31,24 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     f.render_widget(Block::default().style(base_ui_style), area);
 
     let (mode_str, mode_bg) = match app.mode {
-        AppMode::Normal => (" NORMAL ", Color::from(theme.ui.normal_mode_bg.clone())),
-        AppMode::Command => (" COMMAND ", Color::from(theme.ui.command_mode_bg.clone())),
+        AppMode::Normal => (" Normal ", Color::from(theme.ui.normal_mode_bg.clone())),
+        AppMode::Command => (" Command ", Color::from(theme.ui.command_mode_bg.clone())),
         AppMode::SceneNavigator => (
-            " NAVIGATOR ",
+            " Navigator ",
             Color::from(theme.ui.navigator_mode_bg.clone()),
         ),
-        AppMode::SettingsPane => (" SETTINGS ", Color::from(theme.ui.settings_mode_bg.clone())),
-        AppMode::ExportPane => (" EXPORT ", Color::from(theme.ui.normal_mode_bg.clone())),
-        AppMode::Shortcuts => (" LEGEND ", Color::from(theme.ui.normal_mode_bg.clone())),
-        AppMode::Search => (" SEARCH ", Color::from(theme.ui.search_mode_bg.clone())),
-        AppMode::Home => (" HOME ", Color::from(theme.ui.normal_mode_bg.clone())),
-        AppMode::FilePicker => (" FILE ", Color::from(theme.ui.normal_mode_bg.clone())),
+        AppMode::SettingsPane => (" Settings ", Color::from(theme.ui.settings_mode_bg.clone())),
+        AppMode::ExportPane => (" Export ", Color::from(theme.ui.normal_mode_bg.clone())),
+        AppMode::Shortcuts => (" Legend ", Color::from(theme.ui.normal_mode_bg.clone())),
+        AppMode::Search => (" Search ", Color::from(theme.ui.search_mode_bg.clone())),
+        AppMode::Home => (" Home ", Color::from(theme.ui.normal_mode_bg.clone())),
+        AppMode::FilePicker => (" File ", Color::from(theme.ui.normal_mode_bg.clone())),
         AppMode::Snapshots => (
-            " SNAPSHOTS ",
+            " Snapshots ",
             Color::from(theme.ui.navigator_mode_bg.clone()),
         ),
-        AppMode::SprintStat => (" SPRINTS ", Color::from(theme.ui.normal_mode_bg.clone())),
-        _ => (" PROMPT ", Color::from(theme.ui.command_mode_bg.clone())),
+        AppMode::SprintStat => (" Sprints ", Color::from(theme.ui.normal_mode_bg.clone())),
+        _ => (" Prompt ", Color::from(theme.ui.command_mode_bg.clone())),
     };
 
     let is_prompt = app.mode != AppMode::Normal;
@@ -59,7 +58,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     let _in_command_mode = app.mode == AppMode::Command;
     let footer_height = if show_bottom { 1 } else { 0 };
-    let header_height = if app.buffers.len() > 1 { 2 } else { 0 };
+    let header_height: u16 = 1; // Always visible
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -71,16 +70,26 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     let (header_area, mut text_area, footer_area) = (chunks[0], chunks[1], chunks[2]);
 
-    if header_height > 0 {
-        let header_chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Length(1), Constraint::Length(1)])
-            .split(header_area);
-        
-        let (tabs_area, sep_area) = (header_chunks[0], header_chunks[1]);
+    // ── Header rendering (Zen Style) ──────────────────────────────────────
+    {
+        let dim_color = Color::from(theme.ui.dim.clone());
+        let sep = " | ";
+        let sep_style = Style::default().fg(dim_color);
 
-        let tab_titles: Vec<Line> = (0..app.buffers.len())
-            .map(|i| {
+        let mut left_spans = Vec::new();
+
+        // Opening bracket + app name with version
+        left_spans.push(Span::styled("[ ", sep_style));
+        left_spans.push(Span::styled(
+            format!("Fount v{}", env!("CARGO_PKG_VERSION")),
+            Style::default().fg(mode_bg).add_modifier(Modifier::BOLD),
+        ));
+
+        // Buffer tabs (if multiple buffers)
+        if app.buffers.len() > 1 {
+            left_spans.push(Span::styled(sep, sep_style));
+
+            for i in 0..app.buffers.len() {
                 let (file, dirty) = if i == app.current_buf_idx {
                     (&app.file, app.dirty)
                 } else {
@@ -91,41 +100,55 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     .as_ref()
                     .and_then(|p| p.file_name())
                     .map(|n| n.to_string_lossy().into_owned())
-                    .unwrap_or_else(|| "New Buffer".to_string());
+                    .unwrap_or_else(|| "New Script".to_string());
 
-                let mut text = format!(" {} ", name);
-                if dirty {
-                    text.push('*');
+                let dirty_mark = if dirty { "*" } else { "" };
+                let label = format!("{}{}", name, dirty_mark);
+
+                if i == app.current_buf_idx {
+                    left_spans.push(Span::styled(
+                        label,
+                        Style::default()
+                            .fg(Color::from(theme.ui.selection_fg.clone()))
+                            .bg(Color::from(theme.ui.selection_bg.clone()))
+                            .add_modifier(Modifier::BOLD),
+                    ));
+                } else {
+                    left_spans.push(Span::styled(label, Style::default().fg(dim_color)));
                 }
-                text.push(' ');
-                Line::from(text)
-            })
-            .collect();
 
-        let highlight_bg = Color::from(theme.ui.selection_bg.clone());
-        let highlight_fg = Color::from(theme.ui.selection_fg.clone());
+                if i + 1 < app.buffers.len() {
+                    left_spans.push(Span::styled(sep, sep_style));
+                }
+            }
+        }
 
-        let tabs = Tabs::new(tab_titles)
-            .select(app.current_buf_idx)
-            .style(Style::default().fg(Color::from(theme.ui.dim.clone())))
-            .highlight_style(
-                Style::default()
-                    .bg(highlight_bg)
-                    .fg(highlight_fg)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .divider(" | ");
+        // Right side: theme name + closing bracket
+        let mut right_spans = Vec::new();
+        right_spans.push(Span::styled(sep, sep_style));
+        right_spans.push(Span::styled(
+            app.config.theme.clone(),
+            Style::default().fg(dim_color),
+        ));
+        right_spans.push(Span::styled(" ]", sep_style));
 
-        let tab_area_with_pad = tabs_area.inner(ratatui::layout::Margin {
-            horizontal: 1,
-            vertical: 0,
-        });
-        f.render_widget(tabs, tab_area_with_pad);
-        
-        // Draw separator line
-        let line_color = Color::from(theme.ui.normal_mode_bg.clone());
-        let sep_line = "─".repeat(sep_area.width as usize);
-        f.render_widget(Paragraph::new(sep_line).style(Style::default().fg(line_color)), sep_area);
+        let left_width: usize = left_spans
+            .iter()
+            .map(|s| UnicodeWidthStr::width(s.content.as_ref()))
+            .sum();
+        let right_width: usize = right_spans
+            .iter()
+            .map(|s| UnicodeWidthStr::width(s.content.as_ref()))
+            .sum();
+        let total_width = header_area.width as usize;
+
+        if total_width > left_width + right_width {
+            let pad_len = total_width - left_width - right_width;
+            left_spans.push(Span::raw(" ".repeat(pad_len)));
+        }
+
+        left_spans.extend(right_spans);
+        f.render_widget(Paragraph::new(Line::from(left_spans)), header_area);
     }
 
     app.sidebar_area = Rect::default();
@@ -142,21 +165,11 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let shadow_area = side_chunks[1];
         text_area = side_chunks[2];
 
-        // Draw shadow
-        let shadow_color = theme
-            .ui
-            .shadow_color
-            .clone()
-            .unwrap_or(HexColor("black".into()));
-        f.render_widget(
-            Block::default().style(Style::default().bg(Color::from(shadow_color))),
-            shadow_area,
-        );
-
-        let sidebar_block = Block::default()
-            .borders(Borders::RIGHT)
-            .border_style(Style::default().fg(Color::from(theme.ui.dim.clone())));
-        f.render_widget(sidebar_block, app.sidebar_area);
+        // Draw clean separator
+        let dim_sep_color = Color::from(theme.ui.dim.clone());
+        let sep_col = "│".repeat(shadow_area.height as usize);
+        let sep_lines: Vec<Line> = sep_col.chars().map(|_| Line::from(Span::styled("│", Style::default().fg(dim_sep_color)))).collect();
+        f.render_widget(Paragraph::new(sep_lines), shadow_area);
     }
 
     app.settings_area = Rect::default();
@@ -181,21 +194,10 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let shadow_area = side_chunks[1];
         app.settings_area = side_chunks[2];
 
-        // Draw shadow (left of panel)
-        let shadow_color = theme
-            .ui
-            .shadow_color
-            .clone()
-            .unwrap_or(HexColor("black".into()));
-        f.render_widget(
-            Block::default().style(Style::default().bg(Color::from(shadow_color))),
-            shadow_area,
-        );
-
-        let settings_block = Block::default()
-            .borders(Borders::LEFT)
-            .border_style(Style::default().fg(mode_bg));
-        f.render_widget(settings_block, app.settings_area);
+        // Draw clean separator
+        let dim_sep_color = Color::from(theme.ui.dim.clone());
+        let sep_lines: Vec<Line> = (0..shadow_area.height).map(|_| Line::from(Span::styled("│", Style::default().fg(dim_sep_color)))).collect();
+        f.render_widget(Paragraph::new(sep_lines), shadow_area);
     }
 
     let height = text_area.height as usize;
@@ -474,7 +476,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                             .add_modifier(Modifier::BOLD)
                     };
 
-                    let prefix = if is_selected { " ⟫ " } else { "   " };
+                    let prefix = if is_selected { " › " } else { "   " };
                     lines.push(Line::from(vec![
                         Span::styled(prefix, style),
                         Span::styled(item.label.to_uppercase(), style),
@@ -518,7 +520,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                         Style::default().fg(dim_color).add_modifier(Modifier::DIM)
                     };
 
-                    let prefix = if is_selected { " ⟫ " } else { "   " };
+                    let prefix = if is_selected { " › " } else { "   " };
 
                     // Determine if this is the last scene in the section
                     let is_last_in_section =
@@ -677,7 +679,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     Style::default().fg(dim_color).add_modifier(Modifier::DIM)
                 };
 
-                let prefix = if is_selected { " ⟫ " } else { "   " };
+                let prefix = if is_selected { " › " } else { "   " };
 
                 match item {
                     EnsembleItem::CharacterHeader(char_idx) => {
@@ -732,9 +734,9 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             })
             .collect();
 
-        let title = format!(" [ ENSEMBLE ({}) ] ", app.character_stats.len());
+        let title = format!(" [ Ensemble ({}) ]", app.character_stats.len());
         let list = List::new(items)
-            .block(Block::default().title(title))
+            .block(Block::default().title(Span::styled(title, Style::default().fg(Color::from(theme.ui.dim.clone())))))
             .highlight_style(Style::default());
 
         f.render_stateful_widget(
@@ -785,13 +787,13 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
                 let line = if label == "Theme" {
                     Line::from(vec![
-                        Span::styled(if is_selected { " ⟫ " } else { "   " }, style),
+                        Span::styled(if is_selected { " › " } else { "   " }, style),
                         Span::styled(icon, if is_selected { style } else { icon_style }),
                         Span::styled(format!("{}: {}", label, theme_name), style),
                     ])
                 } else {
                     Line::from(vec![
-                        Span::styled(if is_selected { " ⟫ " } else { "   " }, style),
+                        Span::styled(if is_selected { " › " } else { "   " }, style),
                         Span::styled(icon, if is_selected { style } else { icon_style }),
                         Span::styled(label, style),
                     ])
@@ -840,13 +842,13 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 Style::default()
             };
             ListItem::new(Line::from(vec![
-                Span::styled(if is_selected { " ⟫ " } else { "   " }, style),
+                Span::styled(if is_selected { " › " } else { "   " }, style),
                 Span::styled(label.to_string(), style),
             ]))
         };
 
         visual_items.push(ListItem::new(Line::from(vec![Span::styled(
-            "  ── SCREENPLAY EXPORT ──",
+            "  [ Screenplay Export ]",
             header_style,
         )])));
         visual_items.push(render_item(0, &format!(" Format: {}", format_label), app));
@@ -874,7 +876,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
         visual_items.push(ListItem::new(Line::from(Span::raw(""))));
         visual_items.push(ListItem::new(Line::from(Span::styled(
-            "  ── PRODUCTION REPORTS ──",
+            "  [ Production Reports ]",
             header_style,
         ))));
         visual_items.push(render_item(4, &format!(" Type: {}", report_label), app));
@@ -965,9 +967,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 items.push(ListItem::new(""));
             }
 
-            let header_str = format!(" ━━━ {} ", cat.trim());
-            let header_line =
-                header_str.clone() + &"━".repeat(40usize.saturating_sub(header_str.len()));
+            let header_line = format!(" [ {} ]", cat.trim());
 
             items.push(ListItem::new(Line::from(Span::styled(
                 header_line,
@@ -985,7 +985,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                         key_padded,
                         Style::default().fg(mode_bg).add_modifier(Modifier::BOLD),
                     ),
-                    Span::styled("│ ", Style::default().fg(Color::DarkGray)),
+                    Span::styled("| ", Style::default().fg(Color::DarkGray)),
                     Span::styled(*desc, Style::default().fg(Color::Gray)),
                 ])));
             }
@@ -1002,25 +1002,34 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         );
     }
 
-    // ── Footer rendering ──────────────────────────────────────────────────
+    // ── Footer rendering (Zen Style) ────────────────────────────────────────
     if footer_area.height > 0 {
+        let dim_color = Color::from(theme.ui.dim.clone());
+        let sep = " | ";
+        let sep_style = Style::default().fg(dim_color);
+
         let mut spans = Vec::new();
 
+        // Opening bracket
+        spans.push(Span::styled("[ ", sep_style));
+
+        // Mode label (title-case, calmer than SCREAMING)
         spans.push(Span::styled(
-            mode_str,
+            mode_str.trim(),
             Style::default().fg(mode_bg).add_modifier(Modifier::BOLD),
         ));
-        spans.push(Span::raw(" │ "));
+        spans.push(Span::styled(sep, sep_style));
 
+        // Filename + dirty/lock indicators
         let fname = app
             .file
             .as_ref()
             .and_then(|p| p.file_name())
             .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_else(|| "[No Name]".to_string());
-        let dirty_str = if app.dirty { " [+]" } else { "" };
+            .unwrap_or_else(|| "New Script".to_string());
+        let dirty_str = if app.dirty { "*" } else { "" };
         let lock_str = if app.config.production_lock {
-            " (L)"
+            " 🔒"
         } else {
             ""
         };
@@ -1028,8 +1037,9 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             format!("{}{}{}", fname, dirty_str, lock_str),
             Style::default().fg(mode_bg),
         ));
-        spans.push(Span::raw(" │ "));
+        spans.push(Span::styled(sep, sep_style));
 
+        // Center content: command, search, status, or hint
         if app.mode == AppMode::Command {
             let cmd_style = if app.command_error {
                 Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
@@ -1043,14 +1053,14 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 let commands = app.get_command_completions();
                 if let Some(first_match) = commands.iter().find(|&c| c.starts_with(&app.command_input) && c != &app.command_input) {
                     let remainder = &first_match[app.command_input.len()..];
-                    spans.push(Span::styled(remainder.to_string(), Style::default().fg(Color::DarkGray)));
+                    spans.push(Span::styled(remainder.to_string(), Style::default().fg(dim_color)));
                 }
             }
 
             if app.command_input.is_empty() && !app.command_error {
                 spans.push(Span::styled(
                     " type a command...",
-                    Style::default().fg(Color::DarkGray),
+                    Style::default().fg(dim_color),
                 ));
             }
         } else if matches!(
@@ -1060,15 +1070,15 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             match app.mode {
                 AppMode::Search => {
                     let prompt_base = if app.last_search.is_empty() {
-                        "SEARCH: ".to_string()
+                        "Search: ".to_string()
                     } else {
-                        format!("SEARCH [{}]: ", app.last_search)
+                        format!("Search [{}]: ", app.last_search)
                     };
                     spans.push(Span::raw(format!("{}{}", prompt_base, app.search_query)));
                 }
-                AppMode::PromptSave => spans.push(Span::raw("SAVE MODIFIED SCRIPT? (Y/N/C) ")),
+                AppMode::PromptSave => spans.push(Span::raw("Save modified script? (y/n/c) ")),
                 AppMode::PromptFilename => {
-                    spans.push(Span::raw(format!("FILENAME: {} ", app.filename_input)))
+                    spans.push(Span::raw(format!("Filename: {} ", app.filename_input)))
                 }
                 _ => {}
             }
@@ -1077,17 +1087,18 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 Style::default().fg(Color::Red)
             } else {
                 Style::default()
-                    .fg(Color::DarkGray)
+                    .fg(dim_color)
                     .add_modifier(Modifier::ITALIC)
             };
             spans.push(Span::styled(msg, style));
         } else {
             spans.push(Span::styled(
-                "COMMANDS [F1]",
-                Style::default().fg(Color::DarkGray),
+                "F1 Help",
+                Style::default().fg(dim_color),
             ));
         }
 
+        // Sprint progress (if active)
         if let Some(GoalType::Sprint {
             start_time,
             duration,
@@ -1109,7 +1120,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             let words_written = current_words.saturating_sub(*start_words);
 
             let sprint_msg = format!(
-                " │ SPRINT [{}{}] {:02}:{:02} ({}w)",
+                " | Sprint [{}{}] {:02}:{:02} +{}w",
                 "█".repeat(filled),
                 "░".repeat(empty),
                 rem_min,
@@ -1119,21 +1130,23 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             spans.push(Span::styled(sprint_msg, Style::default().fg(mode_bg)));
         }
 
+        // Right-side info: word count, line count, cursor position
         let word_count = app.total_word_count();
-        let line_count = app.lines.len();
-        let pos_str = format!("{}:{}", app.cursor_y + 1, app.cursor_x + 1);
+        let pos_str = format!("Ln {}, Col {}", app.cursor_y + 1, app.cursor_x + 1);
 
         let mut right_spans = Vec::new();
-        right_spans.push(Span::raw(" │ "));
+        right_spans.push(Span::styled(sep, sep_style));
         right_spans.push(Span::styled(
-            format!("{}W {}L", word_count, line_count),
-            Style::default().fg(Color::DarkGray),
+            format!("{} words", word_count),
+            Style::default().fg(dim_color),
         ));
-        right_spans.push(Span::raw(" │ "));
+        right_spans.push(Span::styled(sep, sep_style));
         right_spans.push(Span::styled(
             pos_str,
-            Style::default().add_modifier(Modifier::BOLD),
+            Style::default().fg(dim_color),
         ));
+        // Closing bracket
+        right_spans.push(Span::styled(" ]", sep_style));
 
         let left_width: usize = spans
             .iter()
@@ -1155,9 +1168,9 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
         if app.mode == AppMode::Search && footer_area.height > 0 {
             let prompt_base = if app.last_search.is_empty() {
-                "SEARCH: ".to_string()
+                "Search: ".to_string()
             } else {
-                format!("SEARCH [{}]: ", app.last_search)
+                format!("Search [{}]: ", app.last_search)
             };
             let prompt_w = UnicodeWidthStr::width(prompt_base.as_str())
                 + UnicodeWidthStr::width(app.search_query.as_str());
@@ -1275,8 +1288,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
         home_lines.push(Line::from(""));
         home_lines.push(Line::from(Span::styled(
-            "WRITE BLOCKBUSTER IN YOUR TERMINAL!",
-            Style::default().fg(dim).add_modifier(Modifier::DIM),
+            "Write blockbusters in your terminal.",
+            Style::default().fg(dim).add_modifier(Modifier::ITALIC),
         )));
         home_lines.push(Line::from(""));
         home_lines.push(Line::from(Span::styled("\u{2500}".repeat(40), Style::default().fg(dim))));
@@ -1284,15 +1297,15 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
         // MAIN MENU
         let menu_options = [
-            "NEW SCRIPT",
-            "OPEN FILE",
-            "TUTORIAL",
-            "EXIT APP",
+            "New Script",
+            "Open File",
+            "Tutorial",
+            "Exit",
         ];
 
         for (i, label) in menu_options.iter().enumerate() {
             let is_sel = i == app.home_selected;
-            let text = if is_sel { format!(" ▶ {} ◀ ", label) } else { format!("   {}   ", label) };
+            let text = if is_sel { format!(" › {} ", label) } else { format!("   {}   ", label) };
             let style = if is_sel {
                 Style::default().fg(sel_fg).bg(sel_bg).add_modifier(Modifier::BOLD)
             } else {
@@ -1305,7 +1318,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         // RECENT DOCUMENTS
         if !app.recent_files.is_empty() {
             home_lines.push(Line::from(""));
-            home_lines.push(Line::from(Span::styled("RECENT DOCUMENTS", Style::default().fg(dim).add_modifier(Modifier::BOLD))));
+            home_lines.push(Line::from(Span::styled("[ Recent Documents ]", Style::default().fg(dim).add_modifier(Modifier::BOLD))));
             home_lines.push(Line::from(""));
             
             for (i, path) in app.recent_files.iter().take(4).enumerate() {
@@ -1313,7 +1326,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 let is_sel = idx == app.home_selected;
                 
                 let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "Unknown".to_string());
-                let text = if is_sel { format!(" ▶ {} ◀ ", name) } else { format!("   {}   ", name) };
+                let text = if is_sel { format!(" › {} ", name) } else { format!("   {}   ", name) };
                 
                 let style = if is_sel {
                     Style::default().fg(sel_fg).bg(sel_bg).add_modifier(Modifier::BOLD)

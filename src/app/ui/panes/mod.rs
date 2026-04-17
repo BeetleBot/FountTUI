@@ -44,8 +44,9 @@ pub fn draw_sprint_stats(f: &mut Frame, app: &mut App) {
     f.render_widget(Clear, modal_area);
 
     let history_block = Block::default()
-        .title(" EXPORT SPRINT DATA (E) | SPRINT HISTORY ")
+        .title(" [ Sprint History | Press E to Export ] ")
         .borders(Borders::ALL)
+        .border_type(ratatui::widgets::BorderType::Rounded)
         .border_style(Style::default().fg(mode_bg));
 
     let inner_area = modal_area.inner(ratatui::layout::Margin {
@@ -115,11 +116,11 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_widget(Clear, block_area);
 
     let title = match state.action {
-        crate::app::FilePickerAction::Open => " Open File ",
-        crate::app::FilePickerAction::Save => " Save As ",
-        crate::app::FilePickerAction::ExportReport => " Export Report ",
-        crate::app::FilePickerAction::ExportScript => " Export Script ",
-        crate::app::FilePickerAction::ExportSprints => " Export Sprints ",
+        crate::app::FilePickerAction::Open => " [ Open File ] ",
+        crate::app::FilePickerAction::Save => " [ Save As ] ",
+        crate::app::FilePickerAction::ExportReport => " [ Export Report ] ",
+        crate::app::FilePickerAction::ExportScript => " [ Export Script ] ",
+        crate::app::FilePickerAction::ExportSprints => " [ Export Sprints ] ",
     };
 
     let block = Block::default()
@@ -130,6 +131,7 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
                 .add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
+        .border_type(ratatui::widgets::BorderType::Rounded)
         .border_style(Style::default().fg(Color::DarkGray));
     f.render_widget(block, block_area);
 
@@ -198,7 +200,7 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             };
 
             ListItem::new(Line::from(vec![
-                Span::styled(if is_selected { " ⟫ " } else { "   " }, style),
+                Span::styled(if is_selected { " › " } else { "   " }, style),
                 Span::styled(icon, style),
                 Span::styled(name, style),
             ]))
@@ -214,7 +216,7 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             Style::default().fg(Color::LightGreen)
         };
         display_items.push(ListItem::new(Line::from(vec![
-            Span::styled(if is_selected { " ⟫ " } else { "   " }, style),
+            Span::styled(if is_selected { " › " } else { "   " }, style),
             Span::styled("󰒓 ", style),
             Span::styled(
                 format!("Confirm: {}", state.filename_input),
@@ -264,8 +266,9 @@ pub fn draw_snapshots(f: &mut Frame, app: &mut App) {
     f.render_widget(Clear, modal_area);
 
     let block = Block::default()
-        .title(" (R/Enter) REPLACE CURRENT | (O) OPEN IN NEW | SNAPSHOTS ")
+        .title(" [ Snapshots | Enter: Replace | O: Open in New ] ")
         .borders(Borders::ALL)
+        .border_type(ratatui::widgets::BorderType::Rounded)
         .border_style(Style::default().fg(mode_bg));
 
     let header = Row::new(vec![

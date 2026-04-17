@@ -51,7 +51,7 @@ use super::*;
         }
 
         assert!(
-            content.contains("SAVE") && content.contains("MODIFIED"),
+            content.contains("Save") && content.contains("modified"),
             "Prompt should appear even in focus mode. Content: {}", content
         );
     }
@@ -129,7 +129,7 @@ use super::*;
         terminal.draw(|f| crate::app::ui::draw(f, &mut app)).unwrap();
 
         let buffer = terminal.backend().buffer();
-        let status_cell = &buffer[(0, 23)];
+        let status_cell = &buffer[(2, 23)];
         assert_eq!(
             status_cell.fg,
             Color::Blue,
@@ -204,7 +204,7 @@ use super::*;
         terminal.draw(|f| crate::app::ui::draw(f, &mut app)).unwrap();
 
         assert_eq!(app.scroll, 0);
-        assert_eq!(terminal.backend_mut().get_cursor_position().unwrap().y, 0);
+        assert_eq!(terminal.backend_mut().get_cursor_position().unwrap().y, 1);
     }
 
 
