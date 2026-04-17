@@ -31,9 +31,6 @@ Fount is a dedicated writing environment designed to disappear while you work.
 
 ### Installation
 
-**Windows (Recommended):**
-Download and run the latest **[Fount Windows Installer (.msi)](https://github.com/BeetleBot/Fount/releases/latest)**. This will automatically add `fount` to your system PATH.
-
 **Linux & macOS (Single Command):**
 ```bash
 curl -sSfL https://raw.githubusercontent.com/BeetleBot/Fount/main/scripts/install.sh | sh
