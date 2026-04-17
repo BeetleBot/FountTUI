@@ -33,11 +33,13 @@ pub fn export_to_pdf(
     path: &std::path::Path,
     paper_size: PaperSize,
     bold_scene_headings: bool,
+    mirror_scene_numbers: crate::config::MirrorOption,
 ) -> std::io::Result<()> {
     let screenplay = parse(fountain_text);
     let exporter = PdfExporter {
         paper_size,
         bold_scene_headings,
+        mirror_scene_numbers,
         ..Default::default()
     };
     exporter.export_to_file(&screenplay, path)

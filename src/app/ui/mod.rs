@@ -865,19 +865,31 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             ),
             app,
         ));
+        visual_items.push(render_item(
+            3,
+            &format!(
+                " Scene Numbers: Both Sides: {}",
+                if app.config.mirror_scene_numbers != crate::config::MirrorOption::Off {
+                    "[X]"
+                } else {
+                    "[ ]"
+                }
+            ),
+            app,
+        ));
 
         visual_items.push(ListItem::new(Line::from(vec![Span::raw("")])));
-        visual_items.push(render_item(3, " [ EXPORT SCREENPLAY ]", app));
+        visual_items.push(render_item(4, " [ EXPORT SCREENPLAY ]", app));
 
         visual_items.push(ListItem::new(Line::from(Span::raw(""))));
         visual_items.push(ListItem::new(Line::from(Span::styled(
             "  [ Production Reports ]",
             header_style,
         ))));
-        visual_items.push(render_item(4, &format!(" Type: {}", report_label), app));
+        visual_items.push(render_item(5, &format!(" Type: {}", report_label), app));
 
         visual_items.push(ListItem::new(Line::from(Span::raw(""))));
-        visual_items.push(render_item(5, " [ EXPORT REPORT ]", app));
+        visual_items.push(render_item(6, " [ EXPORT REPORT ]", app));
 
         let list = List::new(visual_items);
         f.render_widget(

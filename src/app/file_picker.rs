@@ -115,7 +115,13 @@ impl App {
                         } else {
                             crate::pdf::A4
                         };
-                        crate::pdf::export_to_pdf(&fountain_text, &path, paper_size, self.config.export_bold_scene_headings)
+                        crate::pdf::export_to_pdf(
+                            &fountain_text,
+                            &path,
+                            paper_size,
+                            self.config.export_bold_scene_headings,
+                            self.config.mirror_scene_numbers.clone(),
+                        )
                     }
                 };
                 match result {

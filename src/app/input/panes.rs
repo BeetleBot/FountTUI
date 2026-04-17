@@ -246,7 +246,7 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::ExportPane => {
-                    let options_count = 6;
+                    let options_count = 7;
                     match key.code {
                         KeyCode::Esc => {
                             self.mode = AppMode::Normal;
@@ -283,6 +283,15 @@ impl App {
                                 }
                                 2 => self.config.export_bold_scene_headings = !self.config.export_bold_scene_headings,
                                 3 => {
+                                    if self.config.mirror_scene_numbers == crate::config::MirrorOption::Off {
+                                        self.config.mirror_scene_numbers = crate::config::MirrorOption::ExportOnly;
+                                        let _ = crate::config::Config::save_string_setting("mirror_scene_numbers", "export");
+                                    } else {
+                                        self.config.mirror_scene_numbers = crate::config::MirrorOption::Off;
+                                        let _ = crate::config::Config::save_string_setting("mirror_scene_numbers", "off");
+                                    }
+                                }
+                                4 => {
                                     let (ext, default_name) = match self.config.export_format.as_str() {
                                         "pdf" => ("pdf", "screenplay.pdf"),
                                         "fountain" => ("fountain", "screenplay.fountain"),
@@ -295,7 +304,7 @@ impl App {
 
                                     self.open_file_picker(FilePickerAction::ExportScript, vec![ext.to_string()], Some(default_name.to_string()));
                                 }
-                                4 => {
+                                5 => {
                                     let formats = ["csv_scene", "csv_char"];
                                     if let Some(idx) = formats.iter().position(|&x| x == self.config.report_format.as_str()) {
                                         self.config.report_format = formats[(idx + 1) % formats.len()].to_string();
@@ -303,7 +312,7 @@ impl App {
                                         self.config.report_format = "csv_scene".to_string();
                                     }
                                 }
-                                5 => {
+                                6 => {
                                     let (ext, default_name) = match self.config.report_format.as_str() {
                                         "csv_scene" => ("csv", "scene_list.csv"),
                                         "csv_char" => ("csv", "character_report.csv"),

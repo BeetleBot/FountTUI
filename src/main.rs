@@ -35,7 +35,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 fount::pdf::A4
             };
-            if let Err(e) = fount::pdf::export_to_pdf(&fountain_text, &export_path, paper_size, app.config.export_bold_scene_headings) {
+            if let Err(e) = fount::pdf::export_to_pdf(
+                &fountain_text,
+                &export_path,
+                paper_size,
+                app.config.export_bold_scene_headings,
+                app.config.mirror_scene_numbers.clone(),
+            ) {
                 eprintln!("Error exporting to PDF: {}", e);
                 std::process::exit(1);
             }

@@ -18,6 +18,7 @@ use crate::pdf::{
     rich_string::RichString,
     screenplay::{Dialogue, DialogueElement, Element, Span, TitlePage},
 };
+use crate::config::MirrorOption;
 
 const FONT_SIZE: usize = 12; // standard screenplay size
 const FONT_WIDTH: f32 = 7.2; // 12 * 0.6 (Courier Prime's aspect ratio)
@@ -187,6 +188,8 @@ pub struct PdfExporter {
     pub paper_size: PaperSize,
     /// Apply bold formatting to scene headings
     pub bold_scene_headings: bool,
+    /// Whether to mirror scene numbers to the right side
+    pub mirror_scene_numbers: MirrorOption,
 }
 
 impl Exporter for PdfExporter {
@@ -367,8 +370,8 @@ impl PdfExporter {
                                 right: layout_info.size.x as f32 - MARGINS.heading.left + 18.0,
                             };
                             let right_number_margin = Margin {
-                                left: layout_info.size.x as f32 - MARGINS.heading.right + 18.0,
-                                right: 18.0,
+                                left: layout_info.size.x as f32 - 72.0 - 54.0, // Anchored at 72 (page num pos), 54pt span
+                                right: 72.0, // Aligned with page numbers
                             };
 
                             let rich_number = &number.as_ref().unwrap().into();
@@ -381,20 +384,22 @@ impl PdfExporter {
                                 Alignment::LeftToRight,
                             )?;
 
-                            let mut initial_line_index_right = *ctx.line_index;
-                            let mut ctx_number_right = DrawContext {
-                                layout_info,
-                                surface: ctx.surface,
-                                line_index: &mut initial_line_index_right,
-                                max_lines: max_lines_per_page,
-                            };
-                            write_element(
-                                &mut ctx_number_right,
-                                rich_number,
-                                &right_number_margin,
-                                &mut 0,
-                                Alignment::RightToLeft,
-                            )?;
+                            if self.mirror_scene_numbers != MirrorOption::Off {
+                                let mut initial_line_index_right = *ctx.line_index;
+                                let mut ctx_number_right = DrawContext {
+                                    layout_info,
+                                    surface: ctx.surface,
+                                    line_index: &mut initial_line_index_right,
+                                    max_lines: max_lines_per_page,
+                                };
+                                write_element(
+                                    &mut ctx_number_right,
+                                    rich_number,
+                                    &right_number_margin,
+                                    &mut 0,
+                                    Alignment::RightToLeft,
+                                )?;
+                            }
                         }
                         outline.push_child(OutlineNode::new(
                             slug.to_plain_string(),
