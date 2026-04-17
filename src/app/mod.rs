@@ -501,7 +501,7 @@ impl App {
             .as_ref()
             .and_then(|p| p.file_name())
             .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_else(|| "New Buffer".to_string());
+            .unwrap_or_else(|| "New File".to_string());
 
         let line_count = self.lines.len();
         let line_word = if line_count == 1 { "line" } else { "lines" };
@@ -575,7 +575,7 @@ impl App {
             .as_ref()
             .and_then(|p| p.file_name())
             .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_else(|| "New Buffer".to_string());
+            .unwrap_or_else(|| "New File".to_string());
         let line_count = self.lines.len();
         let line_word = if line_count == 1 { "line" } else { "lines" };
         self.set_status(&format!("{} -- {} {}", file_name, line_count, line_word));
@@ -1165,7 +1165,7 @@ impl App {
                 let new_idx = self.buffers.len() - 1;
                 self.has_multiple_buffers = true;
                 self.switch_buffer(new_idx);
-                self.set_status("New buffer opened");
+                self.set_status("New file opened");
                 *text_changed = true;
                 *cursor_moved = true;
             }

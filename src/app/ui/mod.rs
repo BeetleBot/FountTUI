@@ -174,14 +174,9 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     app.settings_area = Rect::default();
     if app.mode == AppMode::SettingsPane
-        || app.mode == AppMode::Shortcuts
         || app.mode == AppMode::ExportPane
     {
-        let side_width = if app.mode == AppMode::Shortcuts {
-            41
-        } else {
-            34
-        };
+        let side_width: u16 = 34;
         let side_chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
@@ -895,112 +890,156 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     if app.mode == AppMode::Shortcuts {
-        let categories = &[
-            (
-                " GENERAL KEYS ",
-                &[
-                    ("/         ", "Explore Commands"),
-                    ("F1        ", "Toggle Help Pane"),
-                    ("Esc       ", "Back to Editor"),
-                    ("^P        ", "Zen Settings"),
-                    ("^E        ", "Export Menu"),
-                    ("^H / ^L   ", "Scenes / Ensemble"),
-                    ("^O        ", "Open File"),
-                    ("^N        ", "New Script"),
-                ][..],
-            ),
-            (
-                " NAV & EDIT ",
-                &[
-                    ("/[line]    ", "Jump to line"),
-                    ("/s[num]    ", "Jump to scene"),
-                    ("/u / /rd   ", "Undo / Redo change"),
-                    ("/copy     ", "Clipboard copy"),
-                    ("/cut      ", "Clipboard cut"),
-                    ("/paste    ", "Clipboard paste"),
-                    ("/selectall", "Highlight all text"),
-                    ("/home     ", "Back to start screen"),
-                ][..],
-            ),
-            (
-                " SCENE & PROD ",
-                &[
-                    ("/renum     ", "Renumber all scenes"),
-                    ("/clearnum  ", "Clear scene numbers"),
-                    ("/injectnum ", "Tag current scene (#)"),
-                    ("/locknum   ", "Production scene lock"),
-                    ("/unlocknum ", "Unlock scene numbers"),
-                    ("/addtitle  ", "Insert title page"),
-                ][..],
-            ),
-            (
-                " SPRINT & SNAP ",
-                &[
-                    ("/sprint [m] ", "Start word sprint"),
-                    ("/cancelsprint", "Cancel active sprint"),
-                    ("/sprintstat ", "View sprint history"),
-                    ("/snap       ", "Session snapshots"),
-                    ("/search [q] ", "Global search"),
-                    ("/export     ", "Open export menu"),
-                ][..],
-            ),
-            (
-                " ZEN SETTING (/set) ",
-                &[
-                    ("focus      ", "Toggle Zen mode"),
-                    ("typewriter ", "Toggle center lock"),
-                    ("markup     ", "Toggle syntax markers"),
-                    ("pagenums   ", "Toggle page counts"),
-                    ("scenenums  ", "Toggle scene numbers"),
-                    ("contd      ", "Toggle auto (CONT'D)"),
-                    ("autosave   ", "Toggle auto-save (30s)"),
-                    ("autocomplete", "Toggle suggestions"),
-                    ("autobreaks ", "Toggle smart breaks"),
-                    ("^PgUp/PgDn ", "Switch Buffers"),
-                ][..],
-            ),
-        ];
+        // ── Cheat Sheet: 3-column grid ──────────────────────────────────
+        let modal_area = panes::centered_rect(92, 90, area);
+        f.render_widget(ratatui::widgets::Clear, modal_area);
 
-        let mut items = Vec::new();
-        for (idx, (cat, shortcuts)) in categories.iter().enumerate() {
-            if idx > 0 {
-                items.push(ListItem::new(""));
+        let dim_color = Color::from(theme.ui.dim.clone());
+        let key_style = Style::default().fg(mode_bg).add_modifier(Modifier::BOLD);
+        let desc_style = Style::default().fg(Color::Gray);
+        let hdr_style = Style::default().fg(mode_bg).add_modifier(Modifier::BOLD);
+        let sep_style = Style::default().fg(dim_color);
+
+        // Helper: build lines for one category
+        let build_section = |title: &'static str, entries: &[(&'static str, &'static str)]| -> Vec<Line<'static>> {
+            let mut lines = Vec::new();
+            lines.push(Line::from(Span::styled(format!(" [ {} ]", title), hdr_style)));
+            for (key, desc) in entries {
+                let k = key.trim();
+                lines.push(Line::from(vec![
+                    Span::styled(format!("  {:<14}", k), key_style),
+                    Span::styled(*desc, desc_style),
+                ]));
             }
+            lines.push(Line::from(""));
+            lines
+        };
 
-            let header_line = format!(" [ {} ]", cat.trim());
+        // Column 1: Editor Keys + File Commands + Sprint & Tools
+        let mut col1: Vec<Line> = Vec::new();
+        col1.extend(build_section("Editor Keys", &[
+            ("/",            "Command bar"),
+            ("F1",           "Cheat sheet"),
+            ("Esc",          "Back to editor"),
+            ("^P",           "Settings pane"),
+            ("^E",           "Export pane"),
+            ("^H",           "Scene Navigator"),
+            ("^L",           "Ensemble"),
+            ("Tab",          "Autocomplete"),
+        ]));
+        col1.extend(build_section("File Commands", &[
+            ("/w",           "Save"),
+            ("/ww",          "Save As"),
+            ("/o [path]",    "Open file"),
+            ("/new",         "New file"),
+            ("/bn / /bp",    "Next / prev file"),
+            ("/q",           "Close file"),
+            ("/q!",          "Force close"),
+            ("/wq",          "Save & close"),
+            ("/ex",          "Exit app"),
+            ("/home",        "Start screen"),
+        ]));
+        col1.extend(build_section("Sprint & Tools", &[
+            ("/sprint [m]",  "Start sprint"),
+            ("/cancelsprint", "Cancel sprint"),
+            ("/sprintstat",  "Sprint history"),
+            ("/snap",        "Snapshots"),
+            ("/export",      "Export pane"),
+            ("/theme [name]", "Switch theme"),
+        ]));
 
-            items.push(ListItem::new(Line::from(Span::styled(
-                header_line,
+        // Column 2: Selection + Navigation Commands
+        let mut col2: Vec<Line> = Vec::new();
+        col2.extend(build_section("Selection", &[
+            ("Shift+Arrow",  "Extend selection"),
+            ("Shift+Home",   "Select to start"),
+            ("Shift+End",    "Select to end"),
+            ("^A",           "Select all"),
+            ("^C",           "Copy"),
+            ("^X",           "Cut"),
+            ("^V",           "Paste"),
+        ]));
+        col2.extend(build_section("Navigation", &[
+            ("/[line]",      "Jump to line"),
+            ("/s[num]",      "Jump to scene"),
+            ("/search [q]",  "Search text"),
+            ("/ud / /rd",    "Undo / Redo"),
+            ("/pos",         "Cursor position"),
+            ("/copy",        "Copy clipboard"),
+            ("/cut",         "Cut clipboard"),
+            ("/paste",       "Paste clipboard"),
+            ("/selectall",   "Select all text"),
+        ]));
+
+        // Column 3: Move & Navigate + Scene & Production + Settings
+        let mut col3: Vec<Line> = Vec::new();
+        col3.extend(build_section("Movement", &[
+            ("^Left/Right",  "Jump by word"),
+            ("^Backspace",   "Delete word \u{2190}"),
+            ("^Delete",      "Delete word \u{2192}"),
+            ("Home / End",   "Line start/end"),
+            ("PgUp / PgDn",  "Scroll page"),
+            ("^PgUp/PgDn",   "Switch files"),
+        ]));
+        col3.extend(build_section("Scene & Production", &[
+            ("/renum",       "Renumber scenes"),
+            ("/clearnum",    "Clear numbers"),
+            ("/injectnum",   "Number scene"),
+            ("/locknum",     "Production lock"),
+            ("/unlocknum",   "Unlock numbers"),
+            ("/addtitle",    "Title page"),
+        ]));
+        col3.extend(build_section("Settings (/set)", &[
+            ("focus",        "Zen mode"),
+            ("typewriter",   "Center cursor"),
+            ("markup",       "Show/hide markup"),
+            ("pagenums",     "Page numbers"),
+            ("scenenums",    "Scene numbers"),
+            ("contd",        "Auto (CONT'D)"),
+            ("autosave",     "Auto-save 30s"),
+            ("autocomplete", "Suggestions"),
+            ("autobreaks",   "Smart breaks"),
+        ]));
+
+        // Render the block border
+        let block = Block::default()
+            .title(Span::styled(
+                " [ Cheat Sheet ] ",
                 Style::default().fg(mode_bg).add_modifier(Modifier::BOLD),
-            ))));
+            ))
+            .borders(ratatui::widgets::Borders::ALL)
+            .border_type(ratatui::widgets::BorderType::Rounded)
+            .border_style(Style::default().fg(dim_color));
 
-            items.push(ListItem::new(""));
+        let inner = block.inner(modal_area);
+        f.render_widget(block, modal_area);
 
-            for (key, desc) in *shortcuts {
-                let key_clean = key.trim();
-                let key_padded = format!("  {:<16} ", key_clean);
+        // Split inner into 3 columns with separators
+        let col_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Ratio(1, 3),
+                Constraint::Length(1),
+                Constraint::Ratio(1, 3),
+                Constraint::Length(1),
+                Constraint::Min(0),
+            ])
+            .split(inner);
 
-                items.push(ListItem::new(Line::from(vec![
-                    Span::styled(
-                        key_padded,
-                        Style::default().fg(mode_bg).add_modifier(Modifier::BOLD),
-                    ),
-                    Span::styled("| ", Style::default().fg(Color::DarkGray)),
-                    Span::styled(*desc, Style::default().fg(Color::Gray)),
-                ])));
-            }
-        }
+        // Render separator columns
+        let sep_lines: Vec<Line> = (0..col_chunks[1].height)
+            .map(|_| Line::from(Span::styled("\u{2502}", sep_style)))
+            .collect();
+        f.render_widget(Paragraph::new(sep_lines.clone()), col_chunks[1]);
+        f.render_widget(Paragraph::new(sep_lines), col_chunks[3]);
 
-        let list = List::new(items);
-        f.render_stateful_widget(
-            list,
-            app.settings_area.inner(ratatui::layout::Margin {
-                horizontal: 0,
-                vertical: 1,
-            }),
-            &mut app.shortcuts_state,
-        );
+        // Render the three columns
+        f.render_widget(Paragraph::new(col1), col_chunks[0]);
+        f.render_widget(Paragraph::new(col2), col_chunks[2]);
+        f.render_widget(Paragraph::new(col3), col_chunks[4]);
     }
+
+
 
     // ── Footer rendering (Zen Style) ────────────────────────────────────────
     if footer_area.height > 0 {
@@ -1093,7 +1132,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             spans.push(Span::styled(msg, style));
         } else {
             spans.push(Span::styled(
-                "F1 Help",
+                "F1 Reference",
                 Style::default().fg(dim_color),
             ));
         }
