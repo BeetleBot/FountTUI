@@ -1,7 +1,7 @@
 # Changelog
 
 
-## [0.8.0] - 2026-04-18
+## [0.8.1] - 2026-04-18
 
 ### Changed
 - **Windows Distribution**: Removed pre-built Windows binaries and MSI installer from releases due to Smart App Control blocking unsigned apps. Windows users should install via `cargo install fount`.

@@ -7,7 +7,7 @@
         Manufacturer='BeetleBot'
         Language='1033'
         Codepage='1252'
-        Version='0.8.0'>
+        Version='0.8.1'>
 
         <Package Id='*' Keywords='Installer' Description='Fount Screenplay Editor Installer'
             Comments='A terminal-based Fountain screenplay editor' Manufacturer='BeetleBot'
