@@ -6,9 +6,6 @@
 ### Changed
 - **Windows Distribution**: Removed pre-built Windows binaries and MSI installer from releases due to Smart App Control blocking unsigned apps. Windows users should install via `cargo install fount`.
 
-### Added
-- **Interactive Setup Wizard**: The MSI installer now features a full Next → Next → Finish wizard with license agreement, destination folder selection, and premium branding.
-
 ## [0.7.8] - 2026-04-18
 
 ### Added
