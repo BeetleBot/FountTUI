@@ -1,4 +1,5 @@
 pub mod home;
+pub mod xray;
 
 use unicode_width::UnicodeWidthStr;
 use crate::app::App;

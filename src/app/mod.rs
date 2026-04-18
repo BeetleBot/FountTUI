@@ -97,6 +97,39 @@ pub enum AppMode {
     FilePicker,
     Snapshots,
     SprintStat,
+    XRay,
+}
+
+#[derive(Clone, Debug)]
+pub struct XRayCharacter {
+    pub name: String,
+    pub word_count: usize,
+    pub dialogue_lines: usize,
+    pub percentage: f32,
+}
+
+#[derive(Clone, Debug)]
+pub struct XRayScene {
+    pub label: String,
+    pub scene_num: Option<String>,
+    pub page_count: f32,
+    pub is_over_limit: bool,
+    pub line_idx: usize,
+}
+
+#[derive(Clone, Debug)]
+pub struct PacingBlock {
+    pub page: usize,
+    pub action_lines: usize,
+    pub dialogue_lines: usize,
+}
+
+#[derive(Clone, Debug)]
+pub struct XRayData {
+    pub characters: Vec<XRayCharacter>,
+    pub total_dialogue_words: usize,
+    pub scenes: Vec<XRayScene>,
+    pub pacing_map: Vec<PacingBlock>,
 }
 
 #[derive(PartialEq, Debug, Clone, Default)]
@@ -274,6 +307,10 @@ pub struct App {
     pub sprint_stats_state: TableState,
     pub flash_timer: Option<Instant>,
     pub recent_files: Vec<PathBuf>,
+
+    pub xray_data: Option<XRayData>,
+    pub xray_scroll: usize,
+    pub xray_tab: usize,
 }
 
 impl Drop for App {
@@ -425,6 +462,10 @@ impl App {
             sprint_stats_state: TableState::default(),
             flash_timer: None,
             recent_files: Vec::new(),
+
+            xray_data: None,
+            xray_scroll: 0,
+            xray_tab: 0,
         };
 
         app.load_recent_files();
@@ -1200,6 +1241,9 @@ impl App {
             }
             "sprintstat" => {
                 self.open_sprint_stats();
+            }
+            "xray" => {
+                self.compute_xray();
             }
             _ => {
                 self.set_error(&format!("Unknown command: /{}", cmd));

@@ -1,5 +1,5 @@
 pub mod panes;
-use self::panes::{draw_snapshots, draw_sprint_stats, draw_file_picker, home::draw_home};
+use self::panes::{draw_snapshots, draw_sprint_stats, draw_file_picker, home::draw_home, xray::draw_xray};
 
 use crate::{
     app::{App, AppMode, EnsembleItem, GoalType},
@@ -48,6 +48,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             Color::from(theme.ui.navigator_mode_bg.clone()),
         ),
         AppMode::SprintStat => (" Sprints ", Color::from(theme.ui.normal_mode_bg.clone())),
+        AppMode::XRay => (" X-Ray ", Color::from(theme.ui.navigator_mode_bg.clone())),
         _ => (" Prompt ", Color::from(theme.ui.command_mode_bg.clone())),
     };
 
@@ -1306,6 +1307,10 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     if app.mode == AppMode::SprintStat {
         draw_sprint_stats(f, app);
+    }
+
+    if app.mode == AppMode::XRay {
+        draw_xray(f, app);
     }
 }
 

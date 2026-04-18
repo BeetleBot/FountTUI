@@ -122,6 +122,18 @@ impl App {
         }
     }
 
+    /// Normalizes a character name by stripping parenthetical extensions
+    /// like (V.O.), (CONT'D), (O.S.), etc. so that EDWARD (V.O.) and
+    /// EDWARD (CONT'D) both collapse to EDWARD.
+    pub fn normalize_character_name(raw: &str) -> String {
+        let trimmed = raw.trim();
+        if let Some(idx) = trimmed.find('(') {
+            trimmed[..idx].trim().to_uppercase()
+        } else {
+            trimmed.to_uppercase()
+        }
+    }
+
     pub fn open_character_sidebar(&mut self) {
         use std::collections::HashMap;
         self.character_stats.clear();
@@ -142,10 +154,9 @@ impl App {
                 current_scene = raw_heading.trim().to_uppercase_1to1();
             }
 
-            if row.line_type == LineType::Character {
-                let name = strip_sigils(&row.raw_text, row.line_type)
-                    .trim()
-                    .to_uppercase_1to1();
+            if row.line_type == LineType::Character || row.line_type == LineType::DualDialogueCharacter {
+                let raw_name = strip_sigils(&row.raw_text, row.line_type).trim().to_string();
+                let name = Self::normalize_character_name(&raw_name);
                 let entry = stats_map
                     .entry(name.clone())
                     .or_insert_with(|| CharacterItem {
@@ -187,6 +198,180 @@ impl App {
         self.selected_ensemble_idx = 0;
         self.ensemble_state.select(Some(0));
         self.mode = AppMode::CharacterNavigator;
+    }
+
+    pub fn compute_xray(&mut self) {
+        use std::collections::HashMap;
+        use crate::app::{XRayData, XRayCharacter, XRayScene, PacingBlock};
+        use crate::types::LINES_PER_PAGE;
+
+        let mut char_stats: HashMap<String, (usize, usize)> = HashMap::new(); // name -> (words, lines)
+        let mut current_character: Option<String> = None;
+
+        // Scene tracking
+        let mut scenes: Vec<XRayScene> = Vec::new();
+        let mut current_scene_label = String::new();
+        let mut current_scene_num: Option<String> = None;
+        let mut current_scene_line_idx: usize = 0;
+        let mut current_scene_visual_rows: usize = 0;
+        let mut in_scene = false;
+
+        // Pacing: per-page action vs dialogue counts
+        let mut pacing_map: HashMap<usize, (usize, usize)> = HashMap::new(); // page -> (action, dialogue)
+        let mut current_page: usize = 1;
+
+        for row in &self.layout {
+            // Track page boundaries
+            if let Some(p) = row.page_num {
+                current_page = p;
+            }
+
+            match row.line_type {
+                LineType::SceneHeading => {
+                    // Close previous scene
+                    if in_scene {
+                        let page_count = current_scene_visual_rows as f32 / LINES_PER_PAGE as f32;
+                        scenes.push(XRayScene {
+                            label: current_scene_label.clone(),
+                            scene_num: current_scene_num.clone(),
+                            page_count,
+                            is_over_limit: page_count > 3.0,
+                            line_idx: current_scene_line_idx,
+                        });
+                    }
+
+                    let mut label = strip_sigils(&row.raw_text, row.line_type).to_string();
+                    // Strip inline notes
+                    while let Some(start) = label.find("[[") {
+                        if let Some(end_offset) = label[start..].find("]]") {
+                            label.replace_range(start..start + end_offset + 2, "");
+                        } else {
+                            break;
+                        }
+                    }
+                    current_scene_label = label.trim().to_uppercase();
+                    current_scene_num = row.scene_num.clone();
+                    current_scene_line_idx = row.line_idx;
+                    current_scene_visual_rows = 1;
+                    in_scene = true;
+
+                    let entry = pacing_map.entry(current_page).or_insert((0, 0));
+                    entry.0 += 1; // Scene headings count as action
+                }
+                LineType::Character | LineType::DualDialogueCharacter => {
+                    let raw_name = strip_sigils(&row.raw_text, row.line_type).trim().to_string();
+                    let name = Self::normalize_character_name(&raw_name);
+                    current_character = Some(name);
+                    if in_scene {
+                        current_scene_visual_rows += 1;
+                    }
+                }
+                LineType::Dialogue => {
+                    if let Some(ref name) = current_character {
+                        let words = row.raw_text.split_whitespace().count();
+                        let entry = char_stats.entry(name.clone()).or_insert((0, 0));
+                        entry.0 += words;
+                        entry.1 += 1;
+                    }
+                    if in_scene {
+                        current_scene_visual_rows += 1;
+                    }
+                    let entry = pacing_map.entry(current_page).or_insert((0, 0));
+                    entry.1 += 1; // dialogue line
+                }
+                LineType::Parenthetical => {
+                    if in_scene {
+                        current_scene_visual_rows += 1;
+                    }
+                    let entry = pacing_map.entry(current_page).or_insert((0, 0));
+                    entry.1 += 1; // parenthetical counts as dialogue
+                }
+                LineType::Action | LineType::Shot => {
+                    current_character = None;
+                    if in_scene {
+                        current_scene_visual_rows += 1;
+                    }
+                    let entry = pacing_map.entry(current_page).or_insert((0, 0));
+                    entry.0 += 1; // action line
+                }
+                LineType::Transition => {
+                    current_character = None;
+                    if in_scene {
+                        current_scene_visual_rows += 1;
+                    }
+                    let entry = pacing_map.entry(current_page).or_insert((0, 0));
+                    entry.0 += 1;
+                }
+                LineType::Empty => {
+                    if in_scene {
+                        current_scene_visual_rows += 1;
+                    }
+                }
+                _ => {
+                    if row.line_type != LineType::Parenthetical {
+                        current_character = None;
+                    }
+                    if in_scene {
+                        current_scene_visual_rows += 1;
+                    }
+                }
+            }
+        }
+
+        // Close last scene
+        if in_scene {
+            let page_count = current_scene_visual_rows as f32 / LINES_PER_PAGE as f32;
+            scenes.push(XRayScene {
+                label: current_scene_label,
+                scene_num: current_scene_num,
+                page_count,
+                is_over_limit: page_count > 3.0,
+                line_idx: current_scene_line_idx,
+            });
+        }
+
+        // Build character list
+        let total_dialogue_words: usize = char_stats.values().map(|(w, _)| w).sum();
+        let mut characters: Vec<XRayCharacter> = char_stats
+            .into_iter()
+            .map(|(name, (word_count, dialogue_lines))| {
+                let percentage = if total_dialogue_words > 0 {
+                    (word_count as f32 / total_dialogue_words as f32) * 100.0
+                } else {
+                    0.0
+                };
+                XRayCharacter {
+                    name,
+                    word_count,
+                    dialogue_lines,
+                    percentage,
+                }
+            })
+            .collect();
+        characters.sort_by(|a, b| b.word_count.cmp(&a.word_count));
+
+        // Build pacing blocks
+        let max_page = pacing_map.keys().max().copied().unwrap_or(1);
+        let pacing: Vec<PacingBlock> = (1..=max_page)
+            .map(|p| {
+                let (action, dialogue) = pacing_map.get(&p).copied().unwrap_or((0, 0));
+                PacingBlock {
+                    page: p,
+                    action_lines: action,
+                    dialogue_lines: dialogue,
+                }
+            })
+            .collect();
+
+        self.xray_data = Some(XRayData {
+            characters,
+            total_dialogue_words,
+            scenes,
+            pacing_map: pacing,
+        });
+        self.xray_scroll = 0;
+        self.xray_tab = 0;
+        self.mode = AppMode::XRay;
     }
 
     pub fn refresh_ensemble_list(&mut self) {

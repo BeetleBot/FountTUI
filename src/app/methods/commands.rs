@@ -10,7 +10,7 @@ impl App {
             "search", "export",
             "ud", "rd", "copy", "cut", "paste", "pos",
             "selectall", "home", "o", "bn", "bp", "new", "newfile", "addtitle",
-            "snap", "sprint", "cancelsprint", "sprintstat",
+            "snap", "sprint", "cancelsprint", "sprintstat", "xray",
             "set", "theme", "t"
         ]
         .into_iter()

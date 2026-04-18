@@ -561,6 +561,43 @@ impl App {
                     }
                     return Ok(false);
                 }
+                AppMode::XRay => {
+                    match key.code {
+                        KeyCode::Esc | KeyCode::Char('q') => {
+                            self.mode = AppMode::Normal;
+                            self.xray_data = None;
+                        }
+                        KeyCode::Left | KeyCode::Char('h') => {
+                            if self.xray_tab > 0 {
+                                self.xray_tab -= 1;
+                                self.xray_scroll = 0;
+                            }
+                        }
+                        KeyCode::Right | KeyCode::Char('l') => {
+                            if self.xray_tab < 2 {
+                                self.xray_tab += 1;
+                                self.xray_scroll = 0;
+                            }
+                        }
+                        KeyCode::Char('1') => { self.xray_tab = 0; self.xray_scroll = 0; }
+                        KeyCode::Char('2') => { self.xray_tab = 1; self.xray_scroll = 0; }
+                        KeyCode::Char('3') => { self.xray_tab = 2; self.xray_scroll = 0; }
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            self.xray_scroll = self.xray_scroll.saturating_sub(1);
+                        }
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            self.xray_scroll += 1;
+                        }
+                        KeyCode::PageUp => {
+                            self.xray_scroll = self.xray_scroll.saturating_sub(10);
+                        }
+                        KeyCode::PageDown => {
+                            self.xray_scroll += 10;
+                        }
+                        _ => {}
+                    }
+                    return Ok(false);
+                }
             _ => {}
         }
         Ok(false)
