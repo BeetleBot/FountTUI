@@ -59,7 +59,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     let _in_command_mode = app.mode == AppMode::Command;
     let footer_height = if show_bottom { 1 } else { 0 };
-    let header_height: u16 = 1; // Always visible
+    let show_header = !app.config.focus_mode || is_prompt || has_status;
+    let header_height: u16 = if show_header { 1 } else { 0 };
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
