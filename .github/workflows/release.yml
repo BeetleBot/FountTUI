@@ -45,11 +45,12 @@ jobs:
           body_path: LATEST_CHANGELOG.md
           draft: false
           prerelease: false
+          make_latest: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
   upload-assets:
     name: ${{ matrix.name }}
-    needs: [publish-crates-io, create-release]
+    needs: [create-release]
     strategy:
       matrix:
         include:

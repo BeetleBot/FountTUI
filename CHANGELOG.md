@@ -1,7 +1,7 @@
 # Changelog
 
 
-## [0.7.7] - 2026-04-18
+## [0.7.8] - 2026-04-18
 
 ### Added
 - **Windows MSI Installer**: Professional installer for Windows with Start Menu integration and desktop shortcuts.
