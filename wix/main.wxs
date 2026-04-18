@@ -7,20 +7,21 @@
         Manufacturer='BeetleBot'
         Language='1033'
         Codepage='1252'
-        Version='0.7.8'>
+        Version='0.7.9'>
 
         <Package Id='*' Keywords='Installer' Description='Fount Screenplay Editor Installer'
             Comments='A terminal-based Fountain screenplay editor' Manufacturer='BeetleBot'
-            InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' Platform='x64' InstallScope='perMachine' />
+            InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' Platform='x64'
+            InstallScope='perUser' InstallPrivileges='limited' />
 
         <MajorUpgrade DowngradeErrorMessage='A newer version of [ProductName] is already installed.' />
 
         <Media Id='1' Cabinet='contents.cab' EmbedCab='yes' />
 
         <Directory Id='TARGETDIR' Name='SourceDir'>
-            <Directory Id='ProgramFiles64Folder'>
+            <Directory Id='LocalAppDataFolder'>
                 <Directory Id='INSTALLDIR' Name='Fount'>
-                    <Component Id='MainExecutable' Guid='*' Win64='yes'>
+                    <Component Id='MainExecutable' Guid='*'>
                         <File Id='FountEXE' Source='target\release\fount.exe' KeyPath='yes' Checksum='yes'>
                             <Shortcut Id='startmenuFount' Directory='ProgramMenuDir' Name='Fount'
                                 WorkingDirectory='INSTALLDIR' Icon='fount.ico' IconIndex='0' Advertise='yes' />
