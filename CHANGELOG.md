@@ -1,9 +1,14 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.7.7] - 2026-04-18
+
+### Added
+- **Windows MSI Installer**: Professional installer for Windows with Start Menu integration and desktop shortcuts.
+- **Embedded App Logo**: The executable now features the Fount branding in File Explorer and the Taskbar.
+
+### Fixed
+- **Windows Icon Rendering**: Improved terminal icon compatibility with automatic fallback for standard Windows terminals (Nerd Font vs. Unicode).
 
 ## [0.7.6] - 2026-04-18
 

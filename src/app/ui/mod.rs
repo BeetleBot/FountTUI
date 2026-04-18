@@ -772,14 +772,29 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 };
 
                 let (icon, icon_style) = if label == "Theme" {
-                    (
-                        "󰔎 ",
-                        Style::default().fg(Color::from(theme.ui.normal_mode_bg.clone())),
-                    )
+                    if app.config.use_nerd_fonts {
+                        (
+                            "󰔎 ",
+                            Style::default().fg(Color::from(theme.ui.normal_mode_bg.clone())),
+                        )
+                    } else {
+                        (
+                            "• ",
+                            Style::default().fg(Color::from(theme.ui.normal_mode_bg.clone())),
+                        )
+                    }
                 } else if *value {
-                    ("󰄬 ", Style::default().fg(Color::Green))
+                    if app.config.use_nerd_fonts {
+                        ("󰄬 ", Style::default().fg(Color::Green))
+                    } else {
+                        ("✓ ", Style::default().fg(Color::Green))
+                    }
                 } else {
-                    ("󰄱 ", Style::default().fg(Color::DarkGray))
+                    if app.config.use_nerd_fonts {
+                        ("󰄱 ", Style::default().fg(Color::DarkGray))
+                    } else {
+                        ("[ ] ", Style::default().fg(Color::DarkGray))
+                    }
                 };
 
                 let line = if label == "Theme" {

@@ -104,6 +104,10 @@ unset force_ansi
 # Unicode support automatically.
 unset force_ascii
 
+# Enable Nerd Font icons (e.g., modern symbols for checkmarks).
+# Default is true on most systems, but can be unset for standard Unicode.
+set use_nerd_fonts
+
 ## PDF Export
 
 # Paper size for PDF export. Available values: "a4", "letter"
@@ -226,11 +230,10 @@ pub struct Cli {
 
     
     #[arg(long)]
-    pub force_ascii: bool,
-
-    
-    #[arg(long)]
     pub force_ansi: bool,
+
+    #[arg(long)]
+    pub no_nerd_fonts: bool,
 
     
     #[arg(long, value_name = "FILE", num_args = 0..=1, default_missing_value = "-")]
@@ -372,6 +375,9 @@ pub struct Config {
 
     /// Selected theme name
     pub theme: String,
+
+    /// Whether to use Nerd Font icons
+    pub use_nerd_fonts: bool,
 }
 
 impl Default for Config {
@@ -414,6 +420,7 @@ impl Default for Config {
             include_title_page: true,
             production_lock: false,
             theme: "Adaptive".to_string(),
+            use_nerd_fonts: true,
         }
     }
 }
@@ -486,6 +493,7 @@ impl Config {
                         "report_format" => self.report_format = val,
                         "include_title_page" => self.include_title_page = true,
                         "theme" => self.theme = val,
+                        "use_nerd_fonts" => self.use_nerd_fonts = true,
                         _ => {}
                     }
                 } else if cmd == "unset" {
@@ -508,6 +516,7 @@ impl Config {
                         "no_formatting" => self.no_formatting = false,
                         "force_ascii" => self.force_ascii = false,
                         "force_ansi" => self.force_ansi = false,
+                        "use_nerd_fonts" => self.use_nerd_fonts = false,
                         "force_scene_numbers" => self.force_scene_numbers = false,
                         "export_bold_scene_headings" => self.export_bold_scene_headings = false,
                         "include_title_page" => self.include_title_page = false,
@@ -631,6 +640,7 @@ impl Config {
         let is_custom_path = cli.config.is_some();
         let config_path = cli.config.clone().or_else(Self::config_path);
 
+        let mut config_content = String::new();
         if let Some(path) = config_path {
             if !is_custom_path && !path.exists() {
                 if let Some(parent) = path.parent() {
@@ -640,7 +650,10 @@ impl Config {
             }
 
             match fs::read_to_string(&path) {
-                Ok(content) => config.parse_config_str(&content),
+                Ok(content) => {
+                    config.parse_config_str(&content);
+                    config_content = content;
+                }
                 Err(e) if is_custom_path => {
                     eprintln!(
                         "Warning: Failed to load custom config file at '{}': {}",
@@ -666,13 +679,13 @@ impl Config {
         config.focus_mode |= cli.focus_mode;
         config.no_color |= cli.no_color;
         config.no_formatting |= cli.no_formatting;
-        config.force_ascii |= cli.force_ascii;
         config.force_ansi |= cli.force_ansi;
         config.goto_end |= cli.goto_end;
         config.force_scene_numbers |= cli.force_scene_numbers;
         config.export_bold_scene_headings |= cli.export_bold_scene_headings;
         config.include_title_page |= cli.include_title_page;
-        
+        config.use_nerd_fonts &= !cli.no_nerd_fonts;
+
         if config.export_format.is_empty() {
             config.export_format = "pdf".to_string();
         }
@@ -713,8 +726,24 @@ impl Config {
             config.no_color = true;
         }
 
+        // On Windows, default to no Nerd Fonts unless explicitly enabled in config
+        // (because most standard Windows terminals don't have them installed by default)
+        if cfg!(windows) && !content_had_nerd_font_setting(&config_content) {
+            config.use_nerd_fonts = false;
+        }
+
         config
     }
+}
+
+fn content_had_nerd_font_setting(content: &str) -> bool {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("set use_nerd_fonts") || trimmed.starts_with("unset use_nerd_fonts") {
+            return true;
+        }
+    }
+    false
 }
 
 #[cfg(test)]

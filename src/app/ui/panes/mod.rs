@@ -191,9 +191,17 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             };
 
             let (icon, color) = if is_dir {
-                (" ", Color::LightBlue)
+                if app.config.use_nerd_fonts {
+                    (" ", Color::LightBlue)
+                } else {
+                    ("/ ", Color::LightBlue)
+                }
             } else {
-                ("󰈙 ", Color::White)
+                if app.config.use_nerd_fonts {
+                    ("󰈙 ", Color::White)
+                } else {
+                    ("  ", Color::White)
+                }
             };
 
             let style = if is_selected {
@@ -220,7 +228,7 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
         };
         display_items.push(ListItem::new(Line::from(vec![
             Span::styled(if is_selected { " › " } else { "   " }, style),
-            Span::styled("󰒓 ", style),
+            Span::styled(if app.config.use_nerd_fonts { "󰒓 " } else { "* " }, style),
             Span::styled(
                 format!("Confirm: {}", state.filename_input),
                 style.add_modifier(Modifier::BOLD),

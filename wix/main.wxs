@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+    <Product
+        Id='*'
+        Name='Fount'
+        UpgradeCode='6E1E4F2B-D7B2-4E8B-B6C8-1E9D7C3F4D5E'
+        Manufacturer='BeetleBot'
+        Language='1033'
+        Codepage='1252'
+        Version='0.7.7'>
+
+        <Package Id='*' Keywords='Installer' Description='Fount Screenplay Editor Installer'
+            Comments='A terminal-based Fountain screenplay editor' Manufacturer='BeetleBot'
+            InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
+
+        <MajorUpgrade DowngradeErrorMessage='A newer version of [ProductName] is already installed.' />
+
+        <Media Id='1' Cabinet='contents.cab' EmbedCab='yes' />
+
+        <Directory Id='TARGETDIR' Name='SourceDir'>
+            <Directory Id='ProgramFilesFolder'>
+                <Directory Id='INSTALLDIR' Name='Fount'>
+                    <Component Id='MainExecutable' Guid='*'>
+                        <File Id='FountEXE' Source='target\release\fount.exe' KeyPath='yes' Checksum='yes'>
+                            <Shortcut Id='startmenuFount' Directory='ProgramMenuDir' Name='Fount'
+                                WorkingDirectory='INSTALLDIR' Icon='fount.ico' IconIndex='0' Advertise='yes' />
+                        </File>
+                    </Component>
+                </Directory>
+            </Directory>
+            <Directory Id='ProgramMenuFolder' Name='Programs'>
+                <Directory Id='ProgramMenuDir' Name='Fount' />
+            </Directory>
+        </Directory>
+
+        <Feature Id='MainApplication' Title='Main Application' Level='1'>
+            <ComponentRef Id='MainExecutable' />
+            <ComponentRef Id='ProgramMenuShortcut' />
+        </Feature>
+
+        <DirectoryRef Id='ProgramMenuDir'>
+            <Component Id='ProgramMenuShortcut' Guid='*'>
+                <RemoveFolder Id='ProgramMenuDir' On='uninstall' />
+                <RegistryValue Root='HKCU' Key='Software\BeetleBot\Fount' Name='installed' Type='integer' Value='1' KeyPath='yes' />
+            </Component>
+        </DirectoryRef>
+
+        <Icon Id='fount.ico' SourceFile='assets\icons\fount.ico' />
+        <Property Id='ARPPRODUCTICON' Value='fount.ico' />
+
+    </Product>
+</Wix>
