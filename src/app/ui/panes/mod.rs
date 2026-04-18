@@ -1,3 +1,5 @@
+pub mod home;
+
 use unicode_width::UnicodeWidthStr;
 use crate::app::App;
 use ratatui::{

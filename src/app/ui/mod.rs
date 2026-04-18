@@ -1,5 +1,5 @@
 pub mod panes;
-use self::panes::{draw_snapshots, draw_sprint_stats, draw_file_picker};
+use self::panes::{draw_snapshots, draw_sprint_stats, draw_file_picker, home::draw_home};
 
 use crate::{
     app::{App, AppMode, EnsembleItem, GoalType},
@@ -1293,107 +1293,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     // -- Minimalist Home Screen --
     if app.mode == AppMode::Home {
-        let panel_w = 72u16;
-        let panel_h = 32u16;
-        let x = area.x + area.width.saturating_sub(panel_w) / 2;
-        let y = area.y + area.height.saturating_sub(panel_h) / 2;
-        let panel = Rect {
-            x,
-            y,
-            width: panel_w.min(area.width),
-            height: panel_h.min(area.height),
-        };
-
-        f.render_widget(ratatui::widgets::Clear, panel);
-
-        let accent = Color::from(theme.ui.normal_mode_bg.clone());
-        let dim = Color::from(theme.ui.dim.clone());
-        let sel_bg = Color::from(theme.ui.selection_bg.clone());
-        let sel_fg = Color::from(theme.ui.selection_fg.clone());
-        let normal_fg = theme.ui.foreground.clone().map(Color::from).unwrap_or(Color::White);
-
-        let block = Block::default()
-            .borders(ratatui::widgets::Borders::ALL)
-            .border_type(ratatui::widgets::BorderType::Rounded)
-            .border_style(Style::default().fg(dim));
-        f.render_widget(block, panel);
-
-        let inner = Rect {
-            x: panel.x + 2,
-            y: panel.y + 2,
-            width: panel.width.saturating_sub(4),
-            height: panel.height.saturating_sub(4),
-        };
-
-        let mut home_lines = Vec::new();
-        home_lines.push(Line::from(""));
-
-        // ASCII LOGO
-        let logo_style = Style::default().fg(accent).add_modifier(Modifier::BOLD);
-        for row in &[
-            "███████╗ ██████╗ ██╗   ██╗███╗   ██╗████████╗",
-            "██╔════╝██╔═══██╗██║   ██║████╗  ██║╚══██╔══╝",
-            "█████╗  ██║   ██║██║   ██║██╔██╗ ██║   ██║   ",
-            "██╔══╝  ██║   ██║██║   ██║██║╚██╗██║   ██║   ",
-            "██║     ╚██████╔╝╚██████╔╝██║ ╚████║   ██║   ",
-            "╚═╝      ╚═════╝  ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ",
-        ] {
-            home_lines.push(Line::from(Span::styled(*row, logo_style)));
-        }
-
-        home_lines.push(Line::from(""));
-        home_lines.push(Line::from(Span::styled(
-            "Write blockbusters in your terminal.",
-            Style::default().fg(dim).add_modifier(Modifier::ITALIC),
-        )));
-        home_lines.push(Line::from(""));
-        home_lines.push(Line::from(Span::styled("\u{2500}".repeat(40), Style::default().fg(dim))));
-        home_lines.push(Line::from(""));
-
-        // MAIN MENU
-        let menu_options = [
-            "New File",
-            "Open File",
-            "Tutorial",
-            "Exit",
-        ];
-
-        for (i, label) in menu_options.iter().enumerate() {
-            let is_sel = i == app.home_selected;
-            let text = if is_sel { format!(" › {} ", label) } else { format!("   {}   ", label) };
-            let style = if is_sel {
-                Style::default().fg(sel_fg).bg(sel_bg).add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(normal_fg)
-            };
-            home_lines.push(Line::from(Span::styled(text, style)));
-            home_lines.push(Line::from(""));
-        }
-
-        // RECENT DOCUMENTS
-        if !app.recent_files.is_empty() {
-            home_lines.push(Line::from(""));
-            home_lines.push(Line::from(Span::styled("[ Recent Files ]", Style::default().fg(dim).add_modifier(Modifier::BOLD))));
-            home_lines.push(Line::from(""));
-            
-            for (i, path) in app.recent_files.iter().take(4).enumerate() {
-                let idx = menu_options.len() + i;
-                let is_sel = idx == app.home_selected;
-                
-                let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "Unknown".to_string());
-                let text = if is_sel { format!(" › {} ", name) } else { format!("   {}   ", name) };
-                
-                let style = if is_sel {
-                    Style::default().fg(sel_fg).bg(sel_bg).add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default().fg(dim)
-                };
-                
-                home_lines.push(Line::from(Span::styled(text, style)));
-            }
-        }
-
-        f.render_widget(Paragraph::new(home_lines).alignment(ratatui::layout::Alignment::Center), inner);
+        draw_home(f, app);
     }
 
     if app.mode == AppMode::FilePicker {
