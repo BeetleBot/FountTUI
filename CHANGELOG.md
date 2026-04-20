@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.8.2] - 2026-04-20
+
+### Added
+- **Index Cards Mode (`/ic`)**:
+    - **Visual Scene Organization**: A complete redesign of the legacy "Story Architect" into a premium, card-based interface.
+    - **ASCII Aesthetic**: Cards now feature a unique `[ ]` ASCII bracket design with dynamic background support for all themes (including light modes).
+    - **Marker Color Integration**: Scene headings on cards now inherit the color of `[[marker]]` tags for instant structural visualization.
+    - **Interactive Reordering**: Shift scenes intuitively using `Shift+Up/Down` with robust re-indexing.
+- **Multi-Platform Distribution**:
+    - **Native Linux Packaging**: Official support for **`.deb`** (Debian/Ubuntu) and **`.rpm`** (Fedora/RHEL) packages.
+    - **Windows Portable**: Universal `.zip` release for Windows 10/11 x64 systems.
+    - **AUR Release Support**: Standardized PKGBUILD preparation for `yay` users.
+
+### Fixed
+- **UI State Persistence**: Re-engineered the state machine (`previous_mode`) to prevent jarring jumps back to the editor when opening the command bar from Index Cards.
+- **Theme Context Consistency**: Resolved a bug where Index Cards would retain a dark background in light themes (e.g., "Paper").
+- **Adaptive Header/Footer**: Standardized the Zen shell to dynamically display relevant metadata (Scene Counts vs Word Counts) and context labels based on the current view.
+- **Navigation Shortcuts**: Refined [Esc] and [Backspace] logic to correctly restore the previous interactive view.
 
 ## [0.8.1] - 2026-04-18
 
