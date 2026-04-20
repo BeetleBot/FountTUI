@@ -33,11 +33,11 @@ cargo install fount
 > [!NOTE]
 > **A Letter from the Creator**
 > 
-> As a credited Tamil/Indian screenwriter—writing predominantly in **English and Tanglish**—I found myself at a crossroads when I transitioned to Linux. I deeply missed **Beat**, my long-time companion for storytelling, and couldn't find a minimalist alternative that felt "right" in the terminal.
+> As a credited Tamil/Indian screenwriter—writing predominantly in **English and Tanglish**—I found myself at a crossroads when I transitioned to Linux. I deeply missed **[Beat](https://github.com/lmparppei/Beat)**, my long-time companion for storytelling, and couldn't find a minimalist alternative that felt "right" in the terminal.
 > 
-> My search led me to **Lottie**, whose elegance immediately captivated me. I cloned the project and began shaping it into the tool I needed. While I possess a moderate grasp of Rust, this journey was significantly smoothed by the partnership of **AI Agents like Claude and Gemini**. 
+> My search led me to **[Lottie](https://github.com/coignard/lottie)**, whose elegance immediately captivated me. I cloned the project and began shaping it into the tool I needed. While I possess a moderate grasp of Rust, this journey was significantly smoothed by the partnership of **AI Agents like Claude and Gemini**. 
 > 
-> To be clear: **this software is 75% my design and 25% AI collaboration.** AI was instrumental in helping me overcome technical hurdles, complicated logic, and the often frustrating nuances of software release workflows. Fount is the result of my creative vision, the open-source code that inspired me, and the intelligence of the agents that helped me build it. It is a tool I use daily, and I hope it serves you just as well.
+> AI was instrumental in helping me overcome technical hurdles, complicated logic, and the often frustrating nuances of software release workflows. Fount is the result of my creative vision and little bit of coding background, the open-source code that inspired me, and the intelligence of the agents that helped me build it. It is a tool I use daily, and I hope it serves you just as well.
 
 ---
 
@@ -49,39 +49,8 @@ Fount is a dedicated writing environment designed to disappear while you work.
 - **Unified Vision**: A single-line footer displays real-time **Word Counts**, **Page Numbers**, and **Status**.
 - **Story-Map Navigation**: Toggle the **Scene Navigator (`Ctrl+H`)** to see your screenplay's structure.
 - **Ensemble Management**: Use the **Character Sidebar (`Ctrl+L`)** to analyze character distribution.
-- **Index Cards**: A grid-based **Story Architect (`/ic`)** for high-level plotting.
-- **Multi-Buffer Workflow**: Open and switch between multiple scripts seamlessly.
-
----
-
-## ⌨️ Command Reference
-
-### Keyboard Shortcuts
-| Shortcut | Action |
-| :--- | :--- |
-| **`/`** | **Command Mode** (Open footer command bar) |
-| **`F1`** | **Cheat Sheet** (Toggle help panel) |
-| **`Ctrl + H`** | Open Scene Navigator |
-| **`Ctrl + L`** | Open Ensemble Sidebar |
-| **`Ctrl + P`** | Open Settings Pane |
-| **`Ctrl + E`** | Open Export Pane |
-| **`Ctrl + A`** | Select All Text |
-| **`Ctrl + C / X / V`** | Copy / Cut / Paste |
-| **`Tab`** | Smart Indent / Autocomplete |
-| **`Esc`** | Back to Editor / Clear Status |
-
-### Shorthand Commands
-| Command | Action |
-| :--- | :--- |
-| **`/w`** | Save Current Script |
-| **`/o [path]`** | Open script |
-| **`/ic`** | **Index Cards Mode** |
-| **`/editor`** | Return to Normal Editor |
-| **`/sprint [m]`** | Start a writing sprint |
-| **`/xray`** | Visual script analysis |
-| **`/renum`** | Auto-Renumber all scenes |
-| **`/search [q]`** | Global Script Search |
-| **`/ex`** | **Exit Fount** |
+- **Index Cards**: A grid-based **Index Cards (`/ic`)** for high-level plotting.
+- **Multi-Scripts Workflow**: Open and switch between multiple scripts seamlessly.
 
 ---
 
