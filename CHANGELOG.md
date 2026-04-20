@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.4] - 2026-04-20
+
+### Added
+- **Linux Desktop Integration**:
+    - Official app drawer icon support for all Linux releases.
+    - Added a desktop entry (`.desktop`) with `Fount` branding and file associations.
+    - Updated AUR, DEB, and RPM packaging to automatically install the icon and launcher.
+
 ## [0.8.3] - 2026-04-20
 
 ### Added
