@@ -138,7 +138,7 @@ impl App {
                             self.selected_setting =
                                 (self.selected_setting + 1).min(settings_count - 1);
                         }
-                        KeyCode::Enter | KeyCode::Char(' ') => {
+                        KeyCode::Enter | KeyCode::Char(' ') | KeyCode::Char('l') => {
                             match self.selected_setting {
                                 0 => {
                                     self.config.strict_typewriter_mode =
@@ -275,7 +275,7 @@ impl App {
                             self.selected_export_option =
                                 (self.selected_export_option + 1).min(options_count - 1);
                         }
-                        KeyCode::Enter | KeyCode::Char(' ') => {
+                        KeyCode::Enter | KeyCode::Char(' ') | KeyCode::Char('l') => {
                             match self.selected_export_option {
                                 0 => {
                                     let formats = ["pdf", "fountain", "fdx"];
@@ -376,7 +376,7 @@ impl App {
                         KeyCode::Char('n') | KeyCode::Char('N') |
                         KeyCode::Char('o') | KeyCode::Char('O') |
                         KeyCode::Char('t') | KeyCode::Char('T') |
-                        KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Char('l') => {
                             match key.code {
                                 KeyCode::Char('n') | KeyCode::Char('N') => self.home_selected = 0,
                                 KeyCode::Char('o') | KeyCode::Char('O') => self.home_selected = 1,
@@ -494,12 +494,12 @@ impl App {
                                 }
                             }
                         }
-                        KeyCode::Enter => {
+                        KeyCode::Enter | KeyCode::Char('l') => {
                             if self.file_picker_enter().map_err(|e| io::Error::other(e.to_string()))? {
                                 return Ok(true);
                             }
                         }
-                        KeyCode::Backspace => {
+                        KeyCode::Backspace | KeyCode::Char('h') => {
                             if let Some(ref mut state) = self.file_picker {
                                 if state.action != FilePickerAction::Open {
                                     state.filename_input.pop();
@@ -525,7 +525,7 @@ impl App {
                 }
                 AppMode::Snapshots => {
                     match key.code {
-                        KeyCode::Esc => {
+                        KeyCode::Esc | KeyCode::Char('h') => {
                             self.mode = AppMode::Normal;
                         }
                         KeyCode::Up | KeyCode::Char('k') => {
@@ -540,7 +540,7 @@ impl App {
                                 self.snapshot_list_state.select(Some(current + 1));
                             }
                         }
-                        KeyCode::Enter | KeyCode::Char('r') => {
+                        KeyCode::Enter | KeyCode::Char('r') | KeyCode::Char('l') => {
                             let selected = self.snapshot_list_state.selected().unwrap_or(0);
                             self.restore_snapshot(selected, false)?;
                         }
@@ -554,7 +554,7 @@ impl App {
                 }
                 AppMode::SprintStat => {
                     match key.code {
-                        KeyCode::Esc | KeyCode::Char('q') => self.mode = AppMode::Normal,
+                        KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('h') => self.mode = AppMode::Normal,
                         KeyCode::Up | KeyCode::Char('k') => {
                             let current = self.sprint_stats_state.selected().unwrap_or(0);
                             if current > 0 {
@@ -671,7 +671,7 @@ impl App {
                                     *update_target_x = true;
                                 }
                             }
-                            KeyCode::Up => {
+                            KeyCode::Up | KeyCode::Char('k') => {
                                 let shift = key.modifiers.contains(KeyModifiers::SHIFT);
                                 if shift {
                                     if self.selected_card_idx > 0 {
@@ -683,7 +683,7 @@ impl App {
                                     self.selected_card_idx = self.selected_card_idx.saturating_sub(columns);
                                 }
                             }
-                            KeyCode::Down => {
+                            KeyCode::Down | KeyCode::Char('j') => {
                                 let shift = key.modifiers.contains(KeyModifiers::SHIFT);
                                 if shift {
                                     if self.selected_card_idx + 1 < cards_count {
@@ -697,7 +697,7 @@ impl App {
                                     }
                                 }
                             }
-                            KeyCode::Left => {
+                            KeyCode::Left | KeyCode::Char('h') => {
                                 let shift = key.modifiers.contains(KeyModifiers::SHIFT);
                                 if shift {
                                     if self.selected_card_idx > 0 {
@@ -709,7 +709,7 @@ impl App {
                                     self.selected_card_idx = self.selected_card_idx.saturating_sub(1);
                                 }
                             }
-                            KeyCode::Right => {
+                            KeyCode::Right | KeyCode::Char('l') => {
                                 let shift = key.modifiers.contains(KeyModifiers::SHIFT);
                                 if shift {
                                     if self.selected_card_idx + 1 < cards_count {

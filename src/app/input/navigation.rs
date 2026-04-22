@@ -9,7 +9,7 @@ impl App {
         match self.mode {
                 AppMode::SceneNavigator => {
                     match key.code {
-                        KeyCode::Esc => {
+                        KeyCode::Esc | KeyCode::Char('h') => {
                             self.mode = AppMode::Normal;
                             self.set_status("Cancelled");
                         }
@@ -31,7 +31,7 @@ impl App {
                                 self.navigator_state.select(Some(self.selected_scene));
                             }
                         }
-                        KeyCode::Enter => {
+                        KeyCode::Enter | KeyCode::Char('l') => {
                             let line_idx = self.scenes[self.selected_scene].line_idx;
                             self.cursor_y = line_idx;
                             self.cursor_x = 0;
@@ -45,7 +45,7 @@ impl App {
                 }
                 AppMode::CharacterNavigator => {
                     match key.code {
-                        KeyCode::Esc => {
+                        KeyCode::Esc | KeyCode::Char('h') => {
                             self.mode = AppMode::Normal;
                         }
                         KeyCode::Up | KeyCode::Char('k') => {
@@ -90,7 +90,7 @@ impl App {
                                 self.ensemble_state.select(Some(self.selected_ensemble_idx));
                             }
                         }
-                        KeyCode::Enter => {
+                        KeyCode::Enter | KeyCode::Char('l') => {
                             match &self.ensemble_items[self.selected_ensemble_idx] {
                                 EnsembleItem::CharacterHeader(char_idx) => {
                                     let item = &self.character_stats[*char_idx];
