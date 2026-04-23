@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.8.5] - 2026-04-23
+
+### Added
+- **Global Search & Replace**:
+    - Interactive replacement workflow with `r` (Replace Current) and `Shift+R` (Replace All) while search is active.
+    - Incremental navigation with `Alt+Up/Down` directly after starting a search.
+- **Searchable Cheat Sheet**:
+    - The dynamic Cheat Sheet (`F1`) now supports live filtering with the `/` shortcut.
+    - Shortcuts are now managed via a centralized `assets/shortcuts.txt` registry.
+- **Command History**: New `Alt+/` shortcut to recall and edit the last successfully executed command.
+- **Improved Theme Sensitivity**:
+    - Modals (X-Ray, Cheat Sheet, Snapshots, File Picker) now fully respect theme backgrounds and foregrounds.
+    - Fixed visibility of analysis charts in light themes (e.g., "Paper").
+
+### Changed
+- **Header UI Restructuring**:
+    - Buffer tabs moved to the left side for better focus.
+    - App mode and version moved to the right side.
+    - Removed theme name from the header to reduce clutter.
+- **Scene Navigator Aesthetics**:
+    - Scene headings are now bolded for better hierarchy.
+    - Selection bar is now a neutral, adaptive gray.
+    - Color markers are preserved even when a scene is selected.
+- **Command Bar UX**:
+    - Fully case-insensitive autocompletion and inline hints.
+    - Normalized theme name suggestions to compatible slugs (lowercase, no spaces).
+
+### Fixed
+- **Cleanup**: Resolved all compiler warnings and verified test suite stability.
+
 ## [0.8.4] - 2026-04-20
 
 ### Added
