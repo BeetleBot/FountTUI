@@ -1,5 +1,8 @@
 pub mod panes;
-use self::panes::{draw_snapshots, draw_sprint_stats, draw_file_picker, home::draw_home, xray::draw_xray, index_cards::draw_index_cards};
+use self::panes::{
+    draw_file_picker, draw_snapshots, draw_sprint_stats, home::draw_home,
+    index_cards::draw_index_cards, xray::draw_xray,
+};
 
 use crate::{
     app::{App, AppMode, EnsembleItem, GoalType, shortcuts},
@@ -21,7 +24,6 @@ use unicode_width::UnicodeWidthStr;
 pub fn draw(f: &mut Frame, app: &mut App) {
     let area = f.area();
     let theme = &app.theme;
-
 
     let mut base_ui_style = Style::default();
     if let Some(bg) = &theme.ui.background {
@@ -51,8 +53,13 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         ),
         AppMode::SprintStat => (" Sprints ", Color::from(theme.ui.normal_mode_bg.clone())),
         AppMode::XRay => (" X-Ray ", Color::from(theme.ui.navigator_mode_bg.clone())),
-        AppMode::IndexCards => (" Index Cards ", Color::from(theme.ui.navigator_mode_bg.clone())),
-        AppMode::ReplaceOne | AppMode::ReplaceAll => (" Replace ", Color::from(theme.ui.command_mode_bg.clone())),
+        AppMode::IndexCards => (
+            " Index Cards ",
+            Color::from(theme.ui.navigator_mode_bg.clone()),
+        ),
+        AppMode::ReplaceOne | AppMode::ReplaceAll => {
+            (" Replace ", Color::from(theme.ui.command_mode_bg.clone()))
+        }
         _ => (" Prompt ", Color::from(theme.ui.command_mode_bg.clone())),
     };
 
@@ -192,14 +199,15 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         // Draw clean separator
         let dim_sep_color = Color::from(theme.ui.dim.clone());
         let sep_col = "│".repeat(shadow_area.height as usize);
-        let sep_lines: Vec<Line> = sep_col.chars().map(|_| Line::from(Span::styled("│", Style::default().fg(dim_sep_color)))).collect();
+        let sep_lines: Vec<Line> = sep_col
+            .chars()
+            .map(|_| Line::from(Span::styled("│", Style::default().fg(dim_sep_color))))
+            .collect();
         f.render_widget(Paragraph::new(sep_lines), shadow_area);
     }
 
     app.settings_area = Rect::default();
-    if app.mode == AppMode::SettingsPane
-        || app.mode == AppMode::ExportPane
-    {
+    if app.mode == AppMode::SettingsPane || app.mode == AppMode::ExportPane {
         let side_width: u16 = 34;
         let side_chunks = Layout::default()
             .direction(Direction::Horizontal)
@@ -215,7 +223,9 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
         // Draw clean separator
         let dim_sep_color = Color::from(theme.ui.dim.clone());
-        let sep_lines: Vec<Line> = (0..shadow_area.height).map(|_| Line::from(Span::styled("│", Style::default().fg(dim_sep_color)))).collect();
+        let sep_lines: Vec<Line> = (0..shadow_area.height)
+            .map(|_| Line::from(Span::styled("│", Style::default().fg(dim_sep_color))))
+            .collect();
         f.render_widget(Paragraph::new(sep_lines), shadow_area);
     }
 
@@ -342,7 +352,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     }
 
                     let empty_logical_line = String::new();
-                    let full_logical_line = app.lines.get(row.line_idx).unwrap_or(&empty_logical_line);
+                    let full_logical_line =
+                        app.lines.get(row.line_idx).unwrap_or(&empty_logical_line);
 
                     let is_last_visual_row = row.char_end == full_logical_line.chars().count();
                     let mut meta_key_end = 0;
@@ -447,30 +458,19 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     if app.mode == AppMode::SceneNavigator {
-        let border_color = theme
-            .sidebar
-            .border
-            .clone()
-            .map(Color::from)
-            .unwrap_or(Color::DarkGray);
-        let selected_bg = theme
-            .sidebar
-            .item_selected_bg
-            .clone()
-            .map(Color::from)
-            .unwrap_or(mode_bg);
+        let selected_bg = if theme.is_light() {
+            Color::Rgb(220, 220, 220)
+        } else {
+            Color::Rgb(45, 45, 45)
+        };
         let selected_fg = theme
-            .sidebar
-            .item_selected_fg
+            .ui
+            .foreground
             .clone()
             .map(Color::from)
-            .unwrap_or(Color::Black);
-        let dim_color = theme
-            .sidebar
-            .item_dimmed
-            .clone()
-            .map(Color::from)
-            .unwrap_or(Color::DarkGray);
+            .unwrap_or(Color::White);
+        let dim_color = Color::from(theme.ui.dim.clone());
+        let border_color = dim_color;
         let header_color = theme
             .sidebar
             .section_header
@@ -522,23 +522,18 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     // Scene Item
                     let mut base_style = if is_selected {
                         Style::default()
-                            .fg(selected_fg)
                             .bg(selected_bg)
                             .add_modifier(Modifier::BOLD)
                     } else {
-                        Style::default()
+                        Style::default().add_modifier(Modifier::BOLD)
                     };
 
-                    if let Some(c) = &theme.ui.foreground
-                        && !is_selected
-                    {
-                        base_style = base_style.fg(Color::from(c.clone()));
-                    }
-
-                    if let Some(c) = item.color
-                        && !is_selected
-                    {
+                    if let Some(c) = item.color {
                         base_style = base_style.fg(c);
+                    } else if is_selected {
+                        base_style = base_style.fg(selected_fg);
+                    } else if let Some(c) = &theme.ui.foreground {
+                        base_style = base_style.fg(Color::from(c.clone()));
                     }
 
                     let dim_style = if is_selected {
@@ -568,7 +563,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     lines.push(Line::from(vec![
                         Span::styled(prefix, base_style),
                         Span::styled(connector, line_style),
-                        Span::styled(s_tag, base_style.add_modifier(Modifier::BOLD)),
+                        Span::styled(s_tag, base_style),
                         Span::styled(item.label.clone(), base_style),
                     ]));
 
@@ -763,7 +758,10 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
         let title = format!(" [ Ensemble ({}) ]", app.character_stats.len());
         let list = List::new(items)
-            .block(Block::default().title(Span::styled(title, Style::default().fg(Color::from(theme.ui.dim.clone())))))
+            .block(Block::default().title(Span::styled(
+                title,
+                Style::default().fg(Color::from(theme.ui.dim.clone())),
+            )))
             .highlight_style(Style::default());
 
         f.render_stateful_widget(
@@ -1003,17 +1001,20 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let all_shortcuts = shortcuts::get_all_shortcuts()
             .into_iter()
             .filter(|s| {
-                query.is_empty() || 
-                s.key.to_lowercase().contains(&query) || 
-                s.desc.to_lowercase().contains(&query) ||
-                s.category.to_lowercase().contains(&query)
+                query.is_empty()
+                    || s.key.to_lowercase().contains(&query)
+                    || s.desc.to_lowercase().contains(&query)
+                    || s.category.to_lowercase().contains(&query)
             })
             .collect::<Vec<_>>();
 
         // Helper: build lines for one category from registry
         let build_section = |title: &str, shortcuts: &[shortcuts::Shortcut]| -> Vec<Line> {
             let mut lines = Vec::new();
-            lines.push(Line::from(Span::styled(format!(" [ {} ]", title), hdr_style)));
+            lines.push(Line::from(Span::styled(
+                format!(" [ {} ]", title),
+                hdr_style,
+            )));
             for shortcut in shortcuts {
                 let k = shortcut.key.trim();
                 lines.push(Line::from(vec![
@@ -1038,23 +1039,32 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let mut col3: Vec<Line> = Vec::new();
 
         for (i, cat) in categories.iter().enumerate() {
-            let cat_shortcuts: Vec<shortcuts::Shortcut> = all_shortcuts.iter()
+            let cat_shortcuts: Vec<shortcuts::Shortcut> = all_shortcuts
+                .iter()
                 .filter(|s| s.category == *cat)
                 .cloned()
                 .collect();
-            
+
             let section_lines = build_section(cat, &cat_shortcuts);
             // Distribute columns more dynamically if filtered
             if query.is_empty() {
-                if i < 3 { col1.extend(section_lines); }
-                else if i < 5 { col2.extend(section_lines); }
-                else { col3.extend(section_lines); }
+                if i < 3 {
+                    col1.extend(section_lines);
+                } else if i < 5 {
+                    col2.extend(section_lines);
+                } else {
+                    col3.extend(section_lines);
+                }
             } else {
                 // In search mode, just stack them or balance them better
                 let total_cats = categories.len();
-                if i < (total_cats + 2) / 3 { col1.extend(section_lines); }
-                else if i < 2 * (total_cats + 2) / 3 { col2.extend(section_lines); }
-                else { col3.extend(section_lines); }
+                if i < (total_cats + 2) / 3 {
+                    col1.extend(section_lines);
+                } else if i < 2 * (total_cats + 2) / 3 {
+                    col2.extend(section_lines);
+                } else {
+                    col3.extend(section_lines);
+                }
             }
         }
 
@@ -1066,7 +1076,23 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             .borders(ratatui::widgets::Borders::ALL)
             .border_type(ratatui::widgets::BorderType::Rounded)
             .border_style(Style::default().fg(dim_color))
-            .style(Style::default().bg(Color::from(theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))).fg(Color::from(theme.ui.foreground.clone().unwrap_or(HexColor("White".to_string())))));
+            .style(
+                Style::default()
+                    .bg(Color::from(
+                        theme
+                            .ui
+                            .background
+                            .clone()
+                            .unwrap_or(HexColor("Reset".to_string())),
+                    ))
+                    .fg(Color::from(
+                        theme
+                            .ui
+                            .foreground
+                            .clone()
+                            .unwrap_or(HexColor("White".to_string())),
+                    )),
+            );
 
         let inner_area = block.inner(chunks[1]);
         f.render_widget(block, chunks[1]);
@@ -1095,8 +1121,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         f.render_widget(Paragraph::new(col2), col_chunks[2]);
         f.render_widget(Paragraph::new(col3), col_chunks[4]);
     }
-
-
 
     // ── Footer rendering (Zen Style) ────────────────────────────────────────
     if footer_area.height > 0 {
@@ -1133,12 +1157,17 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             format!("{}{}{}", fname, dirty_str, lock_str),
             Style::default().fg(mode_bg),
         ));
-        
+
         // Saved indicator
         if let Some(time) = app.save_indicator_timer {
             let elapsed = time.elapsed().as_secs_f32();
             if elapsed < 2.0 {
-                spans.push(Span::styled("  ✓ Saved", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)));
+                spans.push(Span::styled(
+                    "  ✓ Saved",
+                    Style::default()
+                        .fg(Color::Green)
+                        .add_modifier(Modifier::BOLD),
+                ));
             }
         }
 
@@ -1157,9 +1186,14 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             if !app.command_input.is_empty() && !app.command_error {
                 let commands = app.get_command_completions();
                 let input_lower = app.command_input.to_lowercase();
-                if let Some(first_match) = commands.iter().find(|&c| c.to_lowercase().starts_with(&input_lower) && c.to_lowercase() != input_lower) {
+                if let Some(first_match) = commands.iter().find(|&c| {
+                    c.to_lowercase().starts_with(&input_lower) && c.to_lowercase() != input_lower
+                }) {
                     let remainder = &first_match[app.command_input.len()..];
-                    spans.push(Span::styled(remainder.to_string(), Style::default().fg(dim_color)));
+                    spans.push(Span::styled(
+                        remainder.to_string(),
+                        Style::default().fg(dim_color),
+                    ));
                 }
             }
 
@@ -1171,7 +1205,11 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             }
         } else if matches!(
             app.mode,
-            AppMode::Search | AppMode::PromptSave | AppMode::PromptFilename | AppMode::ReplaceOne | AppMode::ReplaceAll
+            AppMode::Search
+                | AppMode::PromptSave
+                | AppMode::PromptFilename
+                | AppMode::ReplaceOne
+                | AppMode::ReplaceAll
         ) {
             match app.mode {
                 AppMode::Search => {
@@ -1180,21 +1218,28 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     } else {
                         format!("Search [{}]: ", app.last_search)
                     };
-                    
+
                     let mut count_msg = String::new();
                     if !app.search_matches.is_empty() {
                         let cur = app.current_match_idx.map(|idx| idx + 1).unwrap_or(0);
                         count_msg = format!(" [{}/{}]", cur, app.search_matches.len());
                     }
-                    
+
                     spans.push(Span::raw(format!("{}{}", prompt_base, app.search_query)));
                     if !count_msg.is_empty() {
                         spans.push(Span::styled(count_msg, Style::default().fg(dim_color)));
                     }
-                    spans.push(Span::styled(" [Alt+↑/↓] Navigate", Style::default().fg(dim_color)));
+                    spans.push(Span::styled(
+                        " [Alt+↑/↓] Navigate",
+                        Style::default().fg(dim_color),
+                    ));
                 }
-                AppMode::ReplaceOne => spans.push(Span::raw(format!("Replace: {} ", app.command_input))),
-                AppMode::ReplaceAll => spans.push(Span::raw(format!("Replace All: {} ", app.command_input))),
+                AppMode::ReplaceOne => {
+                    spans.push(Span::raw(format!("Replace: {} ", app.command_input)))
+                }
+                AppMode::ReplaceAll => {
+                    spans.push(Span::raw(format!("Replace All: {} ", app.command_input)))
+                }
                 AppMode::PromptSave => spans.push(Span::raw("Save modified script? (y/n/c) ")),
                 AppMode::PromptFilename => {
                     spans.push(Span::raw(format!("Filename: {} ", app.filename_input)))
@@ -1212,15 +1257,15 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 };
                 spans.push(Span::styled(msg, style));
             }
-            
+
             if app.show_search_highlight && !app.search_matches.is_empty() {
-                spans.push(Span::styled(" [Alt+↑/↓] Nav [r] Replace [R] Replace All", Style::default().fg(dim_color)));
+                spans.push(Span::styled(
+                    " [Alt+↑/↓] Nav [r] Replace [R] Replace All",
+                    Style::default().fg(dim_color),
+                ));
             }
         } else {
-            spans.push(Span::styled(
-                "F1 Reference",
-                Style::default().fg(dim_color),
-            ));
+            spans.push(Span::styled("F1 Reference", Style::default().fg(dim_color)));
         }
 
         // Sprint progress (if active)
@@ -1281,10 +1326,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 Style::default().fg(dim_color),
             ));
             right_spans.push(Span::styled(sep, sep_style));
-            right_spans.push(Span::styled(
-                pos_str,
-                Style::default().fg(dim_color),
-            ));
+            right_spans.push(Span::styled(pos_str, Style::default().fg(dim_color)));
         }
         // Closing bracket
         right_spans.push(Span::styled(" ]", sep_style));
@@ -1308,32 +1350,59 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         f.render_widget(Paragraph::new(Line::from(spans)), footer_area);
 
         // Cursor Handling for Footer Modes
-        if matches!(app.mode, AppMode::Search | AppMode::Command | AppMode::PromptSave | AppMode::PromptFilename | AppMode::ReplaceOne | AppMode::ReplaceAll) && footer_area.height > 0 {
+        if matches!(
+            app.mode,
+            AppMode::Search
+                | AppMode::Command
+                | AppMode::PromptSave
+                | AppMode::PromptFilename
+                | AppMode::ReplaceOne
+                | AppMode::ReplaceAll
+        ) && footer_area.height > 0
+        {
             // Calculate prefix width of the left side content
-            let fname = app.file.as_ref().and_then(|p| p.file_name()).map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "New Script".to_string());
+            let fname = app
+                .file
+                .as_ref()
+                .and_then(|p| p.file_name())
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "New Script".to_string());
             let dirty_str = if app.dirty { "*" } else { "" };
-            let lock_str = if app.config.production_lock { " 🔒" } else { "" };
-            
+            let lock_str = if app.config.production_lock {
+                " 🔒"
+            } else {
+                ""
+            };
+
             let prefix_w = 2 // "[ "
                 + UnicodeWidthStr::width(mode_str.trim())
                 + 3 // " | "
                 + UnicodeWidthStr::width(fname.as_str()) + UnicodeWidthStr::width(dirty_str) + UnicodeWidthStr::width(lock_str)
                 + 3; // " | "
-            
+
             let (input_prefix, input_content) = match app.mode {
                 AppMode::Search => {
-                    let pb = if app.last_search.is_empty() { "Search: ".to_string() } else { format!("Search [{}]: ", app.last_search) };
+                    let pb = if app.last_search.is_empty() {
+                        "Search: ".to_string()
+                    } else {
+                        format!("Search [{}]: ", app.last_search)
+                    };
                     (pb, app.search_query.clone())
                 }
                 AppMode::ReplaceOne => ("Replace: ".to_string(), app.command_input.clone()),
                 AppMode::ReplaceAll => ("Replace All: ".to_string(), app.command_input.clone()),
                 AppMode::Command => ("/".to_string(), app.command_input.clone()),
                 AppMode::PromptFilename => ("Filename: ".to_string(), app.filename_input.clone()),
-                AppMode::PromptSave => ("Save modified script? (y/n/c) ".to_string(), "".to_string()),
+                AppMode::PromptSave => {
+                    ("Save modified script? (y/n/c) ".to_string(), "".to_string())
+                }
                 _ => (String::new(), String::new()),
             };
-            
-            let cur_x = footer_area.x + (prefix_w + UnicodeWidthStr::width(input_prefix.as_str()) + UnicodeWidthStr::width(input_content.as_str())) as u16;
+
+            let cur_x = footer_area.x
+                + (prefix_w
+                    + UnicodeWidthStr::width(input_prefix.as_str())
+                    + UnicodeWidthStr::width(input_content.as_str())) as u16;
             f.set_cursor_position((cur_x, footer_area.y));
         }
     }
@@ -1388,7 +1457,3 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         draw_index_cards(f, app, text_area);
     }
 }
-
-
-
-
