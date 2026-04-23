@@ -134,7 +134,7 @@ fn draw_dialogue_tab(
     accent: Color,
     dim: Color,
     normal_fg: Color,
-    theme: &crate::theme::Theme,
+    _theme: &crate::theme::Theme,
 ) {
     let mut lines = Vec::new();
 
@@ -267,7 +267,7 @@ fn draw_scenes_tab(
     accent: Color,
     dim: Color,
     normal_fg: Color,
-    theme: &crate::theme::Theme,
+    _theme: &crate::theme::Theme,
 ) {
     let mut lines = Vec::new();
 
