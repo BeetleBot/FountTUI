@@ -238,7 +238,7 @@ impl App {
 
             match self.mode {
                 AppMode::Normal => return self.handle_normal(key, update_target_x, text_changed, cursor_moved),
-                AppMode::Command => return self.handle_command(key, update_target_x, text_changed, cursor_moved),
+                AppMode::Command | AppMode::ReplaceOne | AppMode::ReplaceAll => return self.handle_command(key, update_target_x, text_changed, cursor_moved),
                 AppMode::SceneNavigator | AppMode::CharacterNavigator => return self.handle_navigation(key, update_target_x, text_changed, cursor_moved),
                 _ => return self.handle_panes(key, update_target_x, text_changed, cursor_moved),
             }

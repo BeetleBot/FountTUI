@@ -51,6 +51,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         AppMode::SprintStat => (" Sprints ", Color::from(theme.ui.normal_mode_bg.clone())),
         AppMode::XRay => (" X-Ray ", Color::from(theme.ui.navigator_mode_bg.clone())),
         AppMode::IndexCards => (" Index Cards ", Color::from(theme.ui.navigator_mode_bg.clone())),
+        AppMode::ReplaceOne | AppMode::ReplaceAll => (" Replace ", Color::from(theme.ui.command_mode_bg.clone())),
         _ => (" Prompt ", Color::from(theme.ui.command_mode_bg.clone())),
     };
 
@@ -1120,7 +1121,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             }
         } else if matches!(
             app.mode,
-            AppMode::Search | AppMode::PromptSave | AppMode::PromptFilename
+            AppMode::Search | AppMode::PromptSave | AppMode::PromptFilename | AppMode::ReplaceOne | AppMode::ReplaceAll
         ) {
             match app.mode {
                 AppMode::Search => {
@@ -1142,6 +1143,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     }
                     spans.push(Span::styled(" [Alt+↑/↓] Navigate", Style::default().fg(dim_color)));
                 }
+                AppMode::ReplaceOne => spans.push(Span::raw(format!("Replace: {} ", app.command_input))),
+                AppMode::ReplaceAll => spans.push(Span::raw(format!("Replace All: {} ", app.command_input))),
                 AppMode::PromptSave => spans.push(Span::raw("Save modified script? (y/n/c) ")),
                 AppMode::PromptFilename => {
                     spans.push(Span::raw(format!("Filename: {} ", app.filename_input)))
@@ -1161,7 +1164,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             }
             
             if app.show_search_highlight && !app.search_matches.is_empty() {
-                spans.push(Span::styled(" [Alt+↑/↓] Navigate", Style::default().fg(dim_color)));
+                spans.push(Span::styled(" [Alt+↑/↓] Nav [r] Replace [R] Replace All", Style::default().fg(dim_color)));
             }
         } else {
             spans.push(Span::styled(
@@ -1255,7 +1258,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         f.render_widget(Paragraph::new(Line::from(spans)), footer_area);
 
         // Cursor Handling for Footer Modes
-        if matches!(app.mode, AppMode::Search | AppMode::Command | AppMode::PromptSave | AppMode::PromptFilename) && footer_area.height > 0 {
+        if matches!(app.mode, AppMode::Search | AppMode::Command | AppMode::PromptSave | AppMode::PromptFilename | AppMode::ReplaceOne | AppMode::ReplaceAll) && footer_area.height > 0 {
             // Calculate prefix width of the left side content
             let fname = app.file.as_ref().and_then(|p| p.file_name()).map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "New Script".to_string());
             let dirty_str = if app.dirty { "*" } else { "" };
@@ -1272,6 +1275,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     let pb = if app.last_search.is_empty() { "Search: ".to_string() } else { format!("Search [{}]: ", app.last_search) };
                     (pb, app.search_query.clone())
                 }
+                AppMode::ReplaceOne => ("Replace: ".to_string(), app.command_input.clone()),
+                AppMode::ReplaceAll => ("Replace All: ".to_string(), app.command_input.clone()),
                 AppMode::Command => ("/".to_string(), app.command_input.clone()),
                 AppMode::PromptFilename => ("Filename: ".to_string(), app.filename_input.clone()),
                 AppMode::PromptSave => ("Save modified script? (y/n/c) ".to_string(), "".to_string()),

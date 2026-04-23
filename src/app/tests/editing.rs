@@ -777,3 +777,30 @@ use super::*;
     }
 
 
+    #[test]
+    fn test_replace_all_matches() {
+        let mut app = create_empty_app();
+        app.lines = vec!["Hello Mathew, how is Mathew?".to_string()];
+        app.last_search = "Mathew".to_string();
+        app.compiled_search_regex = regex::RegexBuilder::new("Mathew")
+            .case_insensitive(true)
+            .build()
+            .ok();
+
+        let count = app.replace_all_matches("John");
+        assert_eq!(count, 2);
+        assert_eq!(app.lines[0], "Hello John, how is John?");
+    }
+
+    #[test]
+    fn test_replace_current_match() {
+        let mut app = create_empty_app();
+        app.lines = vec!["Hello Mathew, how is Mathew?".to_string()];
+        app.last_search = "Mathew".to_string();
+        app.search_matches = vec![(0, 6), (0, 21)];
+        app.current_match_idx = Some(1); // The second "Mathew"
+
+        let success = app.replace_current_match("John");
+        assert!(success);
+        assert_eq!(app.lines[0], "Hello Mathew, how is John?");
+    }

@@ -14,6 +14,16 @@ impl App {
                         match key.code {
                             KeyCode::Char('w') if ctrl => {}
                             KeyCode::Char('c') if ctrl => {}
+                            KeyCode::Char('r') if !ctrl && !shift => {
+                                self.mode = AppMode::ReplaceOne;
+                                self.command_input.clear();
+                                return Ok(false);
+                            }
+                            KeyCode::Char('R') if !ctrl && shift => {
+                                self.mode = AppMode::ReplaceAll;
+                                self.command_input.clear();
+                                return Ok(false);
+                            }
                             _ => {
                                 self.show_search_highlight = false;
                                 *text_changed = true;

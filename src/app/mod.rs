@@ -100,6 +100,8 @@ pub enum AppMode {
     SprintStat,
     XRay,
     IndexCards,
+    ReplaceOne,
+    ReplaceAll,
 }
 
 #[derive(Clone, Debug)]

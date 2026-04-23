@@ -721,6 +721,65 @@ impl App {
         self.lines[self.cursor_y] = chars.into_iter().collect();
         self.dirty = true;
     }
+
+    pub fn replace_current_match(&mut self, replacement: &str) -> bool {
+        if let Some(idx) = self.current_match_idx {
+            if idx < self.search_matches.len() {
+                let (y, x) = self.search_matches[idx];
+                let search_len = self.last_search.chars().count();
+
+                self.save_state(true);
+                let b_start = self.byte_of(y, x);
+                let b_end = self.byte_of(y, x + search_len);
+
+                self.lines[y].replace_range(b_start..b_end, replacement);
+
+                self.dirty = true;
+                self.last_edit = LastEdit::Other;
+                self.parse_document();
+                self.update_layout();
+
+                self.show_search_highlight = false;
+                self.search_matches.clear();
+                self.current_match_idx = None;
+
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn replace_all_matches(&mut self, replacement: &str) -> usize {
+        let Some(re) = self.compiled_search_regex.clone() else {
+            return 0;
+        };
+
+        self.save_state(true);
+        let mut count = 0;
+        let mut changed = false;
+
+        for line in &mut self.lines {
+            if re.is_match(line) {
+                let occurrences = re.find_iter(line).count();
+                count += occurrences;
+                *line = re.replace_all(line, replacement).to_string();
+                changed = true;
+            }
+        }
+
+        if changed {
+            self.dirty = true;
+            self.last_edit = LastEdit::Other;
+            self.parse_document();
+            self.update_layout();
+
+            self.show_search_highlight = false;
+            self.search_matches.clear();
+            self.current_match_idx = None;
+        }
+
+        count
+    }
 }
 
 
