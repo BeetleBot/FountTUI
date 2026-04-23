@@ -91,15 +91,47 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
         let mut left_spans = Vec::new();
 
-        // Opening bracket + app name
+        // Opening bracket
         left_spans.push(Span::styled("[ ", sep_style));
-        left_spans.push(Span::styled(
-            format!("Fount v{}", env!("CARGO_PKG_VERSION")),
-            Style::default().fg(mode_bg).add_modifier(Modifier::BOLD),
-        ));
+
+        // Buffer tabs (Always shown on the left)
+        for i in 0..app.buffers.len() {
+            let (file, dirty) = if i == app.current_buf_idx {
+                (&app.file, app.dirty)
+            } else {
+                (&app.buffers[i].file, app.buffers[i].dirty)
+            };
+
+            let name = file
+                .as_ref()
+                .and_then(|p| p.file_name())
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "New Script".to_string());
+
+            let dirty_mark = if dirty { "*" } else { "" };
+            let label = format!("{}{}", name, dirty_mark);
+
+            if i == app.current_buf_idx {
+                left_spans.push(Span::styled(
+                    label,
+                    Style::default()
+                        .fg(Color::from(theme.ui.selection_fg.clone()))
+                        .bg(Color::from(theme.ui.selection_bg.clone()))
+                        .add_modifier(Modifier::BOLD),
+                ));
+            } else {
+                left_spans.push(Span::styled(label, Style::default().fg(dim_color)));
+            }
+
+            if i + 1 < app.buffers.len() {
+                left_spans.push(Span::styled(sep, sep_style));
+            }
+        }
+
+        // Right side: EDITOR | FOUNT VERSION ]
+        let mut right_spans = Vec::new();
 
         // Mode label
-        left_spans.push(Span::styled(sep, sep_style));
         let active_context_mode = if app.mode == AppMode::Command || app.mode == AppMode::Search {
             app.previous_mode
         } else {
@@ -110,57 +142,19 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             AppMode::IndexCards => " INDEX CARDS ",
             _ => " EDITOR ",
         };
-        left_spans.push(Span::styled(
+        right_spans.push(Span::styled(
             mode_label,
             Style::default().fg(mode_bg).add_modifier(Modifier::BOLD),
         ));
-        left_spans.push(Span::styled(sep, sep_style));
-
-        // Buffer tabs (if multiple buffers)
-        if app.buffers.len() > 1 {
-            left_spans.push(Span::styled(sep, sep_style));
-
-            for i in 0..app.buffers.len() {
-                let (file, dirty) = if i == app.current_buf_idx {
-                    (&app.file, app.dirty)
-                } else {
-                    (&app.buffers[i].file, app.buffers[i].dirty)
-                };
-
-                let name = file
-                    .as_ref()
-                    .and_then(|p| p.file_name())
-                    .map(|n| n.to_string_lossy().into_owned())
-                    .unwrap_or_else(|| "New Script".to_string());
-
-                let dirty_mark = if dirty { "*" } else { "" };
-                let label = format!("{}{}", name, dirty_mark);
-
-                if i == app.current_buf_idx {
-                    left_spans.push(Span::styled(
-                        label,
-                        Style::default()
-                            .fg(Color::from(theme.ui.selection_fg.clone()))
-                            .bg(Color::from(theme.ui.selection_bg.clone()))
-                            .add_modifier(Modifier::BOLD),
-                    ));
-                } else {
-                    left_spans.push(Span::styled(label, Style::default().fg(dim_color)));
-                }
-
-                if i + 1 < app.buffers.len() {
-                    left_spans.push(Span::styled(sep, sep_style));
-                }
-            }
-        }
-
-        // Right side: theme name + closing bracket
-        let mut right_spans = Vec::new();
         right_spans.push(Span::styled(sep, sep_style));
+
+        // Fount version
         right_spans.push(Span::styled(
-            app.config.theme.clone(),
-            Style::default().fg(dim_color),
+            format!("Fount v{}", env!("CARGO_PKG_VERSION")),
+            Style::default().fg(mode_bg).add_modifier(Modifier::BOLD),
         ));
+
+        // Closing bracket
         right_spans.push(Span::styled(" ]", sep_style));
 
         let left_width: usize = left_spans
