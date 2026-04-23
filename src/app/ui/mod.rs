@@ -9,10 +9,10 @@ use crate::{
 };
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, List, ListItem, Paragraph},
+    widgets::{Block, BorderType, Borders, List, ListItem, Paragraph},
 };
 use std::collections::HashSet;
 use unicode_width::UnicodeWidthStr;
@@ -962,33 +962,76 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let hdr_style = Style::default().fg(mode_bg).add_modifier(Modifier::BOLD);
         let sep_style = Style::default().fg(dim_color);
 
+        // Define layout: Search Bar + Content
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(3), // Search input
+                Constraint::Min(0),    // Content
+            ])
+            .split(modal_area);
+
+        // 1. Render Search Bar
+        let search_style = if app.is_shortcuts_searching {
+            Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(dim_color)
+        };
+
+        let search_text = if app.shortcuts_query.is_empty() && !app.is_shortcuts_searching {
+            " Press [/] to search shortcuts...".to_string()
+        } else {
+            format!(" Search: {}", app.shortcuts_query)
+        };
+
+        let search_block = Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded)
+            .border_style(search_style)
+            .title(Span::styled(" [ Filter ] ", search_style));
+
+        f.render_widget(
+            Paragraph::new(search_text)
+                .block(search_block)
+                .alignment(Alignment::Left),
+            chunks[0],
+        );
+
+        // 2. Render Shortcuts Content
+        let query = app.shortcuts_query.to_lowercase();
+        let all_shortcuts = shortcuts::get_all_shortcuts()
+            .into_iter()
+            .filter(|s| {
+                query.is_empty() || 
+                s.key.to_lowercase().contains(&query) || 
+                s.desc.to_lowercase().contains(&query) ||
+                s.category.to_lowercase().contains(&query)
+            })
+            .collect::<Vec<_>>();
+
         // Helper: build lines for one category from registry
-        let build_section = |title: &str, shortcuts: &[shortcuts::Shortcut]| -> Vec<Line<'static>> {
+        let build_section = |title: &str, shortcuts: &[shortcuts::Shortcut]| -> Vec<Line> {
             let mut lines = Vec::new();
             lines.push(Line::from(Span::styled(format!(" [ {} ]", title), hdr_style)));
             for shortcut in shortcuts {
                 let k = shortcut.key.trim();
                 lines.push(Line::from(vec![
                     Span::styled(format!("  {:<14}", k), key_style),
-                    Span::styled(shortcut.desc, desc_style),
+                    Span::styled(shortcut.desc.clone(), desc_style),
                 ]));
             }
             lines.push(Line::from(""));
             lines
         };
 
-        let all_shortcuts = shortcuts::get_all_shortcuts();
-        
         // Group by category while preserving order of first appearance
-        let mut categories: Vec<&str> = Vec::new();
+        let mut categories: Vec<String> = Vec::new();
         for s in &all_shortcuts {
             if !categories.contains(&s.category) {
-                categories.push(s.category);
+                categories.push(s.category.clone());
             }
         }
 
-        // Define column assignments (can be tweaked as needed)
-        // Col1: 1, 2, 3 | Col2: 4, 5 | Col3: 6, 7, 8
         let mut col1: Vec<Line> = Vec::new();
         let mut col2: Vec<Line> = Vec::new();
         let mut col3: Vec<Line> = Vec::new();
@@ -1000,16 +1043,20 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 .collect();
             
             let section_lines = build_section(cat, &cat_shortcuts);
-            if i < 3 {
-                col1.extend(section_lines);
-            } else if i < 5 {
-                col2.extend(section_lines);
+            // Distribute columns more dynamically if filtered
+            if query.is_empty() {
+                if i < 3 { col1.extend(section_lines); }
+                else if i < 5 { col2.extend(section_lines); }
+                else { col3.extend(section_lines); }
             } else {
-                col3.extend(section_lines);
+                // In search mode, just stack them or balance them better
+                let total_cats = categories.len();
+                if i < (total_cats + 2) / 3 { col1.extend(section_lines); }
+                else if i < 2 * (total_cats + 2) / 3 { col2.extend(section_lines); }
+                else { col3.extend(section_lines); }
             }
         }
 
-        // Render the block border
         let block = Block::default()
             .title(Span::styled(
                 " [ Cheat Sheet ] ",
@@ -1019,8 +1066,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             .border_type(ratatui::widgets::BorderType::Rounded)
             .border_style(Style::default().fg(dim_color));
 
-        let inner = block.inner(modal_area);
-        f.render_widget(block, modal_area);
+        let inner_area = block.inner(chunks[1]);
+        f.render_widget(block, chunks[1]);
 
         // Split inner into 3 columns with separators
         let col_chunks = Layout::default()
@@ -1032,7 +1079,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 Constraint::Length(1),
                 Constraint::Min(0),
             ])
-            .split(inner);
+            .split(inner_area);
 
         // Render separator columns
         let sep_lines: Vec<Line> = (0..col_chunks[1].height)

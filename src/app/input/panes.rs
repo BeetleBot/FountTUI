@@ -221,38 +221,61 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::Shortcuts => {
-                    match key.code {
-                        KeyCode::Esc | KeyCode::F(1) => {
-                            self.mode = AppMode::Normal;
+                    if self.is_shortcuts_searching {
+                        match key.code {
+                            KeyCode::Esc | KeyCode::Enter => {
+                                self.is_shortcuts_searching = false;
+                            }
+                            KeyCode::Backspace => {
+                                self.shortcuts_query.pop();
+                                self.shortcuts_state.select(Some(0));
+                            }
+                            KeyCode::Char(c) if !ctrl => {
+                                self.shortcuts_query.push(c);
+                                self.shortcuts_state.select(Some(0));
+                            }
+                            _ => {}
                         }
-                        KeyCode::Up | KeyCode::Char('k') => {
-                            let i = self.shortcuts_state.selected().unwrap_or(0);
-                            self.shortcuts_state.select(Some(i.saturating_sub(1)));
+                    } else {
+                        match key.code {
+                            KeyCode::Esc | KeyCode::F(1) => {
+                                self.mode = AppMode::Normal;
+                                self.shortcuts_query.clear();
+                                self.is_shortcuts_searching = false;
+                            }
+                            KeyCode::Char('/') => {
+                                self.is_shortcuts_searching = true;
+                                self.shortcuts_query.clear();
+                            }
+                            KeyCode::Up | KeyCode::Char('k') => {
+                                let i = self.shortcuts_state.selected().unwrap_or(0);
+                                self.shortcuts_state.select(Some(i.saturating_sub(1)));
+                            }
+                            KeyCode::Down | KeyCode::Char('j') => {
+                                let i = self.shortcuts_state.selected().unwrap_or(0);
+                                self.shortcuts_state.select(Some(i.saturating_add(1)));
+                            }
+                            KeyCode::PageUp => {
+                                let i = self.shortcuts_state.selected().unwrap_or(0);
+                                self.shortcuts_state.select(Some(i.saturating_sub(10)));
+                            }
+                            KeyCode::PageDown => {
+                                let i = self.shortcuts_state.selected().unwrap_or(0);
+                                self.shortcuts_state.select(Some(i.saturating_add(10)));
+                            }
+                            KeyCode::Home => {
+                                self.shortcuts_state.select(Some(0));
+                            }
+                            KeyCode::Char('h') if ctrl => {
+                                self.open_scene_navigator();
+                            }
+                            KeyCode::Char('p') if ctrl => {
+                                self.mode = AppMode::SettingsPane;
+                                self.selected_setting = 0;
+                            }
+                            KeyCode::Char('f') if ctrl => {}
+                            _ => {}
                         }
-                        KeyCode::Down | KeyCode::Char('j') => {
-                            let i = self.shortcuts_state.selected().unwrap_or(0);
-                            self.shortcuts_state.select(Some(i.saturating_add(1)));
-                        }
-                        KeyCode::PageUp => {
-                            let i = self.shortcuts_state.selected().unwrap_or(0);
-                            self.shortcuts_state.select(Some(i.saturating_sub(10)));
-                        }
-                        KeyCode::PageDown => {
-                            let i = self.shortcuts_state.selected().unwrap_or(0);
-                            self.shortcuts_state.select(Some(i.saturating_add(10)));
-                        }
-                        KeyCode::Home => {
-                            self.shortcuts_state.select(Some(0));
-                        }
-                        KeyCode::Char('h') if ctrl => {
-                            self.open_scene_navigator();
-                        }
-                        KeyCode::Char('p') if ctrl => {
-                            self.mode = AppMode::SettingsPane;
-                            self.selected_setting = 0;
-                        }
-                        KeyCode::Char('f') if ctrl => {}
-                        _ => {}
                     }
                     return Ok(false);
                 }

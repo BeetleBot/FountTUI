@@ -1,0 +1,96 @@
+# Essential Controls
+/ | Command bar | Open the command entry
+Alt+/ | Command history | Show last successfully run command
+F1 | Cheat sheet | Toggle this help screen (Legend)
+Esc | Back / Cancel | Close current mode or clear selection
+^P | Settings pane | Toggle global settings menu
+^E | Export pane | Open export & reports menu
+^H | Scene Navigator | Browse and jump to scenes
+^L | Ensemble | View character stats and frequency
+Tab | Autocomplete | Accept character or scene suggestion
+/theme [name] | Switch theme | Change UI colors (e.g. /theme adaptive)
+/editor | Normal editor | Return to standard editing from any mode
+
+# Edit & History
+/ud | Undo | Revert the last change
+/rd | Redo | Re-apply the last undone change
+^Z | Quick Undo | Standard undo shortcut
+^Shift+Z | Quick Redo | Standard redo shortcut
+
+# File & Project
+/w | Save | Save current buffer to disk
+/ww | Save As | Save current buffer with a new name
+/o [path] | Open file | Load a .fountain file or open picker
+/new | New file | Create a fresh empty buffer
+/bn | Next buffer | Switch to the next open script
+/bp | Prev buffer | Switch to the previous open script
+^PgDn | Switch Next | Fast buffer swap forward
+^PgUp | Switch Prev | Fast buffer swap backward
+/q | Close | Close current buffer (prompts if dirty)
+/q! | Force close | Close without saving changes
+/wq | Save & close | Write changes then close buffer
+/ex | Exit app | Close Fount and all buffers
+/home | Start screen | Return to the welcome dashboard
+
+# Selection & Editing
+^A | Select all | Highlight the entire document
+Shift+Arrow | Extend selection | Highlight text character/line wise
+Shift+Home | Select to start | Highlight from cursor to line start
+Shift+End | Select to end | Highlight from cursor to line end
+^C | Copy | Copy selection or line to clipboard
+^X | Cut | Cut selection or line to clipboard
+^V | Paste | Paste from system clipboard
+/selectall | Select all | Command alternative for ^A
+/copy | Copy | Command alternative for ^C
+/cut | Cut | Command alternative for ^X
+/paste | Paste | Command alternative for ^V
+
+# Search & Replace
+/search [q] | Search text | Find string in buffer and highlight
+Alt+Up | Prev match | Jump to previous search result
+Alt+Down | Next match | Jump to next search result
+r | Replace | (Search active) Replace current match
+R | Replace All | (Search active) Replace all matches
+
+# Navigation & Motion
+/[line] | Jump to line | Go to a specific line number (e.g. /50)
+/s[num] | Jump to scene | Go to a specific scene number (e.g. /s5)
+^Left/Right | Jump by word | Move cursor by whole words
+^Backspace | Delete word ← | Remove the word behind the cursor
+^Delete | Delete word → | Remove the word ahead of the cursor
+Home / End | Line edges | Move cursor to start or end of line
+PgUp / PgDn | Scroll page | Move view by one full screen height
+/pos | Cursor position | Show current line/col and match info
+
+# Production Tools
+/sprint [m] | Start sprint | Start a writing timer for [m] minutes
+/cancelsprint | Stop sprint | End the current writing session
+/sprintstat | Sprint records | View history of previous sprints
+/snap | Snapshots | Browse and restore auto-saved versions
+/xray | Visual analysis | View pacing and character charts
+/ic | Index cards | Switch to scene architect grid mode
+/renum | Renumber | Update all scene numbers sequentially
+/clearnum | Clear numbers | Strip all scene number tags (#)
+/injectnum | Tag scene | Number the current scene (auto or custom)
+/locknum | Prod. Lock | Enable production numbering mode
+/unlocknum | Unlock | Disable production numbering mode
+/addtitle | Title page | Insert a standard title page block
+
+# Toggle Adaptive Settings (/set)
+/set focus | Zen mode | Toggle distraction-free UI
+/set typewriter | Center cursor | Keep the active line centered vertically
+/set markup | Show markup | Toggle visibility of Fountain syntax
+/set pagenums | Page numbers | Toggle page count in footer
+/set scenenums | Scene numbers | Toggle scene tags in editor
+/set contd | Auto (CONT'D) | Toggle automatic character (CONT'D)
+/set autosave | Auto-save | Toggle 30s background saving
+/set autocomplete | Autocomplete and Suggestions | Toggle character/scene autocomplete
+/set autobreaks | Smart page breaks | Toggle context-aware paragraph spacing
+
+# Mode Specific
+1, 2, 3 | X-Ray Tabs | (X-Ray) Switch between Pacing/Char/Scene
+h / l | X-Ray Tabs | (X-Ray) Switch tabs left/right
+n | New Card | (Index Cards) Add a new scene card
+Shift+Arrows | Swap Cards | (Index Cards) Reorder scenes in the grid
+Enter | Edit Card | (Index Cards) Edit heading/synopsis
+q | Exit Mode | (Index Cards/X-Ray) Return to editor
