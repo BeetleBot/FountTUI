@@ -160,7 +160,7 @@ use super::*;
         assert_eq!(app.cursor_x, 6, "Index of 't' in 'target'");
         assert_eq!(
             app.status_msg.as_deref(),
-            Some("Search Wrapped"),
+            Some("Search Wrapped ( Match 1 of 1 )"),
             "Should display wrapped status message"
         );
     }

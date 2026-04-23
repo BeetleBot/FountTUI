@@ -8,6 +8,7 @@ impl App {
     pub fn handle_panes(&mut self, key: KeyEvent, update_target_x: &mut bool, text_changed: &mut bool, cursor_moved: &mut bool) -> io::Result<bool> {
         let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
         let shift = key.modifiers.contains(KeyModifiers::SHIFT);
+        let alt = key.modifiers.contains(KeyModifiers::ALT);
         match self.mode {
                 AppMode::Search => {
                     match key.code {
@@ -27,6 +28,16 @@ impl App {
                             self.execute_search();
                             *update_target_x = true;
                             *cursor_moved = true;
+                        }
+                        KeyCode::Up if alt => {
+                            self.jump_to_match(false);
+                            *cursor_moved = true;
+                            *update_target_x = true;
+                        }
+                        KeyCode::Down if alt => {
+                            self.jump_to_match(true);
+                            *cursor_moved = true;
+                            *update_target_x = true;
                         }
                         KeyCode::Backspace => {
                             self.search_query.pop();

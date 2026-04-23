@@ -1129,11 +1129,9 @@ impl App {
             "search" => {
                 if let Some(query) = args.first() {
                     self.search_query = query.to_string();
-                    self.last_search = query.to_string();
-                    self.show_search_highlight = true;
-                    self.update_search_regex();
-                    self.mode = AppMode::Search;
-                    self.set_status(&format!("Searching: {}", query));
+                    self.execute_search();
+                    *cursor_moved = true;
+                    *update_target_x = true;
                 } else {
                     self.search_query.clear();
                     self.show_search_highlight = true;
