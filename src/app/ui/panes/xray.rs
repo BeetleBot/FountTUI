@@ -22,9 +22,10 @@ pub fn draw_xray(f: &mut Frame, app: &mut App) {
         }
     }
 
-    let accent = Color::from(theme.ui.normal_mode_bg.clone());
+    let accent = Color::from(theme.ui.navigator_mode_bg.clone());
     let dim = Color::from(theme.ui.dim.clone());
     let normal_fg = theme.ui.foreground.clone().map(Color::from).unwrap_or(Color::White);
+    let normal_bg = theme.ui.background.clone().map(Color::from).unwrap_or(Color::Reset);
 
     let modal_w = 100u16.min(area.width.saturating_sub(4));
     let modal_h = 36u16.min(area.height.saturating_sub(2));
@@ -38,6 +39,7 @@ pub fn draw_xray(f: &mut Frame, app: &mut App) {
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(dim))
+        .style(Style::default().bg(normal_bg).fg(normal_fg))
         .title(Span::styled(
             " [ X-Ray Analysis ] ",
             Style::default().fg(accent).add_modifier(Modifier::BOLD),
@@ -98,9 +100,9 @@ pub fn draw_xray(f: &mut Frame, app: &mut App) {
 
     if let Some(ref data) = app.xray_data {
         match app.xray_tab {
-            0 => draw_dialogue_tab(f, content_area, data, app.xray_scroll, accent, dim, normal_fg),
-            1 => draw_pacing_tab(f, content_area, data, app.xray_scroll, accent, dim, normal_fg),
-            2 => draw_scenes_tab(f, content_area, data, app.xray_scroll, accent, dim, normal_fg),
+            0 => draw_dialogue_tab(f, content_area, data, app.xray_scroll, accent, dim, normal_fg, theme),
+            1 => draw_pacing_tab(f, content_area, data, app.xray_scroll, accent, dim, normal_fg, theme),
+            2 => draw_scenes_tab(f, content_area, data, app.xray_scroll, accent, dim, normal_fg, theme),
             _ => {}
         }
     } else {
@@ -132,6 +134,7 @@ fn draw_dialogue_tab(
     accent: Color,
     dim: Color,
     normal_fg: Color,
+    theme: &crate::theme::Theme,
 ) {
     let mut lines = Vec::new();
 
@@ -196,6 +199,7 @@ fn draw_pacing_tab(
     accent: Color,
     dim: Color,
     _normal_fg: Color,
+    theme: &crate::theme::Theme,
 ) {
     let mut lines = Vec::new();
 
@@ -216,7 +220,7 @@ fn draw_pacing_tab(
             Span::styled("  ", Style::default()),
             Span::styled("▓", Style::default().fg(accent)),
             Span::styled(" = Action   ", Style::default().fg(dim)),
-            Span::styled("░", Style::default().fg(Color::Cyan)),
+            Span::styled("░", Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
             Span::styled(" = Dialogue", Style::default().fg(dim)),
         ]));
         lines.push(Line::from(""));
@@ -242,7 +246,7 @@ fn draw_pacing_tab(
             lines.push(Line::from(vec![
                 Span::styled(format!("  pg{:<3} ", block.page), Style::default().fg(dim)),
                 Span::styled("▓".repeat(action_cells), Style::default().fg(accent)),
-                Span::styled("░".repeat(dialogue_cells), Style::default().fg(Color::Cyan)),
+                Span::styled("░".repeat(dialogue_cells), Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
                 Span::styled(format!(" {}", pct_str), Style::default().fg(dim)),
             ]));
         }
@@ -263,6 +267,7 @@ fn draw_scenes_tab(
     accent: Color,
     dim: Color,
     normal_fg: Color,
+    theme: &crate::theme::Theme,
 ) {
     let mut lines = Vec::new();
 

@@ -5,6 +5,7 @@ use crate::{
     app::{App, AppMode, EnsembleItem, GoalType, shortcuts},
     formatting::{RenderConfig, StringCaseExt, render_inline},
     layout::{find_visual_cursor, strip_sigils},
+    theme::HexColor,
     types::{LineType, PAGE_WIDTH, base_style},
 };
 use ratatui::{
@@ -958,7 +959,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
         let dim_color = Color::from(theme.ui.dim.clone());
         let key_style = Style::default().fg(mode_bg).add_modifier(Modifier::BOLD);
-        let desc_style = Style::default().fg(Color::Gray);
+        let desc_style = Style::default().fg(dim_color);
         let hdr_style = Style::default().fg(mode_bg).add_modifier(Modifier::BOLD);
         let sep_style = Style::default().fg(dim_color);
 
@@ -1064,7 +1065,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             ))
             .borders(ratatui::widgets::Borders::ALL)
             .border_type(ratatui::widgets::BorderType::Rounded)
-            .border_style(Style::default().fg(dim_color));
+            .border_style(Style::default().fg(dim_color))
+            .style(Style::default().bg(Color::from(theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))).fg(Color::from(theme.ui.foreground.clone().unwrap_or(HexColor("White".to_string())))));
 
         let inner_area = block.inner(chunks[1]);
         f.render_widget(block, chunks[1]);

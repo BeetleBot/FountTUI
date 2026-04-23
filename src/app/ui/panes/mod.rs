@@ -3,6 +3,7 @@ pub mod xray;
 pub mod index_cards;
 
 use unicode_width::UnicodeWidthStr;
+use crate::theme::HexColor;
 use crate::app::App;
 use ratatui::{
     Frame,
@@ -51,7 +52,8 @@ pub fn draw_sprint_stats(f: &mut Frame, app: &mut App) {
         .title(" [ Sprint History | Press E to Export ] ")
         .borders(Borders::ALL)
         .border_type(ratatui::widgets::BorderType::Rounded)
-        .border_style(Style::default().fg(mode_bg));
+        .border_style(Style::default().fg(Color::from(theme.ui.dim.clone())))
+        .style(Style::default().bg(Color::from(theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))).fg(Color::from(theme.ui.foreground.clone().unwrap_or(HexColor("White".to_string())))));
 
     let inner_area = modal_area.inner(ratatui::layout::Margin {
         horizontal: 1,
@@ -98,7 +100,7 @@ pub fn draw_sprint_stats(f: &mut Frame, app: &mut App) {
     )
     .header(header)
     .block(history_block)
-    .row_highlight_style(Style::default().bg(Color::DarkGray).fg(Color::White));
+    .row_highlight_style(Style::default().bg(Color::from(theme.ui.selection_bg.clone())).fg(Color::from(theme.ui.selection_fg.clone())));
 
     f.render_stateful_widget(table, inner_area, &mut app.sprint_stats_state);
 }
@@ -127,16 +129,18 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
         crate::app::FilePickerAction::ExportSprints => " [ Export Sprints ] ",
     };
 
+    let mode_bg = Color::from(app.theme.ui.normal_mode_bg.clone());
     let block = Block::default()
         .title(Span::styled(
             title,
             Style::default()
-                .fg(Color::LightMagenta)
+                .fg(mode_bg)
                 .add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
         .border_type(ratatui::widgets::BorderType::Rounded)
-        .border_style(Style::default().fg(Color::DarkGray));
+        .border_style(Style::default().fg(Color::from(app.theme.ui.dim.clone())))
+        .style(Style::default().bg(Color::from(app.theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))).fg(Color::from(app.theme.ui.foreground.clone().unwrap_or(HexColor("White".to_string())))));
     f.render_widget(block, block_area);
 
     let inner_area = block_area.inner(ratatui::layout::Margin {
@@ -160,7 +164,7 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
         Paragraph::new(Line::from(vec![Span::styled(
             dir_str,
             Style::default()
-                .fg(Color::DarkGray)
+                .fg(Color::from(app.theme.ui.dim.clone()))
                 .add_modifier(Modifier::ITALIC),
         )])),
         layout[0],
@@ -206,7 +210,7 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             };
 
             let style = if is_selected {
-                Style::default().bg(Color::LightMagenta).fg(Color::Black)
+                Style::default().bg(Color::from(app.theme.ui.selection_bg.clone())).fg(Color::from(app.theme.ui.selection_fg.clone()))
             } else {
                 Style::default().fg(color)
             };
@@ -223,9 +227,9 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
     if state.action != crate::app::FilePickerAction::Open && !state.filename_input.is_empty() {
         let is_selected = selected_idx == items_len;
         let style = if is_selected {
-            Style::default().bg(Color::LightGreen).fg(Color::Black)
+            Style::default().bg(Color::from(app.theme.ui.selection_bg.clone())).fg(Color::from(app.theme.ui.selection_fg.clone()))
         } else {
-            Style::default().fg(Color::LightGreen)
+            Style::default().fg(Color::from(app.theme.ui.normal_mode_bg.clone()))
         };
         display_items.push(ListItem::new(Line::from(vec![
             Span::styled(if is_selected { " › " } else { "   " }, style),
@@ -245,13 +249,13 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
         f.render_widget(
             Paragraph::new(Line::from(vec![Span::styled(
                 " Filename: ",
-                Style::default().fg(Color::DarkGray),
+                Style::default().fg(Color::from(app.theme.ui.dim.clone())),
             )])),
             layout[2],
         );
 
         // 4. Filename Input
-        let input_style = Style::default().fg(Color::White).bg(Color::Rgb(30, 30, 30));
+        let input_style = Style::default().fg(Color::from(app.theme.ui.selection_fg.clone())).bg(Color::from(app.theme.ui.selection_bg.clone()));
         f.render_widget(
             Paragraph::new(Line::from(vec![Span::styled(
                 format!("  {}", state.filename_input),
@@ -281,7 +285,8 @@ pub fn draw_snapshots(f: &mut Frame, app: &mut App) {
         .title(" [ Snapshots | Enter: Replace | O: Open in New ] ")
         .borders(Borders::ALL)
         .border_type(ratatui::widgets::BorderType::Rounded)
-        .border_style(Style::default().fg(mode_bg));
+        .border_style(Style::default().fg(Color::from(theme.ui.dim.clone())))
+        .style(Style::default().bg(Color::from(theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))).fg(Color::from(theme.ui.foreground.clone().unwrap_or(HexColor("White".to_string())))));
 
     let header = Row::new(vec![
         Cell::from("File Name"),
@@ -319,7 +324,8 @@ pub fn draw_snapshots(f: &mut Frame, app: &mut App) {
     .block(block)
     .row_highlight_style(
         Style::default()
-            .bg(Color::Rgb(50, 50, 50))
+            .bg(Color::from(theme.ui.selection_bg.clone()))
+            .fg(Color::from(theme.ui.selection_fg.clone()))
             .add_modifier(Modifier::BOLD),
     );
 

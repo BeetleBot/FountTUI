@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::theme::HexColor;
 use ratatui::{
     Frame,
     layout::{Rect, Alignment},
@@ -42,6 +43,7 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(dim))
+        .style(Style::default().bg(Color::from(theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))).fg(normal_fg))
         .title(Span::styled(" [ Fount Home ] ", title_style));
     
     f.render_widget(block, modal_area);
