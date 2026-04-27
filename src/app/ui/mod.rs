@@ -234,16 +234,19 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let (vis_row, _vis_x) = find_visual_cursor(&app.layout, app.cursor_y, app.cursor_x);
 
         if app.config.strict_typewriter_mode {
-            let absolute_center = area.height / 2;
-            let center_offset = absolute_center.saturating_sub(text_area.y) as usize;
+            let center_offset = (height / 2) as usize;
             if vis_row < center_offset {
                 pad_top = center_offset - vis_row;
             }
             app.scroll = vis_row.saturating_sub(center_offset);
         } else if app.config.typewriter_mode {
-            let absolute_center = area.height / 2;
-            let center_offset = absolute_center.saturating_sub(text_area.y) as usize;
-            app.scroll = vis_row.saturating_sub(center_offset);
+            let center_offset = (height / 2) as usize;
+            // Normal typewriter mode only scrolls when the cursor passes the midpoint
+            if vis_row >= center_offset {
+                app.scroll = vis_row - center_offset;
+            } else {
+                app.scroll = 0;
+            }
         } else {
             if vis_row < app.scroll {
                 app.scroll = vis_row;
