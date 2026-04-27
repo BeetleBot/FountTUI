@@ -129,3 +129,63 @@ jobs:
             target/debian/*.deb
             target/generate-rpm/*.rpm
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-aur:
+    name: Publish to AUR
+    needs: [upload-assets]
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install System Dependencies
+        run: |
+          pacman -Syu --noconfirm git openssh pacman-contrib base-devel
+      - uses: actions/checkout@v4
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -t ed25519 aur.archlinux.org >> ~/.ssh/known_hosts
+      - name: Update PKGBUILD and .SRCINFO
+        run: |
+          # Create a non-root user for makepkg
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/builder
+          chown -R builder:builder .
+          
+          cd packaging/aur
+          
+          # Extract version without 'v' prefix
+          VERSION=${GITHUB_REF_NAME#v}
+          sed -i "s/^pkgver=.*/pkgver=$VERSION/" PKGBUILD
+          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+          
+          # Use updpkgsums to update checksums (runs as builder)
+          sudo -u builder updpkgsums
+          
+          # Generate .SRCINFO (runs as builder)
+          sudo -u builder makepkg --printsrcinfo > .SRCINFO
+
+          # Cleanup downloaded assets
+          sudo -u builder rm -f *.tar.gz
+      - name: Push to AUR
+        run: |
+          # Configure Git
+          git config --global user.name "BeetleBot"
+          git config --global user.email "nikarabilla@gmail.com"
+          git config --global --add safe.directory '*'
+          
+          # Clone AUR repo and push changes
+          git clone ssh://aur@aur.archlinux.org/fount-bin.git aur-repo
+          cp packaging/aur/PKGBUILD packaging/aur/.SRCINFO aur-repo/
+          cd aur-repo
+          git add PKGBUILD .SRCINFO
+          
+          if git diff --quiet && git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update to ${GITHUB_REF_NAME}"
+            git push origin master
+          fi
+
