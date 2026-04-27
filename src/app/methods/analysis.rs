@@ -572,9 +572,7 @@ impl crate::app::App {
             height += syn_lines;
         }
 
-        if item.synopses.is_empty() {
-            height += 1; // "no synopsis" placeholder height
-        }
+
 
         height += 1; // Empty separator line or ending spacer
         height

@@ -557,12 +557,41 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     };
 
                     // Line 1: Scene Heading
-                    lines.push(Line::from(vec![
+                    let max_heading_w = 45; // Match calculate_scene_height
+                    let heading_indent = 5; // prefix(3) + connector(2)
+                    let mut current_heading_len = 0;
+                    
+                    let mut current_spans = vec![
                         Span::styled(prefix, base_style),
                         Span::styled(connector, line_style),
-                        Span::styled(s_tag, base_style),
-                        Span::styled(item.label.clone(), base_style),
-                    ]));
+                    ];
+                    
+                    if !s_tag.is_empty() {
+                        current_spans.push(Span::styled(s_tag.clone(), base_style));
+                        current_heading_len += s_tag.len();
+                    }
+
+                    for word in item.label.split_whitespace() {
+                        if current_heading_len + word.len() + heading_indent + 1 > max_heading_w {
+                            lines.push(Line::from(current_spans));
+                            let syn_line_char = if is_last_in_section { "   " } else { "│  " };
+                            current_spans = vec![
+                                Span::styled("   ", Style::default()),
+                                Span::styled(syn_line_char, line_style),
+                            ];
+                            current_heading_len = 0;
+                        }
+                        
+                        if current_heading_len > 0 {
+                            current_spans.push(Span::styled(" ", base_style));
+                            current_heading_len += 1;
+                        }
+                        
+                        current_spans.push(Span::styled(word.to_string(), base_style));
+                        current_heading_len += word.len();
+                    }
+                    
+                    lines.push(Line::from(current_spans));
 
                     // Line 2+: Wrapped Synopses or placeholder
                     let syn_line_char = if is_last_in_section { "   " } else { "│  " };
@@ -601,12 +630,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                                 ]));
                             }
                         }
-                    } else {
-                        lines.push(Line::from(vec![
-                            Span::styled("   ", Style::default()),
-                            Span::styled(syn_line_char, line_style),
-                            Span::styled("no synopsis", dim_style.add_modifier(Modifier::ITALIC)),
-                        ]));
                     }
 
                     // Spacer/Separator
@@ -614,12 +637,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                         lines.push(Line::from(vec![
                             Span::styled("   ", Style::default()),
                             Span::styled(syn_line_char, line_style),
-                            Span::styled(
-                                "─".repeat(30),
-                                Style::default()
-                                    .fg(Color::DarkGray)
-                                    .add_modifier(Modifier::DIM),
-                            ),
                         ]));
                     } else {
                         lines.push(Line::from(""));
