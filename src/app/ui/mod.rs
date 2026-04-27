@@ -241,7 +241,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             app.scroll = vis_row.saturating_sub(center_offset);
         } else if app.config.typewriter_mode {
             let center_offset = (height / 2) as usize;
-            // Normal typewriter mode only scrolls when the cursor passes the midpoint
+
             if vis_row >= center_offset {
                 app.scroll = vis_row - center_offset;
             } else {

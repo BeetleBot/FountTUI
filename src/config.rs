@@ -382,6 +382,9 @@ pub struct Config {
 
     /// Whether to use Nerd Font icons
     pub use_nerd_fonts: bool,
+
+    /// Mac Mode: Auto-compatibility for Apple_Terminal
+    pub mac_mode: bool,
 }
 
 impl Default for Config {
@@ -425,6 +428,7 @@ impl Default for Config {
             production_lock: false,
             theme: "Adaptive".to_string(),
             use_nerd_fonts: true,
+            mac_mode: false,
         }
     }
 }
@@ -725,6 +729,16 @@ impl Config {
             config.no_color = false;
         } else if !supports_color {
             config.no_color = true;
+        }
+
+        // --- Mac Mode Detection ---
+        let term_prog = std::env::var("TERM_PROGRAM").unwrap_or_default();
+        if term_prog == "Apple_Terminal" {
+            config.mac_mode = true;
+            // Force safe defaults for the basic Mac terminal
+            config.no_color = true;
+            config.force_ascii = true;
+            config.use_nerd_fonts = false;
         }
 
         config
