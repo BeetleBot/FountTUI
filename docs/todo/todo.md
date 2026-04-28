@@ -1,60 +1,45 @@
-# Fount: Engineering Roadmap & Todo
+# Fount Development Tasks
 
-## 🏛️ Architectural Improvements
+## Technical Debt and Refactoring
 
-### [ ] Modularize the `App` State (`src/app/mod.rs`)
-The `App` struct is currently a monolithic state container. Refactor related fields into focused sub-structs:
-- `EditorBuffer`: Core text, cursor, and undo/redo logic.
-- `NavigatorState`: Scene and character navigation data.
-- `SessionStats`: Sprints, goals, and time tracking.
+### Clean up the App state
+The App struct is currently doing way too much and has become a monolithic container. I need to break it down into smaller, more manageable pieces. Specifically, I should pull out the editor logic (text, cursor, undo), the navigation data (scenes, characters), and the session stats (sprints, goals) into their own dedicated modules.
 
-### [ ] Refactor the Layout Engine (`src/layout.rs`)
-> [!IMPORTANT]
-> The `build_layout` function is currently a monolithic loop exceeding 400 lines. This complexity makes it difficult to debug and prevents easy extension.
+### Break down the Layout Engine
+The build_layout function is a giant 400-line loop. It's becoming a nightmare to debug and extend. I need to split it up into specialized processors that handle specific things like page breaks, dialogue logic, scene numbering, and visual formatting markers.
 
-**Goal**: Decompose `build_layout` into specialized sub-processors:
-- **PaginationProcessor**: Manage page breaks and numbering.
-- **DialogueProcessor**: Handle "Continued" extensions and dual-dialogue logic.
-- **SceneProcessor**: Handle scene numbering and mirroring.
-- **MarkupProcessor**: Mapping Fountain markers to visual formatting.
+### Speed up large document handling
+Right now, the app re-processes the entire script whenever something changes. This is going to get slow once a script goes over 100 pages. I need to implement a tracking system so we only re-parse and re-layout the scenes or pages that were actually edited.
 
-### [ ] Implement Incremental Parsing & Layout
-Currently, Fount re-processes the entire document on most changes. This will cause lag in scripts over 100 pages.
-- **Task**: Implement a "Dirty Region" tracking system to only re-parse and re-layout changed scenes or pages.
+## Performance and Reliability
 
----
+### Improve parser memory usage
+The parser currently converts every line into a vector of characters for Unicode handling, which is wasteful for large files. I should switch to using something like unicode-segmentation for grapheme-aware iteration to cut down on redundant allocations.
 
-## ⚡ Performance & Code Quality
+### Better error handling
+There are too many unwraps and unchecked options scattered throughout the code, especially in file I/O and command execution. I need to create a proper FountError type and migrate the logic to use Result patterns systematically so the app fails gracefully instead of crashing.
 
-### [ ] Optimize Parser Throughput (`src/parser.rs`)
-- **Issue**: Every line is converted to a `Vec<char>` for Unicode handling, which is memory-heavy for large files.
-- **Refactor**: Use `unicode-segmentation` for grapheme-aware iteration instead of redundant vector allocations.
+## Interface and Aesthetics
 
-### [ ] Strengthen Error Handling
-- **Issue**: Widespread use of `.unwrap()` or unchecked `Option` values in command execution and file I/O.
-- **Task**: Introduce a custom `FountError` enum and migrate `src/app/methods/` to use the `Result` pattern systematically.
+### Subtle formatting markers
+Instead of hiding asterisks and underscores completely, I want to try rendering them in a very dim, low-contrast color. This would provide a hint about the document structure without being as distracting as the full-contrast markers.
 
----
+### X-Ray pacing heatmap
+It would be great to add a visual heatmap to the X-Ray view that shows the balance between dialogue and action across the script. This would help writers visualize the rhythm and pacing of their scenes at a glance.
 
-## 🎨 UX & Polish
+## Features and Workflow
 
-- [ ] **Ghost Formatting Markers**: Instead of hiding markers like `*` or `_` completely, render them in a very low-contrast "dim" color to provide structural hints without distraction.
-- [ ] **Pacing Heatmap (X-Ray)**: Add a visual "Dialogue vs. Action" heatmap to the X-Ray view to help writers visualize script rhythm.
+### Project support
+I want to support a .fount file format that can group multiple Fountain files together. This would allow a writer to manage a script that is split into separate acts or episodes as a single unified workspace.
 
----
+### Scripting and Plugins
+Implement a Lua-based engine so users can write their own extensions for the editor. There is a separate architecture plan for this in the docs folder that covers the bridge API and event hooks.
 
-## ⌨️ Workflow & Navigation
-
-- [ ] **Multi-file Project Support**: Support for a `.fount` project file that aggregates multiple Fountain files (e.g., acts or episodes) into a single unified workspace.
-
-
----
-
-## ✅ Completed
-- [x] **Match Count**: Show `[X/Y]` in the status bar during search navigation.
-- [x] **Navigation Shortcuts**: `Alt+Up` / `Alt+Down` for jumping between search matches.
-- [x] **Buffer Tabs**: Minimal adaptive tab bar for multi-buffer workflows.
-- [x] **Save Prompt**: Updated `/w` to prompt for filenames on unnamed buffers.
-- [x] **Dirty Indicator**: Visual `*` in status bar when a buffer has unsaved changes.
-- [x] **Sticky Headings**: Pin the current scene name to the top of the viewport or display it prominently in the footer during scrolling.
-- [x] **Live Navigator Preview**: Scroll the editor background dynamically as the user moves through the Scene Navigator (`Ctrl+H`).
+## Finished Tasks
+- Show match counts (X/Y) in the status bar during search.
+- Added Alt+Up and Alt+Down for jumping between search results.
+- Implemented a minimal tab bar for working with multiple open files.
+- Updated the save command to prompt for a filename on new buffers.
+- Added a visual indicator (asterisk) in the status bar for unsaved changes.
+- Added sticky scene headings in the footer during scrolling.
+- Added live scrolling preview while moving through the scene navigator.
