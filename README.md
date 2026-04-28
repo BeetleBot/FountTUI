@@ -14,8 +14,8 @@
   ```bash
   yay -S fount-bin
   ```
-- **Debian / Ubuntu**: Download the latest `.deb` package from the [Releases](https://github.com/BeetleBot/Fount/releases) page.
-- **Fedora / RHEL**: Download the latest `.rpm` package from the [Releases](https://github.com/BeetleBot/Fount/releases) page.
+- **Debian / Ubuntu**: Download the latest `.deb` package from the [Releases](https://github.com/BeetleBot/FountCLI/releases) page.
+- **Fedora / RHEL**: Download the latest `.rpm` package from the [Releases](https://github.com/BeetleBot/FountCLI/releases) page.
 
 ### Any Platform (via Cargo)
 ```bash

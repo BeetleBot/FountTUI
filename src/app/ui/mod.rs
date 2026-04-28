@@ -1048,11 +1048,20 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             }
         }
 
-        let mut col1: Vec<Line> = Vec::new();
-        let mut col2: Vec<Line> = Vec::new();
-        let mut col3: Vec<Line> = Vec::new();
+        // Determine number of columns based on width
+        let width = modal_area.width;
+        let num_cols = if width < 70 {
+            1
+        } else if width < 110 {
+            2
+        } else {
+            3
+        };
 
-        for (i, cat) in categories.iter().enumerate() {
+        let mut cols_lines: Vec<Vec<Line>> = vec![Vec::new(); num_cols];
+        let mut cols_heights: Vec<usize> = vec![0; num_cols];
+
+        for cat in &categories {
             let cat_shortcuts: Vec<shortcuts::Shortcut> = all_shortcuts
                 .iter()
                 .filter(|s| s.category == *cat)
@@ -1060,26 +1069,16 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 .collect();
 
             let section_lines = build_section(cat, &cat_shortcuts);
-            // Distribute columns more dynamically if filtered
-            if query.is_empty() {
-                if i < 3 {
-                    col1.extend(section_lines);
-                } else if i < 5 {
-                    col2.extend(section_lines);
-                } else {
-                    col3.extend(section_lines);
-                }
-            } else {
-                // In search mode, just stack them or balance them better
-                let total_cats = categories.len();
-                if i < (total_cats + 2) / 3 {
-                    col1.extend(section_lines);
-                } else if i < 2 * (total_cats + 2) / 3 {
-                    col2.extend(section_lines);
-                } else {
-                    col3.extend(section_lines);
+            
+            // Find column with least height to balance distribution
+            let mut min_idx = 0;
+            for j in 1..num_cols {
+                if cols_heights[j] < cols_heights[min_idx] {
+                    min_idx = j;
                 }
             }
+            cols_heights[min_idx] += section_lines.len();
+            cols_lines[min_idx].extend(section_lines);
         }
 
         let block = Block::default()
@@ -1111,29 +1110,43 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let inner_area = block.inner(chunks[1]);
         f.render_widget(block, chunks[1]);
 
-        // Split inner into 3 columns with separators
+        // Define column constraints dynamically
+        let col_constraints = match num_cols {
+            1 => vec![Constraint::Min(0)],
+            2 => vec![Constraint::Percentage(50), Constraint::Length(1), Constraint::Min(0)],
+            3 => vec![Constraint::Ratio(1, 3), Constraint::Length(1), Constraint::Ratio(1, 3), Constraint::Length(1), Constraint::Min(0)],
+            _ => vec![Constraint::Min(0)],
+        };
+
         let col_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Ratio(1, 3),
-                Constraint::Length(1),
-                Constraint::Ratio(1, 3),
-                Constraint::Length(1),
-                Constraint::Min(0),
-            ])
+            .constraints(col_constraints)
             .split(inner_area);
 
-        // Render separator columns
-        let sep_lines: Vec<Line> = (0..col_chunks[1].height)
-            .map(|_| Line::from(Span::styled("\u{2502}", sep_style)))
-            .collect();
-        f.render_widget(Paragraph::new(sep_lines.clone()), col_chunks[1]);
-        f.render_widget(Paragraph::new(sep_lines), col_chunks[3]);
+        // Calculate scroll offset based on shortcuts_state
+        let scroll_idx = app.shortcuts_state.selected().unwrap_or(0);
+        let scroll = scroll_idx as u16;
 
-        // Render the three columns
-        f.render_widget(Paragraph::new(col1), col_chunks[0]);
-        f.render_widget(Paragraph::new(col2), col_chunks[2]);
-        f.render_widget(Paragraph::new(col3), col_chunks[4]);
+        // Render columns and separators
+        for i in 0..num_cols {
+            let area_idx = i * 2;
+            if area_idx < col_chunks.len() {
+                f.render_widget(
+                    Paragraph::new(cols_lines[i].clone()).scroll((scroll, 0)),
+                    col_chunks[area_idx]
+                );
+            }
+
+            if i < num_cols - 1 {
+                let sep_idx = i * 2 + 1;
+                if sep_idx < col_chunks.len() {
+                    let sep_lines: Vec<Line> = (0..col_chunks[sep_idx].height)
+                        .map(|_| Line::from(Span::styled("\u{2502}", sep_style)))
+                        .collect();
+                    f.render_widget(Paragraph::new(sep_lines), col_chunks[sep_idx]);
+                }
+            }
+        }
     }
 
     // ── Footer rendering (Zen Style) ────────────────────────────────────────
