@@ -160,13 +160,25 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
 
     // 1. Current Dir
     let dir_str = format!(" Dir: {}", state.current_dir.display());
+    let dir_style = if state.naming_mode {
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD)
+    } else {
+        Style::default()
+            .fg(Color::from(app.theme.ui.dim.clone()))
+            .add_modifier(Modifier::ITALIC)
+    };
+    
     f.render_widget(
-        Paragraph::new(Line::from(vec![Span::styled(
-            dir_str,
-            Style::default()
-                .fg(Color::from(app.theme.ui.dim.clone()))
-                .add_modifier(Modifier::ITALIC),
-        )])),
+        Paragraph::new(Line::from(vec![
+            Span::styled(dir_str, dir_style),
+            if state.naming_mode {
+                Span::styled(" [LOCKED]", Style::default().fg(Color::LightRed).add_modifier(Modifier::BOLD))
+            } else {
+                Span::raw("")
+            }
+        ])),
         layout[0],
     );
 
@@ -244,15 +256,22 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
     let list = List::new(display_items).highlight_style(Style::default());
     f.render_stateful_widget(list, layout[1], &mut state.list_state);
 
-    // 3. Input Label
+    // 3. Input Label & Hints
     if state.action != crate::app::FilePickerAction::Open {
-        f.render_widget(
-            Paragraph::new(Line::from(vec![Span::styled(
-                " Filename: ",
-                Style::default().fg(Color::from(app.theme.ui.dim.clone())),
-            )])),
-            layout[2],
-        );
+        let hints = if state.naming_mode {
+            Line::from(vec![
+                Span::styled(" Filename: ", Style::default().fg(Color::from(app.theme.ui.normal_mode_bg.clone())).add_modifier(Modifier::BOLD)),
+                Span::styled(" [Enter] ", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+                Span::styled("to SAVE to locked folder", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
+            ])
+        } else {
+            Line::from(vec![
+                Span::styled(" Filename: ", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
+                Span::styled(" [Tab] ", Style::default().fg(Color::from(app.theme.ui.normal_mode_bg.clone())).add_modifier(Modifier::BOLD)),
+                Span::styled("to LOCK folder & type name", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
+            ])
+        };
+        f.render_widget(Paragraph::new(hints), layout[2]);
 
         // 4. Filename Input
         let input_style = Style::default().fg(Color::from(app.theme.ui.selection_fg.clone())).bg(Color::from(app.theme.ui.selection_bg.clone()));
@@ -269,6 +288,54 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
         let cursor_pos =
             layout[3].x + 2 + UnicodeWidthStr::width(state.filename_input.as_str()) as u16;
         f.set_cursor_position((cursor_pos, layout[3].y));
+    }
+
+    // Overwrite Confirmation Overlay
+    if state.show_overwrite_confirm {
+        let confirm_area = centered_rect(60, 30, area);
+        f.render_widget(Clear, confirm_area);
+        let confirm_block = Block::default()
+            .title(Span::styled(" [ Confirm Overwrite ] ", Style::default().fg(Color::LightRed).add_modifier(Modifier::BOLD)))
+            .borders(Borders::ALL)
+            .border_type(ratatui::widgets::BorderType::Double)
+            .border_style(Style::default().fg(Color::LightRed))
+            .style(Style::default().bg(Color::from(app.theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))));
+        
+        let file_name = state.target_path.as_ref().and_then(|p| p.file_name()).map(|n| n.to_string_lossy()).unwrap_or_default();
+        
+        let confirm_text = vec![
+            Line::from(""),
+            Line::from(vec![
+                Span::raw(" File "),
+                Span::styled(file_name, Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::raw(" already exists!"),
+            ]),
+            Line::from(""),
+            Line::from(" Would you like to overwrite it?"),
+            Line::from(""),
+            Line::from(vec![
+                if state.overwrite_confirmed {
+                    Span::styled("  ▶ YES  ", Style::default().bg(Color::Green).fg(Color::Black).add_modifier(Modifier::BOLD))
+                } else {
+                    Span::styled("    Yes  ", Style::default().fg(Color::Green))
+                },
+                Span::raw("      "),
+                if !state.overwrite_confirmed {
+                    Span::styled("  ▶ NO   ", Style::default().bg(Color::Red).fg(Color::Black).add_modifier(Modifier::BOLD))
+                } else {
+                    Span::styled("    No   ", Style::default().fg(Color::Red))
+                },
+            ]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(" [←/→] ", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
+                Span::raw("Switch  "),
+                Span::styled(" [Enter] ", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
+                Span::raw("Confirm"),
+            ]),
+        ];
+        
+        f.render_widget(Paragraph::new(confirm_text).block(confirm_block).alignment(ratatui::layout::Alignment::Center), confirm_area);
     }
 }
 

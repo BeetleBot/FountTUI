@@ -28,6 +28,10 @@ impl App {
             action,
             filename_input: initial_filename.unwrap_or_default(),
             extension_filter: filter,
+            show_overwrite_confirm: false,
+            overwrite_confirmed: false,
+            naming_mode: false,
+            target_path: None,
         });
         self.mode = AppMode::FilePicker;
     }
@@ -53,25 +57,41 @@ impl App {
         };
 
         if let Some(path) = selected_path {
-            if is_dir {
-                if let Some(ref mut state) = self.file_picker {
+            if let Some(ref mut state) = self.file_picker {
+                // If naming_mode is active, we IGNORE folders and just save.
+                if state.naming_mode {
+                    let final_path = if !state.filename_input.is_empty() {
+                        state.current_dir.join(&state.filename_input)
+                    } else {
+                        path
+                    };
+
+                    // Check for overwrite
+                    if final_path.exists() {
+                        state.show_overwrite_confirm = true;
+                        state.target_path = Some(final_path);
+                        state.overwrite_confirmed = false;
+                        return Ok(false);
+                    }
+                    
+                    return self.handle_file_picker_choice(final_path);
+                }
+
+                if is_dir {
                     state.current_dir = path;
                     state.items = get_dir_items(&state.current_dir);
                     state.list_state.select(Some(0));
+                    return Ok(false);
                 }
-                Ok(false)
-            } else {
-                if (action == FilePickerAction::Save || action == FilePickerAction::ExportReport || action == FilePickerAction::ExportScript || action == FilePickerAction::ExportSprints)
-                    && let Some(ref mut state) = self.file_picker {
-                        let selected_idx = state.list_state.selected().unwrap_or(0);
-                        // If we clicked a file in save mode, fill the input
-                        if selected_idx < state.items.len() {
-                            state.filename_input = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-                            return Ok(false);
-                        }
-                    }
-                self.handle_file_picker_choice(path)
+
+                if action != FilePickerAction::Open {
+                    // If we haven't locked the folder yet (not in naming_mode), 
+                    // pressing enter on a file just fills the input.
+                    state.filename_input = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                    return Ok(false);
+                }
             }
+            self.handle_file_picker_choice(path)
         } else {
             Ok(false)
         }

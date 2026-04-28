@@ -501,10 +501,45 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::FilePicker => {
+                    if let Some(ref mut state) = self.file_picker {
+                        if state.show_overwrite_confirm {
+                            match key.code {
+                                KeyCode::Left | KeyCode::Right | KeyCode::Char('h') | KeyCode::Char('l') => {
+                                    state.overwrite_confirmed = !state.overwrite_confirmed;
+                                }
+                                KeyCode::Enter => {
+                                    if state.overwrite_confirmed {
+                                        state.show_overwrite_confirm = false;
+                                        let path = state.target_path.clone().unwrap();
+                                        self.handle_file_picker_choice(path).map_err(|e| io::Error::other(e.to_string()))?;
+                                    } else {
+                                        state.show_overwrite_confirm = false;
+                                    }
+                                }
+                                KeyCode::Char('y') | KeyCode::Char('Y') => {
+                                    state.show_overwrite_confirm = false;
+                                    let path = state.target_path.clone().unwrap();
+                                    self.handle_file_picker_choice(path).map_err(|e| io::Error::other(e.to_string()))?;
+                                }
+                                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+                                    state.show_overwrite_confirm = false;
+                                }
+                                _ => {}
+                            }
+                            return Ok(false);
+                        }
+                    }
+
                     match key.code {
                         KeyCode::Esc => {
                             self.mode = AppMode::Normal;
                             self.file_picker = None;
+                        }
+                        KeyCode::Tab => {
+                            if let Some(ref mut state) = self.file_picker {
+                                state.filename_input.clear();
+                                state.naming_mode = true;
+                            }
                         }
                         KeyCode::Up | KeyCode::Char('k') => {
                             if let Some(ref mut state) = self.file_picker {

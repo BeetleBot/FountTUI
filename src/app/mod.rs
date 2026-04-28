@@ -163,6 +163,10 @@ pub struct FilePickerState {
     pub action: FilePickerAction,
     pub filename_input: String,
     pub extension_filter: Vec<String>,
+    pub show_overwrite_confirm: bool,
+    pub overwrite_confirmed: bool,
+    pub naming_mode: bool,
+    pub target_path: Option<PathBuf>,
 }
 
 #[derive(Clone, Default)]
