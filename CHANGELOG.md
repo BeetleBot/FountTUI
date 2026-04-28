@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.7] - 2026-04-29
+
+### Added
+- **Enhanced TUI File Picker**:
+    - **Locked Folder Workflow**: A new, more focused saving experience. Press `Tab` to "lock" your current directory and switch the picker into **Naming Mode**.
+    - **Dedicated Save Shortcut**: While a folder is locked, the `Enter` key is exclusively for saving, ensuring you don't accidentally navigate away while typing.
+    - **Interactive Overwrite Dialog**: A premium, centered confirmation modal with selectable **YES/NO** buttons. Support for arrow-key navigation and quick keys (`y`/`n`).
+- **Advanced Export Options**:
+    - Added support for including structural metadata in PDF exports.
+    - **Sections** are rendered in **BOLD UPPERCASE**.
+    - **Synopses** are rendered in ***italics*** for better readability.
+- **UI/UX Refinement**:
+    - **Sticky Scene Heading**: The current scene heading is now "sticky" in the status bar, providing constant orientation within long scripts.
+    - **Live Navigator Preview**: The main editor now automatically scrolls to the selected scene as you browse the Scene Navigator sidebar, allowing for quick "peeks" before jumping.
+
 ## [0.8.6] - 2026-04-27
 
 ### Added
