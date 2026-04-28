@@ -280,7 +280,7 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::ExportPane => {
-                    let options_count = 7;
+                    let options_count = 9;
                     match key.code {
                         KeyCode::Esc => {
                             self.mode = AppMode::Normal;
@@ -331,6 +331,14 @@ impl App {
                                     }
                                 }
                                 4 => {
+                                    self.config.export_sections = !self.config.export_sections;
+                                    let _ = crate::config::Config::save_setting("export_sections", self.config.export_sections);
+                                }
+                                5 => {
+                                    self.config.export_synopses = !self.config.export_synopses;
+                                    let _ = crate::config::Config::save_setting("export_synopses", self.config.export_synopses);
+                                }
+                                6 => {
                                     let (ext, default_name) = match self.config.export_format.as_str() {
                                         "pdf" => ("pdf", "screenplay.pdf"),
                                         "fountain" => ("fountain", "screenplay.fountain"),
@@ -340,10 +348,9 @@ impl App {
                                         },
                                         _ => ("pdf", "screenplay.pdf"),
                                     };
-
                                     self.open_file_picker(FilePickerAction::ExportScript, vec![ext.to_string()], Some(default_name.to_string()));
                                 }
-                                5 => {
+                                7 => {
                                     let formats = ["csv_scene", "csv_char", "csv_location", "csv_notes", "csv_breakdown", "txt_dialogue"];
                                     if let Some(idx) = formats.iter().position(|&x| x == self.config.report_format.as_str()) {
                                         self.config.report_format = formats[(idx + 1) % formats.len()].to_string();
@@ -352,7 +359,7 @@ impl App {
                                     }
                                     let _ = crate::config::Config::save_string_setting("report_format", &self.config.report_format);
                                 }
-                                6 => {
+                                8 => {
                                     let (ext, default_name) = match self.config.report_format.as_str() {
                                         "csv_scene" => ("csv", "scene_list.csv"),
                                         "csv_char" => ("csv", "character_report.csv"),
@@ -362,7 +369,6 @@ impl App {
                                         "txt_dialogue" => ("txt", "dialogue_only.txt"),
                                         _ => ("csv", "report.csv"),
                                     };
-
                                     self.open_file_picker(FilePickerAction::ExportReport, vec![ext.to_string()], Some(default_name.to_string()));
                                 }
                                 _ => {}

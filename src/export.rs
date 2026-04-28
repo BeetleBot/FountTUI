@@ -104,10 +104,17 @@ pub fn export_document(
         || config.mirror_scene_numbers == crate::config::MirrorOption::ExportOnly;
 
     for row in layout {
-        if matches!(
-            row.line_type,
-            LineType::Boneyard | LineType::Note | LineType::Section | LineType::Synopsis
-        ) {
+        if matches!(row.line_type, LineType::Boneyard | LineType::Note) {
+            skipped_comment = true;
+            continue;
+        }
+
+        if row.line_type == LineType::Section && !config.export_sections {
+            skipped_comment = true;
+            continue;
+        }
+
+        if row.line_type == LineType::Synopsis && !config.export_synopses {
             skipped_comment = true;
             continue;
         }

@@ -262,6 +262,14 @@ pub struct Cli {
     /// Include title page in exports
     #[arg(long)]
     pub include_title_page: bool,
+
+    /// Include sections in export
+    #[arg(long)]
+    pub export_sections: bool,
+
+    /// Include synopses in export
+    #[arg(long)]
+    pub export_synopses: bool,
 }
 
 
@@ -385,6 +393,12 @@ pub struct Config {
 
     /// Mac Mode: Auto-compatibility for Apple_Terminal
     pub mac_mode: bool,
+
+    /// Include sections in exports
+    pub export_sections: bool,
+
+    /// Include synopses in exports
+    pub export_synopses: bool,
 }
 
 impl Default for Config {
@@ -429,6 +443,8 @@ impl Default for Config {
             theme: "Adaptive".to_string(),
             use_nerd_fonts: true,
             mac_mode: false,
+            export_sections: false,
+            export_synopses: false,
         }
     }
 }
@@ -502,6 +518,8 @@ impl Config {
                         "include_title_page" => self.include_title_page = true,
                         "theme" => self.theme = val,
                         "use_nerd_fonts" => self.use_nerd_fonts = true,
+                        "export_sections" => self.export_sections = true,
+                        "export_synopses" => self.export_synopses = true,
                         _ => {}
                     }
                 } else if cmd == "unset" {
@@ -528,6 +546,8 @@ impl Config {
                         "force_scene_numbers" => self.force_scene_numbers = false,
                         "export_bold_scene_headings" => self.export_bold_scene_headings = false,
                         "include_title_page" => self.include_title_page = false,
+                        "export_sections" => self.export_sections = false,
+                        "export_synopses" => self.export_synopses = false,
                         _ => {}
                     }
                 }
@@ -689,6 +709,8 @@ impl Config {
         config.force_scene_numbers |= cli.force_scene_numbers;
         config.export_bold_scene_headings |= cli.export_bold_scene_headings;
         config.include_title_page |= cli.include_title_page;
+        config.export_sections |= cli.export_sections;
+        config.export_synopses |= cli.export_synopses;
         config.use_nerd_fonts &= !cli.no_nerd_fonts;
 
         if config.export_format.is_empty() {

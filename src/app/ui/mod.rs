@@ -940,19 +940,35 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             ),
             app,
         ));
+        visual_items.push(render_item(
+            4,
+            &format!(
+                " Include Sections: {}",
+                if app.config.export_sections { "[X]" } else { "[ ]" }
+            ),
+            app,
+        ));
+        visual_items.push(render_item(
+            5,
+            &format!(
+                " Include Synopses: {}",
+                if app.config.export_synopses { "[X]" } else { "[ ]" }
+            ),
+            app,
+        ));
 
         visual_items.push(ListItem::new(Line::from(vec![Span::raw("")])));
-        visual_items.push(render_item(4, " [ EXPORT SCREENPLAY ]", app));
+        visual_items.push(render_item(6, " [ EXPORT SCREENPLAY ]", app));
 
         visual_items.push(ListItem::new(Line::from(Span::raw(""))));
         visual_items.push(ListItem::new(Line::from(Span::styled(
             "  [ Production Reports ]",
             header_style,
         ))));
-        visual_items.push(render_item(5, &format!(" Type: {}", report_label), app));
+        visual_items.push(render_item(7, &format!(" Type: {}", report_label), app));
 
         visual_items.push(ListItem::new(Line::from(Span::raw(""))));
-        visual_items.push(render_item(6, " [ EXPORT REPORT ]", app));
+        visual_items.push(render_item(8, " [ EXPORT REPORT ]", app));
 
         let list = List::new(visual_items);
         f.render_widget(

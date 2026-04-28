@@ -112,6 +112,25 @@ impl App {
         std::fs::write(path, content)
     }
 
+    pub fn export_pdf(&self, path: &std::path::Path) -> std::io::Result<()> {
+        let fountain_text = self.lines.join("\n");
+        let paper_size = if self.config.paper_size.to_lowercase() == "letter" {
+            crate::pdf::LETTER
+        } else {
+            crate::pdf::A4
+        };
+
+        crate::pdf::export_to_pdf(
+            &fountain_text,
+            path,
+            paper_size,
+            self.config.export_bold_scene_headings,
+            self.config.mirror_scene_numbers.clone(),
+            self.config.export_sections,
+            self.config.export_synopses,
+        )
+    }
+
     pub fn export_scene_csv(&self, path: &std::path::Path) -> std::io::Result<()> {
         let mut csv = String::new();
         csv.push_str("Scene Number,Int/Ext,Location,Time,Estimated Length (8ths)\n");

@@ -106,23 +106,9 @@ impl App {
                 self.save_as(path)?;
             }
             FilePickerAction::ExportScript => {
-                let fountain_text = self.lines.join("\n");
                 let result = match self.config.export_format.as_str() {
                     "fountain" => self.export_fountain(&path),
-                    _ => {
-                        let paper_size = if self.config.paper_size.to_lowercase() == "letter" {
-                            crate::pdf::LETTER
-                        } else {
-                            crate::pdf::A4
-                        };
-                        crate::pdf::export_to_pdf(
-                            &fountain_text,
-                            &path,
-                            paper_size,
-                            self.config.export_bold_scene_headings,
-                            self.config.mirror_scene_numbers.clone(),
-                        )
-                    }
+                    _ => self.export_pdf(&path),
                 };
                 match result {
                     Ok(_) => self.set_status(&format!("Exported to {}", path.display())),

@@ -184,6 +184,8 @@ struct LayoutInfo<'a> {
 pub struct PdfExporter {
     /// Whether to include synopses in the output
     pub synopses: bool,
+    /// Whether to include sections in the output
+    pub sections: bool,
     /// What size (type) of paper (e.g. A4 or US letter)
     pub paper_size: PaperSize,
     /// Apply bold formatting to scene headings
@@ -495,6 +497,21 @@ impl PdfExporter {
                                 rule: Default::default(),
                             }));
                             write_element!(s, &MARGINS.synopsis, Alignment::LeftToRight);
+                            ctx.surface.set_fill(None);
+                        }
+                    }
+                    Element::Section(s) => {
+                        if self.sections {
+                            ctx.surface.set_fill(Some(Fill {
+                                paint: rgb::Color::new(143, 143, 143).into(),
+                                opacity: NormalizedF32::new(0.5).unwrap(),
+                                rule: Default::default(),
+                            }));
+                            let mut s_bold = s.clone();
+                            for element in &mut s_bold.elements {
+                                element.set_bold();
+                            }
+                            write_element!(&s_bold, &MARGINS.action, Alignment::LeftToRight);
                             ctx.surface.set_fill(None);
                         }
                     }

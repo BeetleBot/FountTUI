@@ -80,7 +80,7 @@ impl<'a> Parser<'a> {
             match self.state {
                 State::Default => {
                     // The first one returning true will break
-                    if self.try_section(trimmed)
+                    if self.try_section(trimmed, i)
                         || self.try_page_break(trimmed, i)
                         || self.try_synopsis(trimmed, i)
                         || self.try_forced_action(trimmed, i)
@@ -136,11 +136,19 @@ impl<'a> Parser<'a> {
         true
     }
 
-    fn try_section(&mut self, line: &str) -> bool {
+    fn try_section(&mut self, line: &str, line_idx: usize) -> bool {
         self.try_(
             line,
-            |_, s| s.trim_start().starts_with('#').then_some(s),
-            |_, _| {},
+            |_, s| s.trim_start().strip_prefix('#'),
+            |this, inner| {
+                let mut inner = inner.trim_start();
+                while inner.starts_with('#') {
+                    inner = inner.strip_prefix('#').unwrap().trim_start();
+                }
+                let rs = RichString::from(inner);
+                this.elements.push(Span::new(Element::Section(rs), line_idx));
+                this.state = State::InBlock;
+            },
         )
     }
 

@@ -60,6 +60,7 @@ pub enum Element {
     Transition(RichString),
     CenteredText(RichString),
     Synopsis(RichString),
+    Section(RichString),
     PageBreak,
 }
 
