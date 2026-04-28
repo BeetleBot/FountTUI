@@ -272,6 +272,7 @@ pub struct App {
     pub current_match_idx: Option<usize>,
 
     pub scenes: Vec<NavigatorItem>,
+    pub nav_original_pos: Option<(usize, usize)>,
 
     pub selected_scene: usize,
 
@@ -459,6 +460,7 @@ impl App {
             search_matches: Vec::new(),
             current_match_idx: None,
             scenes: Vec::new(),
+            nav_original_pos: None,
             selected_scene: 0,
             selected_character: 0,
             character_stats: Vec::new(),

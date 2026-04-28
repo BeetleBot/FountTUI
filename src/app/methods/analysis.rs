@@ -58,6 +58,7 @@ impl App {
     }
 
     pub fn open_scene_navigator(&mut self) {
+        self.nav_original_pos = Some((self.cursor_y, self.cursor_x));
         self.scenes.clear();
         let mut current_scene: Option<NavigatorItem> = None;
         let mut last_color: Option<Color> = None;
@@ -161,6 +162,7 @@ impl App {
     }
 
     pub fn open_character_sidebar(&mut self) {
+        self.nav_original_pos = Some((self.cursor_y, self.cursor_x));
         use std::collections::HashMap;
         self.character_stats.clear();
         let mut stats_map: HashMap<String, CharacterItem> = HashMap::new();

@@ -10,10 +10,17 @@ impl App {
                 AppMode::SceneNavigator => {
                     match key.code {
                         KeyCode::Esc => {
+                            if let Some((y, x)) = self.nav_original_pos.take() {
+                                self.cursor_y = y;
+                                self.cursor_x = x;
+                                *cursor_moved = true;
+                                *update_target_x = true;
+                            }
                             self.mode = AppMode::Normal;
                             self.set_status("Cancelled");
                         }
                         KeyCode::Char(h) if ctrl && h == 'h' => {
+                            self.nav_original_pos = None;
                             self.mode = AppMode::Normal;
                         }
                         KeyCode::Char('p') if ctrl => {
@@ -23,12 +30,24 @@ impl App {
                             if self.selected_scene > 0 {
                                 self.selected_scene -= 1;
                                 self.navigator_state.select(Some(self.selected_scene));
+                                
+                                let line_idx = self.scenes[self.selected_scene].line_idx;
+                                self.cursor_y = line_idx;
+                                self.cursor_x = 0;
+                                *cursor_moved = true;
+                                *update_target_x = true;
                             }
                         }
                         KeyCode::Down | KeyCode::Char('j') => {
                             if self.selected_scene + 1 < self.scenes.len() {
                                 self.selected_scene += 1;
                                 self.navigator_state.select(Some(self.selected_scene));
+                                
+                                let line_idx = self.scenes[self.selected_scene].line_idx;
+                                self.cursor_y = line_idx;
+                                self.cursor_x = 0;
+                                *cursor_moved = true;
+                                *update_target_x = true;
                             }
                         }
                         KeyCode::Enter => {
@@ -36,6 +55,7 @@ impl App {
                             self.cursor_y = line_idx;
                             self.cursor_x = 0;
                             self.mode = AppMode::Normal;
+                            self.nav_original_pos = None;
                             *cursor_moved = true;
                             *update_target_x = true;
                         }
@@ -46,6 +66,12 @@ impl App {
                 AppMode::CharacterNavigator => {
                     match key.code {
                         KeyCode::Esc => {
+                            if let Some((y, x)) = self.nav_original_pos.take() {
+                                self.cursor_y = y;
+                                self.cursor_x = x;
+                                *cursor_moved = true;
+                                *update_target_x = true;
+                            }
                             self.mode = AppMode::Normal;
                         }
                         KeyCode::Up | KeyCode::Char('k') => {
@@ -56,6 +82,13 @@ impl App {
                                     EnsembleItem::CharacterHeader(_) | EnsembleItem::SceneLink(..) => {
                                         self.selected_ensemble_idx = next;
                                         self.ensemble_state.select(Some(self.selected_ensemble_idx));
+                                        
+                                        if let EnsembleItem::SceneLink(_, line_idx, _) = self.ensemble_items[next] {
+                                            self.cursor_y = line_idx;
+                                            self.cursor_x = 0;
+                                            *cursor_moved = true;
+                                            *update_target_x = true;
+                                        }
                                         break;
                                     }
                                     _ => {}
@@ -70,6 +103,13 @@ impl App {
                                     EnsembleItem::CharacterHeader(_) | EnsembleItem::SceneLink(..) => {
                                         self.selected_ensemble_idx = next;
                                         self.ensemble_state.select(Some(self.selected_ensemble_idx));
+
+                                        if let EnsembleItem::SceneLink(_, line_idx, _) = self.ensemble_items[next] {
+                                            self.cursor_y = line_idx;
+                                            self.cursor_x = 0;
+                                            *cursor_moved = true;
+                                            *update_target_x = true;
+                                        }
                                         break;
                                     }
                                     _ => {}
@@ -98,6 +138,7 @@ impl App {
                                         self.cursor_y = *line_idx;
                                         self.cursor_x = 0;
                                         self.mode = AppMode::Normal;
+                                        self.nav_original_pos = None;
                                         *cursor_moved = true;
                                         *update_target_x = true;
                                     }
@@ -106,6 +147,7 @@ impl App {
                                     self.cursor_y = *line_idx;
                                     self.cursor_x = 0;
                                     self.mode = AppMode::Normal;
+                                    self.nav_original_pos = None;
                                     *cursor_moved = true;
                                     *update_target_x = true;
                                 }

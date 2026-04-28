@@ -45,9 +45,7 @@ Currently, Fount re-processes the entire document on most changes. This will cau
 
 ## ⌨️ Workflow & Navigation
 
-- [ ] **Fast Movements**: Implement Vim-style navigation keys (`w`, `b`, `e` for word jumps, `gg`/`G` for start/end of document).
 - [ ] **Multi-file Project Support**: Support for a `.fount` project file that aggregates multiple Fountain files (e.g., acts or episodes) into a single unified workspace.
-- [ ] **Live Navigator Preview**: Scroll the editor background dynamically as the user moves through the Scene Navigator (`Ctrl+H`).
 
 
 ---
@@ -59,3 +57,4 @@ Currently, Fount re-processes the entire document on most changes. This will cau
 - [x] **Save Prompt**: Updated `/w` to prompt for filenames on unnamed buffers.
 - [x] **Dirty Indicator**: Visual `*` in status bar when a buffer has unsaved changes.
 - [x] **Sticky Headings**: Pin the current scene name to the top of the viewport or display it prominently in the footer during scrolling.
+- [x] **Live Navigator Preview**: Scroll the editor background dynamically as the user moves through the Scene Navigator (`Ctrl+H`).
