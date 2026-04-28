@@ -185,6 +185,13 @@ impl RichString {
         str
     }
 
+    /// Converts all text elements to uppercase.
+    pub fn to_uppercase(&mut self) {
+        for element in &mut self.elements {
+            element.text = element.text.to_uppercase();
+        }
+    }
+
     /// Creates a list of "tokens" and [`Delimiter`] runs.
     ///
     /// By token is meant [`&str`] slices divided at delimiters.
@@ -519,6 +526,11 @@ impl Element {
     /// Sets the element to be formatted as bold.
     pub fn set_bold(&mut self) {
         self.attributes.insert(Attributes::BOLD);
+    }
+
+    /// Sets the element to be formatted as italic.
+    pub fn set_italic(&mut self) {
+        self.attributes.insert(Attributes::ITALIC);
     }
 
     /// If the element is styled as underline.

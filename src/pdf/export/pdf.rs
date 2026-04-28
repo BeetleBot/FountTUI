@@ -2,13 +2,10 @@ use std::io::Write;
 
 use krilla::{
     Document,
-    color::rgb,
     destination::XyzDestination,
     geom::{PathBuilder, Point, Rect},
-    num::NormalizedF32,
     outline::{Outline, OutlineNode},
     page::PageSettings,
-    paint::Fill,
     surface::Surface,
     text::Font,
 };
@@ -491,28 +488,21 @@ impl PdfExporter {
                     }
                     Element::Synopsis(s) => {
                         if self.synopses {
-                            ctx.surface.set_fill(Some(Fill {
-                                paint: rgb::Color::new(143, 143, 143).into(),
-                                opacity: NormalizedF32::new(0.5).unwrap(),
-                                rule: Default::default(),
-                            }));
-                            write_element!(s, &MARGINS.synopsis, Alignment::LeftToRight);
-                            ctx.surface.set_fill(None);
+                            let mut s_italic = s.clone();
+                            for element in &mut s_italic.elements {
+                                element.set_italic();
+                            }
+                            write_element!(&s_italic, &MARGINS.synopsis, Alignment::LeftToRight);
                         }
                     }
                     Element::Section(s) => {
                         if self.sections {
-                            ctx.surface.set_fill(Some(Fill {
-                                paint: rgb::Color::new(143, 143, 143).into(),
-                                opacity: NormalizedF32::new(0.5).unwrap(),
-                                rule: Default::default(),
-                            }));
-                            let mut s_bold = s.clone();
-                            for element in &mut s_bold.elements {
+                            let mut s_styled = s.clone();
+                            s_styled.to_uppercase();
+                            for element in &mut s_styled.elements {
                                 element.set_bold();
                             }
-                            write_element!(&s_bold, &MARGINS.action, Alignment::LeftToRight);
-                            ctx.surface.set_fill(None);
+                            write_element!(&s_styled, &MARGINS.action, Alignment::LeftToRight);
                         }
                     }
                     Element::PageBreak => {
