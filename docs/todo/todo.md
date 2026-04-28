@@ -4,6 +4,12 @@ This document outlines the planned architectural improvements and technical debt
 
 ## 🏛️ Architectural Improvements
 
+### [ ] Modularize the `App` State (`src/app/mod.rs`)
+The `App` struct is currently a monolithic state container. Refactor related fields into focused sub-structs:
+- `EditorBuffer`: Core text, cursor, and undo/redo logic.
+- `NavigatorState`: Scene and character navigation data.
+- `SessionStats`: Sprints, goals, and time tracking.
+
 ### [ ] Refactor the Layout Engine (`src/layout.rs`)
 > [!IMPORTANT]
 > The `build_layout` function is currently a monolithic loop exceeding 400 lines. This complexity makes it difficult to debug and prevents easy extension.
@@ -24,7 +30,7 @@ Currently, Fount re-processes the entire document on most changes. This will cau
 
 ### [ ] Optimize Parser Throughput (`src/parser.rs`)
 - **Issue**: Every line is converted to a `Vec<char>` for Unicode handling, which is memory-heavy for large files.
-- **Refactor**: Switch to direct `chars()` iteration or byte-offset tracking to reduce redundant allocations.
+- **Refactor**: Use `unicode-segmentation` for grapheme-aware iteration instead of redundant vector allocations.
 
 ### [ ] Strengthen Error Handling
 - **Issue**: Widespread use of `.unwrap()` or unchecked `Option` values in command execution and file I/O.
@@ -32,11 +38,25 @@ Currently, Fount re-processes the entire document on most changes. This will cau
 
 ---
 
+## 🎨 UX & Polish
+
+- [ ] **Ghost Formatting Markers**: Instead of hiding markers like `*` or `_` completely, render them in a very low-contrast "dim" color to provide structural hints without distraction.
+- [ ] **Sticky Headings**: Pin the current scene name to the top of the viewport or display it prominently in the footer during scrolling.
+- [ ] **Pacing Heatmap (X-Ray)**: Add a visual "Dialogue vs. Action" heatmap to the X-Ray view to help writers visualize script rhythm.
+
+---
+
+## ⌨️ Workflow & Navigation
+
+- [ ] **Fast Movements**: Implement Vim-style navigation keys (`w`, `b`, `e` for word jumps, `gg`/`G` for start/end of document).
+- [ ] **Multi-file Project Support**: Support for a `.fount` project file that aggregates multiple Fountain files (e.g., acts or episodes) into a single unified workspace.
+- [ ] **Live Navigator Preview**: Scroll the editor background dynamically as the user moves through the Scene Navigator (`Ctrl+H`).
+
+---
+
 ## 🛠️ Feature Backlog
 
 - [ ] **Search & Replace**: Add a global command to find and replace terms across the buffer.
-- [ ] **Live Navigator Preview**: Scroll the editor background dynamically as the user moves through the Scene Navigator (`Ctrl+H`).
-- [ ] **Sticky Headings**: Display the current scene name in the footer or pin the scene heading to the top of the viewport during scrolling.
 
 ---
 
