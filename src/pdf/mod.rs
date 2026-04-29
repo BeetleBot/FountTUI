@@ -36,6 +36,7 @@ pub fn export_to_pdf(
     mirror_scene_numbers: crate::config::MirrorOption,
     export_sections: bool,
     export_synopses: bool,
+    export_font: String,
 ) -> std::io::Result<()> {
     let screenplay = parse(fountain_text);
     let exporter = PdfExporter {
@@ -44,7 +45,7 @@ pub fn export_to_pdf(
         mirror_scene_numbers,
         sections: export_sections,
         synopses: export_synopses,
-        ..Default::default()
+        export_font,
     };
     exporter.export_to_file(&screenplay, path)
 }

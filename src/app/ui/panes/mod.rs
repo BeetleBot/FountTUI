@@ -399,3 +399,162 @@ pub fn draw_snapshots(f: &mut Frame, app: &mut App) {
     f.render_stateful_widget(table, modal_area, &mut app.snapshot_list_state);
 }
 
+pub fn draw_export_modal(f: &mut Frame, app: &App) {
+    let area = f.area();
+    let theme = &app.theme;
+    let mode_bg = Color::from(theme.ui.normal_mode_bg.clone());
+    let dim_color = Color::from(theme.ui.dim.clone());
+
+    let modal_area = centered_rect(60, 60, area);
+    f.render_widget(Clear, modal_area);
+
+    let block = Block::default()
+        .title(" [ Export ] ")
+        .borders(Borders::ALL)
+        .border_type(ratatui::widgets::BorderType::Rounded)
+        .border_style(Style::default().fg(dim_color))
+        .style(Style::default().bg(Color::from(theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))));
+    f.render_widget(block, modal_area);
+
+    let inner_area = modal_area.inner(ratatui::layout::Margin {
+        horizontal: 2,
+        vertical: 1,
+    });
+
+    let layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Tabs
+            Constraint::Min(0),    // Options
+            Constraint::Length(1), // Footer hint
+        ])
+        .split(inner_area);
+
+    // 1. Tabs
+    let tab_titles = vec![" 1. Screenplay ", " 2. Reports "];
+    let tabs_spans: Vec<Span> = tab_titles
+        .iter()
+        .enumerate()
+        .map(|(i, t)| {
+            if i == app.export_tab {
+                Span::styled(
+                    t.to_string(),
+                    Style::default()
+                        .fg(Color::from(theme.ui.selection_fg.clone()))
+                        .bg(Color::from(theme.ui.selection_bg.clone()))
+                        .add_modifier(Modifier::BOLD),
+                )
+            } else {
+                Span::styled(t.to_string(), Style::default().fg(dim_color))
+            }
+        })
+        .collect();
+
+    let mut tab_line = Vec::new();
+    for (i, span) in tabs_spans.into_iter().enumerate() {
+        tab_line.push(span);
+        if i < 1 {
+            tab_line.push(Span::styled("  ", Style::default()));
+        }
+    }
+    f.render_widget(Paragraph::new(Line::from(tab_line)).alignment(ratatui::layout::Alignment::Center).block(Block::default().borders(Borders::BOTTOM).border_style(Style::default().fg(dim_color))), layout[0]);
+
+    // 2. Options
+    let mut options = Vec::new();
+
+    let render_option = |_idx: usize, label: &str, value: &str, is_selected: bool| -> ListItem {
+        let style = if is_selected {
+            Style::default()
+                .fg(Color::from(theme.ui.selection_fg.clone()))
+                .bg(Color::from(theme.ui.selection_bg.clone()))
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default()
+        };
+
+        let val_style = if is_selected {
+            style
+        } else {
+            Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)
+        };
+
+        ListItem::new(Line::from(vec![
+            Span::styled(if is_selected { " › " } else { "   " }, style),
+            Span::styled(format!("{:<18}", label), style),
+            Span::styled(value.to_string(), val_style),
+        ]))
+    };
+
+    if app.export_tab == 0 {
+        // Screenplay Tab
+        let format_label = match app.config.export_format.as_str() {
+            "pdf" => "PDF",
+            "fountain" => "Fountain",
+            "fdx" => "FDX (Coming Soon)",
+            _ => "PDF",
+        };
+        let font_label = match app.config.export_font.as_str() {
+            "courier_prime" => "Courier Prime",
+            "courier_prime_sans" => "Courier Prime Sans",
+            _ => "Courier Prime",
+        };
+
+        options.push(render_option(0, "Format", format_label, app.selected_export_option == 0));
+        options.push(render_option(1, "Paper Size", &app.config.paper_size.to_uppercase(), app.selected_export_option == 1));
+        options.push(render_option(2, "Font", font_label, app.selected_export_option == 2));
+        options.push(render_option(3, "Bold Headings", if app.config.export_bold_scene_headings { "[X]" } else { "[ ]" }, app.selected_export_option == 3));
+        options.push(render_option(4, "Scene Numbers", if app.config.mirror_scene_numbers != crate::config::MirrorOption::Off { "[X]" } else { "[ ]" }, app.selected_export_option == 4));
+        options.push(render_option(5, "Include Sections", if app.config.export_sections { "[X]" } else { "[ ]" }, app.selected_export_option == 5));
+        options.push(render_option(6, "Include Synopses", if app.config.export_synopses { "[X]" } else { "[ ]" }, app.selected_export_option == 6));
+        options.push(render_option(7, "Title Page", if app.config.include_title_page { "[X]" } else { "[ ]" }, app.selected_export_option == 7));
+        
+        options.push(ListItem::new(Line::raw("")));
+        let export_style = if app.selected_export_option == 8 {
+            Style::default().bg(Color::Green).fg(Color::Black).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Color::Green)
+        };
+        options.push(ListItem::new(Line::from(vec![
+            Span::styled(if app.selected_export_option == 8 { " › " } else { "   " }, export_style),
+            Span::styled(" [ EXPORT SCREENPLAY ] ", export_style),
+        ])));
+    } else {
+        // Reports Tab
+        let report_label = match app.config.report_format.as_str() {
+            "csv_scene" => "Scene List (CSV)",
+            "csv_char" => "Character Report (CSV)",
+            "csv_location" => "Location Report (CSV)",
+            "csv_notes" => "Notes & Markers (CSV)",
+            "csv_breakdown" => "Script Breakdown (CSV)",
+            "txt_dialogue" => "Dialogue Only (TXT)",
+            _ => "Scene List (CSV)",
+        };
+
+        options.push(render_option(0, "Report Type", report_label, app.selected_export_option == 0));
+        
+        options.push(ListItem::new(Line::raw("")));
+        let export_style = if app.selected_export_option == 1 {
+            Style::default().bg(Color::Green).fg(Color::Black).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Color::Green)
+        };
+        options.push(ListItem::new(Line::from(vec![
+            Span::styled(if app.selected_export_option == 1 { " › " } else { "   " }, export_style),
+            Span::styled(" [ EXPORT REPORT ] ", export_style),
+        ])));
+    }
+
+    f.render_widget(List::new(options), layout[1]);
+
+    // 3. Footer
+    let footer_text = Line::from(vec![
+        Span::styled(" [←/→] ", Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)),
+        Span::styled("Switch Tabs  ", Style::default().fg(dim_color)),
+        Span::styled(" [↑/↓] ", Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)),
+        Span::styled("Select  ", Style::default().fg(dim_color)),
+        Span::styled(" [Tab/Enter] ", Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)),
+        Span::styled("Toggle/Export", Style::default().fg(dim_color)),
+    ]);
+    f.render_widget(Paragraph::new(footer_text).alignment(ratatui::layout::Alignment::Center), layout[2]);
+}
+

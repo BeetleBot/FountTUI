@@ -128,6 +128,7 @@ impl App {
             self.config.mirror_scene_numbers.clone(),
             self.config.export_sections,
             self.config.export_synopses,
+            self.config.export_font.clone(),
         )
     }
 

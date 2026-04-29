@@ -399,6 +399,9 @@ pub struct Config {
 
     /// Include synopses in exports
     pub export_synopses: bool,
+
+    /// Font for PDF export
+    pub export_font: String,
 }
 
 impl Default for Config {
@@ -445,6 +448,7 @@ impl Default for Config {
             mac_mode: false,
             export_sections: false,
             export_synopses: false,
+            export_font: "courier_prime".to_string(),
         }
     }
 }
@@ -520,6 +524,7 @@ impl Config {
                         "use_nerd_fonts" => self.use_nerd_fonts = true,
                         "export_sections" => self.export_sections = true,
                         "export_synopses" => self.export_synopses = true,
+                        "export_font" => self.export_font = val,
                         _ => {}
                     }
                 } else if cmd == "unset" {
@@ -712,6 +717,10 @@ impl Config {
         config.export_sections |= cli.export_sections;
         config.export_synopses |= cli.export_synopses;
         config.use_nerd_fonts &= !cli.no_nerd_fonts;
+
+        if config.export_font.is_empty() {
+            config.export_font = "courier_prime".to_string();
+        }
 
         if config.export_format.is_empty() {
             config.export_format = "pdf".to_string();

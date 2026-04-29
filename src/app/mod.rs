@@ -339,6 +339,7 @@ pub struct App {
     pub is_heading_editing: bool,
     pub card_input_buffer: String,
     pub card_row_offset: usize,
+    pub export_tab: usize,
 }
 
 impl Drop for App {
@@ -509,6 +510,7 @@ impl App {
             is_heading_editing: false,
             card_input_buffer: String::new(),
             card_row_offset: 0,
+            export_tab: 0,
         };
 
         app.load_recent_files();

@@ -280,7 +280,10 @@ impl App {
                     return Ok(false);
                 }
                 AppMode::ExportPane => {
-                    let options_count = 9;
+                    let screenplay_options_count = 9;
+                    let reports_options_count = 2;
+                    let current_options_count = if self.export_tab == 0 { screenplay_options_count } else { reports_options_count };
+
                     match key.code {
                         KeyCode::Esc => {
                             self.mode = AppMode::Normal;
@@ -288,90 +291,130 @@ impl App {
                         KeyCode::Char('c') | KeyCode::Char('e') | KeyCode::Char('g') if ctrl => {
                             self.mode = AppMode::Normal;
                         }
-                        KeyCode::Char('h') if ctrl => {
-                            self.open_scene_navigator();
+                        KeyCode::Left | KeyCode::Char('h') => {
+                            if self.export_tab > 0 {
+                                self.export_tab -= 1;
+                                self.selected_export_option = 0;
+                            }
+                        }
+                        KeyCode::Right | KeyCode::Char('l') => {
+                            if self.export_tab < 1 {
+                                self.export_tab += 1;
+                                self.selected_export_option = 0;
+                            }
+                        }
+                        KeyCode::Char('1') => {
+                            self.export_tab = 0;
+                            self.selected_export_option = 0;
+                        }
+                        KeyCode::Char('2') => {
+                            self.export_tab = 1;
+                            self.selected_export_option = 0;
                         }
                         KeyCode::Up | KeyCode::Char('k') => {
-                            self.selected_export_option = self.selected_export_option.saturating_sub(1);
+                            self.selected_export_option = if self.selected_export_option == 0 {
+                                current_options_count - 1
+                            } else {
+                                self.selected_export_option - 1
+                            };
                         }
                         KeyCode::Down | KeyCode::Char('j') => {
-                            self.selected_export_option =
-                                (self.selected_export_option + 1).min(options_count - 1);
+                            self.selected_export_option = (self.selected_export_option + 1) % current_options_count;
                         }
-                        KeyCode::Enter | KeyCode::Char(' ') => {
-                            match self.selected_export_option {
-                                0 => {
-                                    let formats = ["pdf", "fountain", "fdx"];
-                                    if let Some(idx) = formats.iter().position(|&x| x == self.config.export_format.as_str()) {
-                                        self.config.export_format = formats[(idx + 1) % formats.len()].to_string();
-                                    } else {
-                                        self.config.export_format = "pdf".to_string();
+                        KeyCode::Enter | KeyCode::Char(' ') | KeyCode::Tab => {
+                            if self.export_tab == 0 {
+                                // Screenplay Options
+                                match self.selected_export_option {
+                                    0 => {
+                                        let formats = ["pdf", "fountain", "fdx"];
+                                        if let Some(idx) = formats.iter().position(|&x| x == self.config.export_format.as_str()) {
+                                            self.config.export_format = formats[(idx + 1) % formats.len()].to_string();
+                                        } else {
+                                            self.config.export_format = "pdf".to_string();
+                                        }
+                                        let _ = crate::config::Config::save_string_setting("export_format", &self.config.export_format);
                                     }
-                                    let _ = crate::config::Config::save_string_setting("export_format", &self.config.export_format);
-                                }
-                                1 => {
-                                    if self.config.paper_size == "a4" {
-                                        self.config.paper_size = "letter".to_string();
-                                    } else {
-                                        self.config.paper_size = "a4".to_string();
+                                    1 => {
+                                        if self.config.paper_size == "a4" {
+                                            self.config.paper_size = "letter".to_string();
+                                        } else {
+                                            self.config.paper_size = "a4".to_string();
+                                        }
+                                        let _ = crate::config::Config::save_string_setting("paper_size", &self.config.paper_size);
                                     }
-                                    let _ = crate::config::Config::save_string_setting("paper_size", &self.config.paper_size);
-                                }
-                                2 => {
-                                    self.config.export_bold_scene_headings = !self.config.export_bold_scene_headings;
-                                    let _ = crate::config::Config::save_setting("export_bold_scene_headings", self.config.export_bold_scene_headings);
-                                }
-                                3 => {
-                                    if self.config.mirror_scene_numbers == crate::config::MirrorOption::Off {
-                                        self.config.mirror_scene_numbers = crate::config::MirrorOption::ExportOnly;
-                                        let _ = crate::config::Config::save_string_setting("mirror_scene_numbers", "export");
-                                    } else {
-                                        self.config.mirror_scene_numbers = crate::config::MirrorOption::Off;
-                                        let _ = crate::config::Config::save_string_setting("mirror_scene_numbers", "off");
+                                    2 => {
+                                        if self.config.export_font == "courier_prime" {
+                                            self.config.export_font = "courier_prime_sans".to_string();
+                                        } else {
+                                            self.config.export_font = "courier_prime".to_string();
+                                        }
+                                        let _ = crate::config::Config::save_string_setting("export_font", &self.config.export_font);
                                     }
-                                }
-                                4 => {
-                                    self.config.export_sections = !self.config.export_sections;
-                                    let _ = crate::config::Config::save_setting("export_sections", self.config.export_sections);
-                                }
-                                5 => {
-                                    self.config.export_synopses = !self.config.export_synopses;
-                                    let _ = crate::config::Config::save_setting("export_synopses", self.config.export_synopses);
-                                }
-                                6 => {
-                                    let (ext, default_name) = match self.config.export_format.as_str() {
-                                        "pdf" => ("pdf", "screenplay.pdf"),
-                                        "fountain" => ("fountain", "screenplay.fountain"),
-                                        "fdx" => {
-                                            self.set_status("FDX export is coming soon.");
-                                            return Ok(false);
-                                        },
-                                        _ => ("pdf", "screenplay.pdf"),
-                                    };
-                                    self.open_file_picker(FilePickerAction::ExportScript, vec![ext.to_string()], Some(default_name.to_string()));
-                                }
-                                7 => {
-                                    let formats = ["csv_scene", "csv_char", "csv_location", "csv_notes", "csv_breakdown", "txt_dialogue"];
-                                    if let Some(idx) = formats.iter().position(|&x| x == self.config.report_format.as_str()) {
-                                        self.config.report_format = formats[(idx + 1) % formats.len()].to_string();
-                                    } else {
-                                        self.config.report_format = "csv_scene".to_string();
+                                    3 => {
+                                        self.config.export_bold_scene_headings = !self.config.export_bold_scene_headings;
+                                        let _ = crate::config::Config::save_setting("export_bold_scene_headings", self.config.export_bold_scene_headings);
                                     }
-                                    let _ = crate::config::Config::save_string_setting("report_format", &self.config.report_format);
+                                    4 => {
+                                        if self.config.mirror_scene_numbers == crate::config::MirrorOption::Off {
+                                            self.config.mirror_scene_numbers = crate::config::MirrorOption::ExportOnly;
+                                            let _ = crate::config::Config::save_string_setting("mirror_scene_numbers", "export");
+                                        } else {
+                                            self.config.mirror_scene_numbers = crate::config::MirrorOption::Off;
+                                            let _ = crate::config::Config::save_string_setting("mirror_scene_numbers", "off");
+                                        }
+                                    }
+                                    5 => {
+                                        self.config.export_sections = !self.config.export_sections;
+                                        let _ = crate::config::Config::save_setting("export_sections", self.config.export_sections);
+                                    }
+                                    6 => {
+                                        self.config.export_synopses = !self.config.export_synopses;
+                                        let _ = crate::config::Config::save_setting("export_synopses", self.config.export_synopses);
+                                    }
+                                    7 => {
+                                        self.config.include_title_page = !self.config.include_title_page;
+                                        let _ = crate::config::Config::save_setting("include_title_page", self.config.include_title_page);
+                                    }
+                                    8 => {
+                                        let (ext, default_name) = match self.config.export_format.as_str() {
+                                            "pdf" => ("pdf", "screenplay.pdf"),
+                                            "fountain" => ("fountain", "screenplay.fountain"),
+                                            "fdx" => {
+                                                self.set_status("FDX export is coming soon.");
+                                                return Ok(false);
+                                            },
+                                            _ => ("pdf", "screenplay.pdf"),
+                                        };
+                                        self.open_file_picker(FilePickerAction::ExportScript, vec![ext.to_string()], Some(default_name.to_string()));
+                                    }
+                                    _ => {}
                                 }
-                                8 => {
-                                    let (ext, default_name) = match self.config.report_format.as_str() {
-                                        "csv_scene" => ("csv", "scene_list.csv"),
-                                        "csv_char" => ("csv", "character_report.csv"),
-                                        "csv_location" => ("csv", "location_report.csv"),
-                                        "csv_notes" => ("csv", "notes_report.csv"),
-                                        "csv_breakdown" => ("csv", "script_breakdown.csv"),
-                                        "txt_dialogue" => ("txt", "dialogue_only.txt"),
-                                        _ => ("csv", "report.csv"),
-                                    };
-                                    self.open_file_picker(FilePickerAction::ExportReport, vec![ext.to_string()], Some(default_name.to_string()));
+                            } else {
+                                // Reports Options
+                                match self.selected_export_option {
+                                    0 => {
+                                        let formats = ["csv_scene", "csv_char", "csv_location", "csv_notes", "csv_breakdown", "txt_dialogue"];
+                                        if let Some(idx) = formats.iter().position(|&x| x == self.config.report_format.as_str()) {
+                                            self.config.report_format = formats[(idx + 1) % formats.len()].to_string();
+                                        } else {
+                                            self.config.report_format = "csv_scene".to_string();
+                                        }
+                                        let _ = crate::config::Config::save_string_setting("report_format", &self.config.report_format);
+                                    }
+                                    1 => {
+                                        let (ext, default_name) = match self.config.report_format.as_str() {
+                                            "csv_scene" => ("csv", "scene_list.csv"),
+                                            "csv_char" => ("csv", "character_report.csv"),
+                                            "csv_location" => ("csv", "location_report.csv"),
+                                            "csv_notes" => ("csv", "notes_report.csv"),
+                                            "csv_breakdown" => ("csv", "script_breakdown.csv"),
+                                            "txt_dialogue" => ("txt", "dialogue_only.txt"),
+                                            _ => ("csv", "report.csv"),
+                                        };
+                                        self.open_file_picker(FilePickerAction::ExportReport, vec![ext.to_string()], Some(default_name.to_string()));
+                                    }
+                                    _ => {}
                                 }
-                                _ => {}
                             }
                         }
                         _ => {}

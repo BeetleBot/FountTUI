@@ -43,6 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 app.config.mirror_scene_numbers.clone(),
                 app.config.export_sections,
                 app.config.export_synopses,
+                app.config.export_font.clone(),
             ) {
                 eprintln!("Error exporting to PDF: {}", e);
                 std::process::exit(1);

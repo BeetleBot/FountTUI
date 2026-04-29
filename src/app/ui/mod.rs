@@ -1,7 +1,7 @@
 pub mod panes;
 use self::panes::{
     draw_file_picker, draw_snapshots, draw_sprint_stats, home::draw_home,
-    index_cards::draw_index_cards, xray::draw_xray,
+    index_cards::draw_index_cards, xray::draw_xray, draw_export_modal,
 };
 
 use crate::{
@@ -201,7 +201,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     app.settings_area = Rect::default();
-    if app.mode == AppMode::SettingsPane || app.mode == AppMode::ExportPane {
+    if app.mode == AppMode::SettingsPane {
         let side_width: u16 = 34;
         let side_chunks = Layout::default()
             .direction(Direction::Horizontal)
@@ -868,116 +868,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     if app.mode == AppMode::ExportPane {
-        let format_label = match app.config.export_format.as_str() {
-            "pdf" => "PDF",
-            "fountain" => "Fountain",
-            "fdx" => "FDX (Coming Soon)",
-            _ => "PDF",
-        };
-
-        let report_label = match app.config.report_format.as_str() {
-            "csv_scene" => "Scene List (CSV)",
-            "csv_char" => "Character Report (CSV)",
-            "csv_location" => "Location Report (CSV)",
-            "csv_notes" => "Notes & Markers (CSV)",
-            "csv_breakdown" => "Script Breakdown (CSV)",
-            "txt_dialogue" => "Dialogue Only (TXT)",
-            _ => "Scene List (CSV)",
-        };
-
-        let header_style = Style::default().fg(mode_bg).add_modifier(Modifier::BOLD);
-
-        let mut visual_items = Vec::new();
-
-        let render_item = |idx: usize, label: &str, app: &App| -> ListItem {
-            let is_selected = idx == app.selected_export_option;
-            let style = if is_selected {
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(mode_bg)
-                    .add_modifier(Modifier::BOLD)
-            } else {
-                Style::default()
-            };
-            ListItem::new(Line::from(vec![
-                Span::styled(if is_selected { " › " } else { "   " }, style),
-                Span::styled(label.to_string(), style),
-            ]))
-        };
-
-        visual_items.push(ListItem::new(Line::from(vec![Span::styled(
-            "  [ Screenplay Export ]",
-            header_style,
-        )])));
-        visual_items.push(render_item(0, &format!(" Format: {}", format_label), app));
-
-        visual_items.push(render_item(
-            1,
-            &format!(" Paper: {}", app.config.paper_size.to_uppercase()),
-            app,
-        ));
-        visual_items.push(render_item(
-            2,
-            &format!(
-                " Bold Headings: {}",
-                if app.config.export_bold_scene_headings {
-                    "[X]"
-                } else {
-                    "[ ]"
-                }
-            ),
-            app,
-        ));
-        visual_items.push(render_item(
-            3,
-            &format!(
-                " Scene Numbers: Both Sides: {}",
-                if app.config.mirror_scene_numbers != crate::config::MirrorOption::Off {
-                    "[X]"
-                } else {
-                    "[ ]"
-                }
-            ),
-            app,
-        ));
-        visual_items.push(render_item(
-            4,
-            &format!(
-                " Include Sections: {}",
-                if app.config.export_sections { "[X]" } else { "[ ]" }
-            ),
-            app,
-        ));
-        visual_items.push(render_item(
-            5,
-            &format!(
-                " Include Synopses: {}",
-                if app.config.export_synopses { "[X]" } else { "[ ]" }
-            ),
-            app,
-        ));
-
-        visual_items.push(ListItem::new(Line::from(vec![Span::raw("")])));
-        visual_items.push(render_item(6, " [ EXPORT SCREENPLAY ]", app));
-
-        visual_items.push(ListItem::new(Line::from(Span::raw(""))));
-        visual_items.push(ListItem::new(Line::from(Span::styled(
-            "  [ Production Reports ]",
-            header_style,
-        ))));
-        visual_items.push(render_item(7, &format!(" Type: {}", report_label), app));
-
-        visual_items.push(ListItem::new(Line::from(Span::raw(""))));
-        visual_items.push(render_item(8, " [ EXPORT REPORT ]", app));
-
-        let list = List::new(visual_items);
-        f.render_widget(
-            list,
-            app.settings_area.inner(ratatui::layout::Margin {
-                horizontal: 0,
-                vertical: 1,
-            }),
-        );
+        draw_export_modal(f, app);
     }
 
     if app.mode == AppMode::Shortcuts {

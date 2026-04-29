@@ -180,6 +180,7 @@ const MARGINS: Margins = Margins {
 struct LayoutInfo<'a> {
     pub size: &'a PaperSize,
     pub fonts: &'a FontFamily,
+    pub export_font: &'a str,
 }
 
 /// A [`Screenplay`] exporter for `pdf`
@@ -197,6 +198,8 @@ pub struct PdfExporter {
     pub bold_scene_headings: bool,
     /// Whether to mirror scene numbers to the right side
     pub mirror_scene_numbers: MirrorOption,
+    /// The font family to use for the entire document
+    pub export_font: String,
 }
 
 impl Exporter for PdfExporter {
@@ -224,6 +227,7 @@ impl Exporter for PdfExporter {
         let layout_info = LayoutInfo {
             size: &self.paper_size,
             fonts: &fonts,
+            export_font: &self.export_font,
         };
 
         self.generate_pdf(&mut document, &layout_info, screenplay)?;
@@ -504,7 +508,9 @@ impl PdfExporter {
                             for element in &mut s_styled.elements {
                                 element.set_bold();
                                 element.set_italic();
-                                element.set_sans();
+                                if self.export_font == "courier_prime_sans" {
+                                    element.set_sans();
+                                }
                             }
                             write_element!(&s_styled, &MARGINS.synopsis, Alignment::LeftToRight);
                         }
@@ -515,7 +521,9 @@ impl PdfExporter {
                             s_styled.to_uppercase();
                             for element in &mut s_styled.elements {
                                 element.set_bold();
-                                element.set_sans();
+                                if self.export_font == "courier_prime_sans" {
+                                    element.set_sans();
+                                }
                             }
                             write_element!(&s_styled, &MARGINS.action, Alignment::LeftToRight);
                         }
@@ -771,7 +779,13 @@ fn write_line(
             } else {
                 breakpoint_index - (start_index - relative_index)
             };
-        let font = if string_element.is_sans() {
+        let is_sans = if ctx.layout_info.export_font == "courier_prime_sans" {
+            true
+        } else {
+            string_element.is_sans()
+        };
+
+        let font = if is_sans {
             match (string_element.is_bold(), string_element.is_italic()) {
                 (false, false) => &ctx.layout_info.fonts.sans_regular,
                 (true, false) => &ctx.layout_info.fonts.sans_bold,
