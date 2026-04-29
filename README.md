@@ -41,16 +41,43 @@ cargo install fount
 
 ---
 
-## 🎞️ The Zen Experience
+## ✨ Feature Showcase
 
 Fount is a dedicated writing environment designed to disappear while you work.
 
-- **Adaptive Interior**: Automatically detects your terminal's background to maintain contrast.
-- **Unified Vision**: A single-line footer displays real-time **Word Counts**, **Page Numbers**, and **Status**.
-- **Story-Map Navigation**: Toggle the **Scene Navigator (`Ctrl+H`)** to see your screenplay's structure.
-- **Ensemble Management**: Use the **Character Sidebar (`Ctrl+L`)** to analyze character distribution.
-- **Index Cards**: A grid-based **Index Cards (`/ic`)** for high-level plotting.
-- **Multi-Scripts Workflow**: Open and switch between multiple scripts seamlessly.
+### 🎨 15+ Built-in Themes
+Cycle through curated themes like **Catppuccin**, **Nord**, **Everforest**, and the new **Lilac** to suit your mood.
+![Theme Cycling](assets/demo/themes.gif)
+
+---
+
+### 🗺️ Story-Map Navigation
+Toggle the **Scene Navigator (`Ctrl+H`)** or **Character Sidebar (`Ctrl+L`)** to jump through your screenplay's structure or analyze character presence.
+![Navigator](assets/demo/navigator.gif)
+
+---
+
+### 📊 X-Ray Analysis
+Visualize your screenplay's pacing, character frequency, and scene length distribution in real-time using **X-Ray** (`/xray`) mode
+![X-Ray Analysis](assets/demo/xray.gif)
+
+---
+
+### 🃏 Story Architect (Index Cards)
+Plot your story at a high level using the grid-based **Index Cards (`/ic`)** mode.
+![Index Cards](assets/demo/index_cards.gif)
+
+---
+
+### ⏱️ Writing Sprints
+Stay productive with built-in **Writing Sprints (`/sprint`)** and track your session history.
+![Writing Sprints](assets/demo/sprint.gif)
+
+---
+
+### 🔍 Search & Replace
+A powerful find-and-replace workflow with interactive highlighting.
+![Search & Replace](assets/demo/search.gif)
 
 ---
 
@@ -64,7 +91,3 @@ Fount stands on the shoulders of giants. This project would not have been possib
 
 > [!IMPORTANT]
 > A massive thank you to the creators of these tools. Their commitment to the craft of writing and software design continues to inspire creators worldwide.
-
----
-
-*Crafted for the screenwriting community with 75% Human Spirit and 25% AI Assistance.*
