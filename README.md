@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icons/Light-Fount Banner.png" alt="Fount Banner" width="100%">
+  <img src="assets/icons/FountCLI banner.png" alt="Fount Banner" width="100%">
 </p>
 
 # Fount

@@ -70,7 +70,7 @@ assets = [
     ["target/release/fount", "/usr/bin/fount", "755"],
     ["README.md", "/usr/share/doc/fount/README.md", "644"],
     ["assets/linux/fount.desktop", "/usr/share/applications/fount.desktop", "644"],
-    ["assets/icons/Dark-Fount.png", "/usr/share/icons/hicolor/256x256/apps/fount.png", "644"],
+    ["assets/icons/FountCLI Logo.png", "/usr/share/icons/hicolor/256x256/apps/fount.png", "644"],
 ]
 
 [package.metadata.generate-rpm]
@@ -80,5 +80,5 @@ license = "GPL-3.0-only"
 assets = [
     { source = "target/release/fount", dest = "/usr/bin/fount", mode = "755" },
     { source = "assets/linux/fount.desktop", dest = "/usr/share/applications/fount.desktop", mode = "644" },
-    { source = "assets/icons/Dark-Fount.png", dest = "/usr/share/icons/hicolor/256x256/apps/fount.png", mode = "644" },
+    { source = "assets/icons/FountCLI Logo.png", dest = "/usr/share/icons/hicolor/256x256/apps/fount.png", mode = "644" },
 ]
