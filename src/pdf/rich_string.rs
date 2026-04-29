@@ -539,10 +539,26 @@ impl Element {
         self.attributes.contains(Attributes::UNDERLINE)
     }
 
+    /// Sets the element to be formatted as underline.
+    pub fn set_underline(&mut self) {
+        self.attributes.insert(Attributes::UNDERLINE);
+    }
+
     /// If the element is styled as italic.
     #[must_use]
     pub fn is_italic(&self) -> bool {
         self.attributes.contains(Attributes::ITALIC)
+    }
+
+    /// If the element is styled as sans-serif.
+    #[must_use]
+    pub fn is_sans(&self) -> bool {
+        self.attributes.contains(Attributes::SANS)
+    }
+
+    /// Sets the element to be formatted as sans-serif.
+    pub fn set_sans(&mut self) {
+        self.attributes.insert(Attributes::SANS);
     }
 }
 
@@ -553,6 +569,7 @@ bitflags! {
         const BOLD      = 0b001;
         const UNDERLINE = 0b010;
         const ITALIC    = 0b100;
+        const SANS      = 0b1000;
     }
 }
 
