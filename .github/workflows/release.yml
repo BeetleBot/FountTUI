@@ -75,6 +75,8 @@ jobs:
             name: Fount-Windows-x64
             archive: windows
     runs-on: ${{ matrix.os }}
+    env:
+      RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-C target-feature=+crt-static' || '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Install System Dependencies (Linux)
@@ -134,6 +136,8 @@ jobs:
     name: Windows Installer (.msi)
     needs: [create-release]
     runs-on: windows-latest
+    env:
+      RUSTFLAGS: -C target-feature=+crt-static
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust

@@ -798,6 +798,54 @@ impl Theme {
         }
     }
 
+    pub fn lilac() -> Self {
+        Self {
+            name: "Lilac".to_string(),
+            author: Some("Fount".to_string()),
+            ui: AppTheme {
+                background: Some(HexColor("#1e1e2e".to_string())),
+                foreground: Some(HexColor("#cdd6f4".to_string())),
+                normal_mode_bg: HexColor("#cba6f7".to_string()),
+                command_mode_bg: HexColor("#f9e2af".to_string()),
+                navigator_mode_bg: HexColor("#94e2d5".to_string()),
+                settings_mode_bg: HexColor("#94e2d5".to_string()),
+                search_mode_bg: HexColor("#f5c2e7".to_string()),
+                status_bar_bg: Some(HexColor("#181825".to_string())),
+                status_bar_fg: Some(HexColor("#cdd6f4".to_string())),
+                selection_bg: HexColor("#45475a".to_string()),
+                selection_fg: HexColor("#cdd6f4".to_string()),
+                search_highlight_bg: HexColor("#f9e2af".to_string()),
+                search_highlight_fg: HexColor("#1e1e2e".to_string()),
+                shadow_color: Some(HexColor("#11111b".to_string())),
+                dim: HexColor("#6c7086".to_string()),
+            },
+            syntax: SyntaxTheme {
+                scene_heading: Some(HexColor("#cba6f7".to_string())),
+                character: Some(HexColor("#f5c2e7".to_string())),
+                dialogue: Some(HexColor("#cdd6f4".to_string())),
+                parenthetical: Some(HexColor("#6c7086".to_string())),
+                transition: Some(HexColor("#f38ba8".to_string())),
+                action: Some(HexColor("#cdd6f4".to_string())),
+                centered: Some(HexColor("#f5c2e7".to_string())),
+                section: Some(HexColor("#a6e3a1".to_string())),
+                synopsis: Some(HexColor("#6c7086".to_string())),
+                note: Some(HexColor("#a6e3a1".to_string())),
+                shot: Some(HexColor("#fab387".to_string())),
+                page_break: Some(HexColor("#313244".to_string())),
+                metadata_key: Some(HexColor("#f9e2af".to_string())),
+                metadata_val: Some(HexColor("#cdd6f4".to_string())),
+            },
+            sidebar: SidebarTheme {
+                background: Some(HexColor("#181825".to_string())),
+                border: Some(HexColor("#313244".to_string())),
+                item_selected_bg: Some(HexColor("#cba6f7".to_string())),
+                item_selected_fg: Some(HexColor("#11111b".to_string())),
+                item_dimmed: Some(HexColor("#6c7086".to_string())),
+                section_header: Some(HexColor("#cba6f7".to_string())),
+            },
+        }
+    }
+
     pub fn is_light(&self) -> bool {
         if let Some(bg) = &self.ui.background {
             let hex = bg.0.trim_start_matches('#').to_lowercase();
@@ -854,6 +902,7 @@ impl ThemeManager {
         add_theme(Theme::tokyo_night());
         add_theme(Theme::rose_pine());
         add_theme(Theme::evergreen());
+        add_theme(Theme::lilac());
         
         Self {
             themes,
