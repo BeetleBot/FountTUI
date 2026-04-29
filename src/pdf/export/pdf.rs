@@ -23,11 +23,15 @@ const FONT_WIDTH: f32 = 7.2; // 12 * 0.6 (Courier Prime's aspect ratio)
 /// The font bundled together with Rustwell; Courier Prime.
 /// Includes the data of the font styles Regular, Bold, Italic
 /// and BoldItalic, in stated order.
-const FONTS: [&[u8]; 4] = [
+const FONTS: [&[u8]; 8] = [
     include_bytes!("fonts/CourierPrime-Regular.ttf"),
     include_bytes!("fonts/CourierPrime-Bold.ttf"),
     include_bytes!("fonts/CourierPrime-Italic.ttf"),
     include_bytes!("fonts/CourierPrime-BoldItalic.ttf"),
+    include_bytes!("fonts/CourierPrimeSans-Regular.ttf"),
+    include_bytes!("fonts/CourierPrimeSans-Bold.ttf"),
+    include_bytes!("fonts/CourierPrimeSans-Italic.ttf"),
+    include_bytes!("fonts/CourierPrimeSans-BoldItalic.ttf"),
 ];
 
 /// A family of fonts with the standard variants.
@@ -36,6 +40,10 @@ struct FontFamily {
     pub bold: Font,
     pub italic: Font,
     pub bold_italic: Font,
+    pub sans_regular: Font,
+    pub sans_bold: Font,
+    pub sans_italic: Font,
+    pub sans_bold_italic: Font,
 }
 
 /// Dimensions of a paper in points (pts).
@@ -207,6 +215,10 @@ impl Exporter for PdfExporter {
             bold: Font::new(FONTS[1].into(), 0).unwrap(),
             italic: Font::new(FONTS[2].into(), 0).unwrap(),
             bold_italic: Font::new(FONTS[3].into(), 0).unwrap(),
+            sans_regular: Font::new(FONTS[4].into(), 0).unwrap(),
+            sans_bold: Font::new(FONTS[5].into(), 0).unwrap(),
+            sans_italic: Font::new(FONTS[6].into(), 0).unwrap(),
+            sans_bold_italic: Font::new(FONTS[7].into(), 0).unwrap(),
         };
 
         let layout_info = LayoutInfo {
@@ -488,11 +500,13 @@ impl PdfExporter {
                     }
                     Element::Synopsis(s) => {
                         if self.synopses {
-                            let mut s_italic = s.clone();
-                            for element in &mut s_italic.elements {
+                            let mut s_styled = s.clone();
+                            for element in &mut s_styled.elements {
+                                element.set_bold();
                                 element.set_italic();
+                                element.set_sans();
                             }
-                            write_element!(&s_italic, &MARGINS.synopsis, Alignment::LeftToRight);
+                            write_element!(&s_styled, &MARGINS.synopsis, Alignment::LeftToRight);
                         }
                     }
                     Element::Section(s) => {
@@ -501,6 +515,7 @@ impl PdfExporter {
                             s_styled.to_uppercase();
                             for element in &mut s_styled.elements {
                                 element.set_bold();
+                                element.set_sans();
                             }
                             write_element!(&s_styled, &MARGINS.action, Alignment::LeftToRight);
                         }
@@ -731,8 +746,8 @@ fn write_line(
         }
         Alignment::Centered => {
             let line_length = breakpoint_index - start_index;
-            let line_span = (line_length / 2) as f32 * FONT_WIDTH;
-            x = (ctx.layout_info.size.x / 2) as f32 - line_span;
+            let line_span = (line_length as f32 / 2.0) * FONT_WIDTH;
+            x = (ctx.layout_info.size.x as f32 / 2.0) - line_span;
         }
     }
 
@@ -756,15 +771,24 @@ fn write_line(
             } else {
                 breakpoint_index - (start_index - relative_index)
             };
-        let font = match (string_element.is_bold(), string_element.is_italic()) {
-            (false, false) => &ctx.layout_info.fonts.regular,
-            (true, false) => &ctx.layout_info.fonts.bold,
-            (false, true) => &ctx.layout_info.fonts.italic,
-            (true, true) => &ctx.layout_info.fonts.bold_italic,
+        let font = if string_element.is_sans() {
+            match (string_element.is_bold(), string_element.is_italic()) {
+                (false, false) => &ctx.layout_info.fonts.sans_regular,
+                (true, false) => &ctx.layout_info.fonts.sans_bold,
+                (false, true) => &ctx.layout_info.fonts.sans_italic,
+                (true, true) => &ctx.layout_info.fonts.sans_bold_italic,
+            }
+        } else {
+            match (string_element.is_bold(), string_element.is_italic()) {
+                (false, false) => &ctx.layout_info.fonts.regular,
+                (true, false) => &ctx.layout_info.fonts.bold,
+                (false, true) => &ctx.layout_info.fonts.italic,
+                (true, true) => &ctx.layout_info.fonts.bold_italic,
+            }
         };
         let mut char_indices = string_element.text.char_indices();
         let start_byte_index = char_indices.nth(relative_index).unwrap().0;
-        let end_byte_index = match char_indices.nth(relative_break_index - relative_index - 1) {
+        let end_byte_index = match char_indices.nth(relative_break_index - relative_index) {
             Some((i, _)) => i,
             Option::None => string_element.text.len(),
         };
@@ -785,9 +809,9 @@ fn write_line(
                 let mut pb = PathBuilder::new();
                 let r = Rect::from_xywh(
                     x + (glyph_index as f32 * FONT_WIDTH),
-                    y + 0.5,
+                    y + 1.2,
                     glyphs_written as f32 * FONT_WIDTH,
-                    0.75,
+                    0.5,
                 )
                 .unwrap();
                 pb.push_rect(r);
@@ -815,45 +839,13 @@ fn write_line(
     Ok(())
 }
 
-/// Margins for the [`TitlePage`] elements.
 struct TitlePageMargins {
-    pub title: Margin,
-    pub credit: Margin,
-    pub authors: Margin,
-    pub source: Margin,
-    pub draft_date: Margin,
-    pub contact: Margin,
-    pub notes: Margin,
+    pub margin: Margin,
 }
 
-/// Standard margins for the [`TitlePage`] elements.
 const TITLE_PAGE_MARGINS: TitlePageMargins = TitlePageMargins {
-    title: Margin {
+    margin: Margin {
         left: 72.0,
-        right: 72.0,
-    },
-    credit: Margin {
-        left: 72.0,
-        right: 72.0,
-    },
-    authors: Margin {
-        left: 72.0,
-        right: 72.0,
-    },
-    source: Margin {
-        left: 72.0,
-        right: 72.0,
-    },
-    draft_date: Margin {
-        left: 315.0,
-        right: 72.0,
-    },
-    contact: Margin {
-        left: 72.0,
-        right: 315.0,
-    },
-    notes: Margin {
-        left: 315.0,
         right: 72.0,
     },
 };
@@ -889,7 +881,7 @@ fn write_titlepage(
                     let residual = write_element(
                         &mut ctx,
                         s,
-                        &TITLE_PAGE_MARGINS.$element,
+                        &TITLE_PAGE_MARGINS.margin,
                         &mut 0,
                         Alignment::Centered,
                     )?;
@@ -912,8 +904,8 @@ fn write_titlepage(
                         s,
                         glyph_span(
                             layout_info.size,
-                            TITLE_PAGE_MARGINS.$element.left,
-                            TITLE_PAGE_MARGINS.$element.right,
+                            TITLE_PAGE_MARGINS.margin.left,
+                            TITLE_PAGE_MARGINS.margin.right,
                         ),
                     )
                     .len();
@@ -937,7 +929,7 @@ fn write_titlepage(
                     write_element(
                         &mut ctx,
                         s,
-                        &TITLE_PAGE_MARGINS.$element,
+                        &TITLE_PAGE_MARGINS.margin,
                         &mut 0,
                         $alignment,
                     )?;
@@ -946,12 +938,11 @@ fn write_titlepage(
         };
     }
 
-    // Styling the title: industry standard is BOLD and UPPERCASE
     if !titlepage.title.is_empty() {
         let mut title_line_idx = max_lines / 3;
         for s in &titlepage.title {
-            let mut bold_title = s.clone();
-            for element in &mut bold_title.elements {
+            let mut bold_underlined_title = s.clone();
+            for element in &mut bold_underlined_title.elements {
                 element.text = element.text.to_uppercase();
                 element.set_bold();
             }
@@ -964,8 +955,8 @@ fn write_titlepage(
             };
             write_element(
                 &mut ctx,
-                &bold_title,
-                &TITLE_PAGE_MARGINS.title,
+                &bold_underlined_title,
+                &TITLE_PAGE_MARGINS.margin,
                 &mut 0,
                 Alignment::Centered,
             )?;
@@ -973,47 +964,46 @@ fn write_titlepage(
         line_idx = title_line_idx;
     }
 
-    line_idx += 3; // Extra spacing after title
+    line_idx += 2; // 2 lines after title
     write_title_element!(credit);
-    line_idx += 1; // Spacing after "Written by"
     write_title_element!(authors);
-    line_idx += 2; // Spacing before source
-    write_title_element!(source);
+    let _ = line_idx; // Ready for footer
 
-    // Calculate the max lines needed for the bottom elements to align them correctly
-    let mut bottom_lines = 0;
-    for element_lines in [&titlepage.contact, &titlepage.notes, &titlepage.draft_date] {
-        let mut current_element_total = element_lines.len();
-        for s in element_lines {
-            current_element_total += break_points(
-                s,
-                glyph_span(layout_info.size, 72.0, 72.0), // Approximate span
-            ).len();
+    // Footer stacking at the bottom left
+    let footer_elements = [
+        &titlepage.source,
+        &titlepage.draft_date,
+        &titlepage.contact,
+        &titlepage.notes,
+    ];
+
+    let mut footer_total_lines = 0;
+    for lines in footer_elements.iter() {
+        if lines.is_empty() { continue; }
+        if footer_total_lines > 0 { footer_total_lines += 1; } // Gap between groups
+        for s in *lines {
+            footer_total_lines += 1 + break_points(s, glyph_span(layout_info.size, 72.0, 72.0)).len();
         }
-        bottom_lines = bottom_lines.max(current_element_total);
     }
 
-    let bottom_start_idx = max_lines.saturating_sub(bottom_lines);
+    let mut footer_idx = max_lines.saturating_sub(footer_total_lines + 2); // 2 lines safety margin from bottom
 
-    // Render Contact (Left)
-    let mut c_idx = bottom_start_idx;
-    for s in &titlepage.contact {
-        let mut ctx = DrawContext { layout_info, surface: &mut surface, line_index: &mut c_idx, max_lines };
-        write_element(&mut ctx, s, &TITLE_PAGE_MARGINS.contact, &mut 0, Alignment::LeftToRight)?;
-    }
-
-    // Render Notes (Right)
-    let mut n_idx = bottom_start_idx;
-    for s in &titlepage.notes {
-        let mut ctx = DrawContext { layout_info, surface: &mut surface, line_index: &mut n_idx, max_lines };
-        write_element(&mut ctx, s, &TITLE_PAGE_MARGINS.notes, &mut 0, Alignment::RightToLeft)?;
-    }
-
-    // Render Draft Date (Right)
-    let mut d_idx = if titlepage.notes.is_empty() { bottom_start_idx } else { n_idx };
-    for s in &titlepage.draft_date {
-        let mut ctx = DrawContext { layout_info, surface: &mut surface, line_index: &mut d_idx, max_lines };
-        write_element(&mut ctx, s, &TITLE_PAGE_MARGINS.draft_date, &mut 0, Alignment::RightToLeft)?;
+    let mut first = true;
+    for lines in footer_elements.iter() {
+        if lines.is_empty() { continue; }
+        if !first {
+            footer_idx += 1; // Gap between groups
+        }
+        first = false;
+        for s in *lines {
+            let mut ctx = DrawContext {
+                layout_info,
+                surface: &mut surface,
+                line_index: &mut footer_idx,
+                max_lines,
+            };
+            write_element(&mut ctx, s, &TITLE_PAGE_MARGINS.margin, &mut 0, Alignment::LeftToRight)?;
+        }
     }
 
     surface.finish();
