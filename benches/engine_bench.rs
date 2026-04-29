@@ -106,6 +106,7 @@ fn bench_build_layout(c: &mut Criterion) {
     let theme = fount::theme::Theme::default();
 
     c.bench_function("build_layout/10000_lines", |b| {
+        let mut visual_lines = Vec::new();
         b.iter(|| {
             build_layout(
                 black_box(&lines),
@@ -113,6 +114,7 @@ fn bench_build_layout(c: &mut Criterion) {
                 black_box(5_000),
                 black_box(&config),
                 black_box(&theme),
+                black_box(&mut visual_lines),
             )
         })
     });
