@@ -144,10 +144,13 @@ jobs:
           tool: cargo-wix
       - name: Build MSI
         run: cargo wix --nocapture
+      - name: Rename MSI for Winget
+        shell: pwsh
+        run: Move-Item target/wix/*.msi target/wix/Fount-Installer.msi
       - name: Upload MSI
         uses: softprops/action-gh-release@v2
         with:
-          files: target/wix/*.msi
+          files: target/wix/Fount-Installer.msi
           token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-winget:
