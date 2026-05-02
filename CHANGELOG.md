@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.3] - 2026-05-02
+
+### Added
+- **Semantic Theme System**: Fully refactored UI to use a theme-aware semantic color system (`warning`, `error`, `success`, `info`). This ensures perfect legibility and a premium feel across all color schemes, from sleek dark modes to high-contrast paper themes.
+
+### Changed
+- **UI Icon Standardization**: Replaced all Nerd Font icons with terminal-safe ASCII/Unicode glyphs (`[ ]`, `[!]`, `[*]`). This guarantees a consistent, "just works" experience across all terminal environments without requiring specialized fonts.
+- **Workflow Optimization**: Consolidated Windows distribution into a unified MSIX pipeline. Automated Microsoft Store branding with dynamic icon generation for all required sizes.
+
+### Fixed
+- **Stability**: Resolved multiple compilation errors and edge-case bugs in the UI rendering engine.
+- **MSIX Manifest**: Synced with official Microsoft Store identity for seamless installation.
+
 ## [0.9.2] - 2026-04-30
 
 ### Fixed

@@ -1,7 +1,16 @@
-name: Windows MSIX
+name: MSIX Distribution
 
 on:
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+          - test
+          - release
   push:
     tags:
       - 'v*'
@@ -11,7 +20,7 @@ permissions:
 
 jobs:
   build-msix:
-    name: Windows Store Package (.msix)
+    name: Build MSIX Package
     runs-on: windows-latest
     env:
       RUSTFLAGS: -C target-feature=+crt-static
@@ -28,7 +37,11 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $ver = "${{ github.ref_name }}" -replace '^v',''
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $ver = "${{ github.ref_name }}" -replace '^v',''
+          } else {
+            $ver = (Select-String -Path "Cargo.toml" -Pattern '^version = "([^"]+)"').Matches.Groups[1].Value
+          }
           echo "SEMVER=$ver" >> $env:GITHUB_OUTPUT
           echo "MSIX_VER=$ver.0" >> $env:GITHUB_OUTPUT
 
@@ -70,11 +83,21 @@ jobs:
         run: |
           $sdkDir = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\10.*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
           $makeappx = Join-Path $sdkDir.FullName "x64\MakeAppx.exe"
-          & $makeappx pack /d target/msix/layout /p target/msix/Fount-${{ steps.version.outputs.SEMVER }}.msix /o
+          $filename = if ("${{ github.ref_type }}" -eq "tag") { "Fount-${{ steps.version.outputs.SEMVER }}.msix" } else { "Fount-TEST-BUILD.msix" }
+          & $makeappx pack /d target/msix/layout /p "target/msix/$filename" /o
+          echo "FILENAME=$filename" >> $env:GITHUB_ENV
 
-      - name: Upload MSIX
+      - name: Upload Artifact (Manual/Test)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fount-MSIX-${{ steps.version.outputs.SEMVER }}
+          path: target/msix/${{ env.FILENAME }}
+          retention-days: 5
+
+      - name: Upload to Release (Tag)
+        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          files: target/msix/Fount-${{ steps.version.outputs.SEMVER }}.msix
+          files: target/msix/${{ env.FILENAME }}
           token: ${{ secrets.GITHUB_TOKEN }}
