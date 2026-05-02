@@ -2,14 +2,6 @@ name: Test MSIX Build
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'packaging/msix/**'
-      - '.github/workflows/test-msix.yml'
-      - 'Cargo.toml'
-      - 'src/**'
 
 jobs:
   test-build:
