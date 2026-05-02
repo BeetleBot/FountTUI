@@ -85,9 +85,9 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     // ── Header rendering (Zen Style) ──────────────────────────────────────
     {
-        let dim_color = Color::from(theme.ui.dim.clone());
+        let dim_style = theme.secondary_style();
         let sep = " | ";
-        let sep_style = Style::default().fg(dim_color);
+        let sep_style = dim_style;
 
         let mut left_spans = Vec::new();
 
@@ -120,7 +120,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                         .add_modifier(Modifier::BOLD),
                 ));
             } else {
-                left_spans.push(Span::styled(label, Style::default().fg(dim_color)));
+                left_spans.push(Span::styled(label, dim_style));
             }
 
             if i + 1 < app.buffers.len() {
@@ -191,11 +191,10 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         text_area = side_chunks[2];
 
         // Draw clean separator
-        let dim_sep_color = Color::from(theme.ui.dim.clone());
         let sep_col = "│".repeat(shadow_area.height as usize);
         let sep_lines: Vec<Line> = sep_col
             .chars()
-            .map(|_| Line::from(Span::styled("│", Style::default().fg(dim_sep_color))))
+            .map(|_| Line::from(Span::styled("│", theme.secondary_style())))
             .collect();
         f.render_widget(Paragraph::new(sep_lines), shadow_area);
     }
@@ -216,9 +215,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         app.settings_area = side_chunks[2];
 
         // Draw clean separator
-        let dim_sep_color = Color::from(theme.ui.dim.clone());
         let sep_lines: Vec<Line> = (0..shadow_area.height)
-            .map(|_| Line::from(Span::styled("│", Style::default().fg(dim_sep_color))))
+            .map(|_| Line::from(Span::styled("│", theme.secondary_style())))
             .collect();
         f.render_widget(Paragraph::new(sep_lines), shadow_area);
     }
@@ -257,20 +255,14 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         }
     }
 
-    let mut dark_gray_style = Style::default();
-    if !app.config.no_color {
-        dark_gray_style = dark_gray_style.fg(Color::from(theme.ui.dim.clone()));
-    }
+    let mut dark_gray_style = theme.secondary_style();
 
-    let mut sug_style = Style::default();
+    let mut sug_style = theme.secondary_style();
     if !app.config.no_formatting {
-        sug_style = sug_style.add_modifier(Modifier::DIM | Modifier::BOLD);
+        sug_style = sug_style.add_modifier(Modifier::BOLD);
     }
 
-    let mut page_num_style = Style::default();
-    if !app.config.no_color {
-        page_num_style = page_num_style.fg(Color::from(theme.ui.dim.clone()));
-    }
+    let mut page_num_style = theme.secondary_style();
 
     let current_view_mode = if app.mode == AppMode::Command || app.mode == AppMode::Search {
         app.previous_mode
@@ -455,17 +447,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     if app.mode == AppMode::SceneNavigator {
-        let selected_bg = if theme.is_light() {
-            Color::Rgb(220, 220, 220)
-        } else {
-            Color::Rgb(45, 45, 45)
-        };
-        let selected_fg = theme
-            .ui
-            .foreground
-            .clone()
-            .map(Color::from)
-            .unwrap_or(Color::White);
+        let selected_bg = Color::from(theme.ui.selection_bg.clone());
+        let selected_fg = Color::from(theme.ui.selection_fg.clone());
         let dim_color = Color::from(theme.ui.dim.clone());
         let border_color = dim_color;
         let header_color = theme
@@ -483,9 +466,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 let is_selected = i == app.selected_scene;
                 let mut lines = Vec::new();
 
-                let line_style = Style::default()
-                    .fg(border_color)
-                    .add_modifier(Modifier::DIM);
+                let line_style = theme.secondary_style();
 
                 if item.is_section {
                     // Section Header (ACT I, etc.)
@@ -536,7 +517,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     let dim_style = if is_selected {
                         base_style
                     } else {
-                        Style::default().fg(dim_color).add_modifier(Modifier::DIM)
+                        theme.secondary_style()
                     };
 
                     let prefix = if is_selected { " > " } else { "   " };
@@ -664,7 +645,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             .border
             .clone()
             .map(Color::from)
-            .unwrap_or(Color::DarkGray);
+            .unwrap_or_else(|| theme.ui.dim.clone().into());
         let selected_bg = theme
             .sidebar
             .item_selected_bg
@@ -676,13 +657,13 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             .item_selected_fg
             .clone()
             .map(Color::from)
-            .unwrap_or(Color::Black);
+            .unwrap_or_else(|| theme.ui.selection_fg.clone().into());
         let dim_color = theme
             .sidebar
             .item_dimmed
             .clone()
             .map(Color::from)
-            .unwrap_or(Color::DarkGray);
+            .unwrap_or_else(|| theme.ui.dim.clone().into());
         let header_color = theme
             .sidebar
             .section_header
@@ -698,9 +679,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 let is_selected = i == app.selected_ensemble_idx;
                 let mut lines = Vec::new();
 
-                let line_style = Style::default()
-                    .fg(border_color)
-                    .add_modifier(Modifier::DIM);
+                let line_style = theme.secondary_style();
                 let base_style = if is_selected {
                     Style::default()
                         .fg(selected_fg)
@@ -806,7 +785,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 let is_selected = i == app.selected_setting;
                 let style = if is_selected {
                     Style::default()
-                        .fg(Color::Black)
+                        .fg(theme.ui.selection_fg.clone().into())
                         .bg(mode_bg)
                         .add_modifier(Modifier::BOLD)
                 } else {
@@ -819,9 +798,9 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                         Style::default().fg(Color::from(theme.ui.normal_mode_bg.clone())),
                     )
                 } else if *value {
-                    ("[X] ", Style::default().fg(Color::Green))
+                    ("[X] ", theme.success_style())
                 } else {
-                    ("[ ] ", Style::default().fg(Color::DarkGray))
+                    ("[ ] ", theme.secondary_style())
                 };
 
                 let line = if label == "Theme" {
@@ -861,11 +840,10 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let modal_area = panes::centered_rect(92, 90, area);
         f.render_widget(ratatui::widgets::Clear, modal_area);
 
-        let dim_color = Color::from(theme.ui.dim.clone());
         let key_style = Style::default().fg(mode_bg).add_modifier(Modifier::BOLD);
-        let desc_style = Style::default().fg(dim_color);
+        let desc_style = theme.secondary_style();
         let hdr_style = Style::default().fg(mode_bg).add_modifier(Modifier::BOLD);
-        let sep_style = Style::default().fg(dim_color);
+        let sep_style = theme.secondary_style();
 
         // Define layout: Search Bar + Content
         let chunks = Layout::default()
@@ -1043,9 +1021,9 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     // ── Footer rendering (Zen Style) ────────────────────────────────────────
     if footer_area.height > 0 {
-        let dim_color = Color::from(theme.ui.dim.clone());
+        let dim_style = theme.secondary_style();
         let sep = " | ";
-        let sep_style = Style::default().fg(dim_color);
+        let sep_style = dim_style;
 
         let mut spans = Vec::new();
 
@@ -1083,9 +1061,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             if elapsed < 2.0 {
                 spans.push(Span::styled(
                     "  [X] Saved",
-                    Style::default()
-                        .fg(Color::Green)
-                        .add_modifier(Modifier::BOLD),
+                    theme.success_style().add_modifier(Modifier::BOLD),
                 ));
             }
         }
@@ -1095,7 +1071,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         // Center content: command, search, status, or hint
         if app.mode == AppMode::Command {
             let cmd_style = if app.command_error {
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+                theme.error_style().add_modifier(Modifier::BOLD)
             } else {
                 Style::default().add_modifier(Modifier::BOLD)
             };
@@ -1146,11 +1122,11 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
                     spans.push(Span::raw(format!("{}{}", prompt_base, app.search_query)));
                     if !count_msg.is_empty() {
-                        spans.push(Span::styled(count_msg, Style::default().fg(dim_color)));
+                        spans.push(Span::styled(count_msg, theme.secondary_style()));
                     }
                     spans.push(Span::styled(
                         " [Alt+^/v] Navigate",
-                        Style::default().fg(dim_color),
+                        theme.secondary_style(),
                     ));
                 }
                 AppMode::ReplaceOne => {
@@ -1168,11 +1144,9 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         } else if app.status_msg.is_some() || app.show_search_highlight {
             if let Some(msg) = &app.status_msg {
                 let style = if app.command_error {
-                    Style::default().fg(Color::Red)
+                    theme.error_style()
                 } else {
-                    Style::default()
-                        .fg(dim_color)
-                        .add_modifier(Modifier::ITALIC)
+                    theme.secondary_style().add_modifier(Modifier::ITALIC)
                 };
                 spans.push(Span::styled(msg, style));
             }
@@ -1180,7 +1154,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             if app.show_search_highlight && !app.search_matches.is_empty() {
                 spans.push(Span::styled(
                     " [Alt+^/v] Nav [r] Replace [R] Replace All",
-                    Style::default().fg(dim_color),
+                    theme.secondary_style(),
                 ));
             }
         } else if app.mode != AppMode::Home {
@@ -1190,7 +1164,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 Style::default().fg(mode_bg).add_modifier(Modifier::BOLD),
             ));
         } else {
-            spans.push(Span::styled("F1 Reference", Style::default().fg(dim_color)));
+            spans.push(Span::styled("F1 Reference", theme.secondary_style()));
         }
 
         // Sprint progress (if active)
@@ -1239,7 +1213,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             right_spans.push(Span::styled(sep, sep_style));
             right_spans.push(Span::styled(
                 format!("{} Scenes", cards_len),
-                Style::default().fg(dim_color),
+                dim_style,
             ));
         } else {
             let word_count = app.total_word_count();
@@ -1248,10 +1222,10 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             right_spans.push(Span::styled(sep, sep_style));
             right_spans.push(Span::styled(
                 format!("{} words", word_count),
-                Style::default().fg(dim_color),
+                dim_style,
             ));
             right_spans.push(Span::styled(sep, sep_style));
-            right_spans.push(Span::styled(pos_str, Style::default().fg(dim_color)));
+            right_spans.push(Span::styled(pos_str, dim_style));
         }
         // Closing bracket
         right_spans.push(Span::styled(" ]", sep_style));
@@ -1335,7 +1309,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     // -- Screen Blink Effect --
     if app.flash_timer.is_some() {
         f.render_widget(
-            Block::default().style(Style::default().bg(Color::White)),
+            Block::default().style(Style::default().bg(theme.ui.foreground.clone().into())),
             area,
         );
     }

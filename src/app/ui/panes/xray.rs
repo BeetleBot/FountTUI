@@ -17,7 +17,9 @@ pub fn draw_xray(f: &mut Frame, app: &mut App) {
         for x in area.left()..area.right() {
             if let Some(cell) = buf.cell_mut((x, y)) {
                 let st = cell.style();
-                cell.set_style(st.add_modifier(Modifier::DIM));
+                if !theme.is_light() {
+                    cell.set_style(st.add_modifier(Modifier::DIM));
+                }
             }
         }
     }
@@ -55,19 +57,19 @@ pub fn draw_xray(f: &mut Frame, app: &mut App) {
     // Tab bar
     let tab_titles = vec![
         Span::styled(" 1: Dialogue ", if app.xray_tab == 0 {
-            Style::default().fg(Color::Black).bg(accent).add_modifier(Modifier::BOLD)
+            Style::default().fg(theme.ui.selection_fg.clone().into()).bg(accent).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(dim)
+            theme.secondary_style()
         }),
         Span::styled(" 2: Pacing ", if app.xray_tab == 1 {
-            Style::default().fg(Color::Black).bg(accent).add_modifier(Modifier::BOLD)
+            Style::default().fg(theme.ui.selection_fg.clone().into()).bg(accent).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(dim)
+            theme.secondary_style()
         }),
         Span::styled(" 3: Scenes ", if app.xray_tab == 2 {
-            Style::default().fg(Color::Black).bg(accent).add_modifier(Modifier::BOLD)
+            Style::default().fg(theme.ui.selection_fg.clone().into()).bg(accent).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(dim)
+            theme.secondary_style()
         }),
     ];
 
@@ -90,7 +92,7 @@ pub fn draw_xray(f: &mut Frame, app: &mut App) {
     f.render_widget(
         Paragraph::new(Line::from(Span::styled(
             "─".repeat(sep_w),
-            Style::default().fg(dim),
+            theme.secondary_style(),
         ))),
         tab_layout[1],
     );
@@ -116,11 +118,11 @@ pub fn draw_xray(f: &mut Frame, app: &mut App) {
     f.render_widget(
         Paragraph::new(Line::from(vec![
             Span::styled(" <-/-> ", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
-            Span::styled("Switch Tab", Style::default().fg(dim)),
+            Span::styled("Switch Tab", theme.secondary_style()),
             Span::styled("  ^/v ", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
-            Span::styled("Scroll", Style::default().fg(dim)),
+            Span::styled("Scroll", theme.secondary_style()),
             Span::styled("  Esc ", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
-            Span::styled("Close", Style::default().fg(dim)),
+            Span::styled("Close", theme.secondary_style()),
         ])),
         tab_layout[3],
     );
@@ -147,13 +149,13 @@ fn draw_dialogue_tab(
     if data.characters.is_empty() {
         lines.push(Line::from(Span::styled(
             "  No dialogue found in script.",
-            Style::default().fg(dim).add_modifier(Modifier::ITALIC),
+            theme.secondary_style().add_modifier(Modifier::ITALIC),
         )));
     } else {
         lines.push(Line::from(vec![
             Span::styled(
                 format!("  Total dialogue words: {}", data.total_dialogue_words),
-                Style::default().fg(dim),
+                theme.secondary_style(),
             ),
         ]));
         lines.push(Line::from(""));
@@ -179,7 +181,7 @@ fn draw_dialogue_tab(
             lines.push(Line::from(vec![
                 Span::styled(format!("  {} ", name), Style::default().fg(normal_fg).add_modifier(Modifier::BOLD)),
                 Span::styled(bar, Style::default().fg(accent)),
-                Span::styled(format!(" {} {} {}", pct_str, line_str, word_str), Style::default().fg(dim)),
+                Span::styled(format!(" {} {} {}", pct_str, line_str, word_str), theme.secondary_style()),
             ]));
         }
     }
@@ -212,16 +214,16 @@ fn draw_pacing_tab(
     if data.pacing_map.is_empty() {
         lines.push(Line::from(Span::styled(
             "  No page data available.",
-            Style::default().fg(dim).add_modifier(Modifier::ITALIC),
+            theme.secondary_style().add_modifier(Modifier::ITALIC),
         )));
     } else {
         // Legend
         lines.push(Line::from(vec![
             Span::styled("  ", Style::default()),
             Span::styled("#", Style::default().fg(accent)),
-            Span::styled(" = Action   ", Style::default().fg(dim)),
+            Span::styled(" = Action   ", theme.secondary_style()),
             Span::styled(".", Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
-            Span::styled(" = Dialogue", Style::default().fg(dim)),
+            Span::styled(" = Dialogue", theme.secondary_style()),
         ]));
         lines.push(Line::from(""));
 
@@ -231,8 +233,8 @@ fn draw_pacing_tab(
             let total = block.action_lines + block.dialogue_lines;
             if total == 0 {
                 lines.push(Line::from(vec![
-                    Span::styled(format!("  pg{:<3} ", block.page), Style::default().fg(dim)),
-                    Span::styled("─".repeat(bar_w), Style::default().fg(dim).add_modifier(Modifier::DIM)),
+                    Span::styled(format!("  pg{:<3} ", block.page), theme.secondary_style()),
+                    Span::styled("─".repeat(bar_w), theme.secondary_style()),
                 ]));
                 continue;
             }
@@ -244,10 +246,10 @@ fn draw_pacing_tab(
             let pct_str = format!("{:3.0}%A", action_ratio * 100.0);
 
             lines.push(Line::from(vec![
-                Span::styled(format!("  pg{:<3} ", block.page), Style::default().fg(dim)),
+                Span::styled(format!("  pg{:<3} ", block.page), theme.secondary_style()),
                 Span::styled("#".repeat(action_cells), Style::default().fg(accent)),
                 Span::styled(".".repeat(dialogue_cells), Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
-                Span::styled(format!(" {}", pct_str), Style::default().fg(dim)),
+                Span::styled(format!(" {}", pct_str), theme.secondary_style()),
             ]));
         }
     }
@@ -280,7 +282,7 @@ fn draw_scenes_tab(
     if data.scenes.is_empty() {
         lines.push(Line::from(Span::styled(
             "  No scenes found in script.",
-            Style::default().fg(dim).add_modifier(Modifier::ITALIC),
+            theme.secondary_style().add_modifier(Modifier::ITALIC),
         )));
     } else {
         let over_count = data.scenes.iter().filter(|s| s.is_over_limit).count();
@@ -292,12 +294,12 @@ fn draw_scenes_tab(
             if over_count > 0 {
                 Span::styled(
                     format!("  ·  {} over 3 pages", over_count),
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                    theme.warning_style().add_modifier(Modifier::BOLD),
                 )
             } else {
                 Span::styled(
                     "  *  All scenes within limit [X]",
-                    Style::default().fg(Color::Green),
+                    theme.success_style(),
                 )
             },
         ]));
@@ -308,12 +310,12 @@ fn draw_scenes_tab(
         lines.push(Line::from(vec![
             Span::styled(
                 format!("  {:>4}  {:<width$}  {:>6}  Status", "#", "Scene", "Pages", width = max_label_w),
-                Style::default().fg(dim).add_modifier(Modifier::BOLD),
+                theme.secondary_style().add_modifier(Modifier::BOLD),
             ),
         ]));
         lines.push(Line::from(Span::styled(
             format!("  {}", "─".repeat(area.width.saturating_sub(4) as usize)),
-            Style::default().fg(dim),
+            theme.secondary_style(),
         )));
 
         for scene in &data.scenes {
@@ -327,15 +329,15 @@ fn draw_scenes_tab(
             let pages_str = format!("{:.1}", scene.page_count);
 
             let (status, status_style) = if scene.is_over_limit {
-                ("[!] TOO LONG", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+                ("[!] TOO LONG", theme.warning_style().add_modifier(Modifier::BOLD))
             } else {
-                ("[X]", Style::default().fg(Color::Green))
+                ("[X]", theme.success_style())
             };
 
             let line_style = if scene.is_over_limit {
                 Style::default().fg(normal_fg)
             } else {
-                Style::default().fg(dim)
+                theme.secondary_style()
             };
 
             lines.push(Line::from(vec![

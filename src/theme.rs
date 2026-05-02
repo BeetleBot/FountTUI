@@ -34,6 +34,12 @@ pub struct AppTheme {
     
     pub shadow_color: Option<HexColor>,
     pub dim: HexColor,
+    
+    // Semantic Colors
+    pub warning: HexColor,
+    pub error: HexColor,
+    pub success: HexColor,
+    pub info: HexColor,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -146,6 +152,10 @@ impl Theme {
                 search_highlight_fg: HexColor("black".to_string()),
                 shadow_color: None,
                 dim: HexColor("gray".to_string()),
+                warning: HexColor("yellow".to_string()),
+                error: HexColor("red".to_string()),
+                success: HexColor("green".to_string()),
+                info: HexColor("cyan".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: None,
@@ -194,6 +204,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#2E3440".to_string()),
                 shadow_color: Some(HexColor("#1E222A".to_string())),
                 dim: HexColor("#4C566A".to_string()),
+                warning: HexColor("#EBCB8B".to_string()),
+                error: HexColor("#BF616A".to_string()),
+                success: HexColor("#A3BE8C".to_string()),
+                info: HexColor("#81A1C1".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#88C0D0".to_string())),
@@ -242,6 +256,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#002B36".to_string()),
                 shadow_color: Some(HexColor("#001E26".to_string())),
                 dim: HexColor("#586E75".to_string()),
+                warning: HexColor("#B58900".to_string()),
+                error: HexColor("#DC322F".to_string()),
+                success: HexColor("#859900".to_string()),
+                info: HexColor("#268BD2".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#2AA198".to_string())),
@@ -290,6 +308,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#282A36".to_string()),
                 shadow_color: Some(HexColor("#191A21".to_string())),
                 dim: HexColor("#6272A4".to_string()),
+                warning: HexColor("#F1FA8C".to_string()),
+                error: HexColor("#FF5555".to_string()),
+                success: HexColor("#50FA7B".to_string()),
+                info: HexColor("#8BE9FD".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#8BE9FD".to_string())),
@@ -338,6 +360,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#282828".to_string()),
                 shadow_color: Some(HexColor("#1D2021".to_string())),
                 dim: HexColor("#928374".to_string()),
+                warning: HexColor("#FABD2F".to_string()),
+                error: HexColor("#FB4934".to_string()),
+                success: HexColor("#B8BB26".to_string()),
+                info: HexColor("#83A598".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#8EC07C".to_string())),
@@ -386,6 +412,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#282A36".to_string()),
                 shadow_color: Some(HexColor("#0D0E12".to_string())),
                 dim: HexColor("#6272A4".to_string()),
+                warning: HexColor("#FFB86C".to_string()),
+                error: HexColor("#FF5555".to_string()),
+                success: HexColor("#50FA7B".to_string()),
+                info: HexColor("#8BE9FD".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#8BE9FD".to_string())),
@@ -434,6 +464,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#282C34".to_string()),
                 shadow_color: Some(HexColor("#181A1F".to_string())),
                 dim: HexColor("#5C6370".to_string()),
+                warning: HexColor("#E5C07B".to_string()),
+                error: HexColor("#E06C75".to_string()),
+                success: HexColor("#98C379".to_string()),
+                info: HexColor("#61AFEF".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#56B6C2".to_string())),
@@ -482,6 +516,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#1E1E2E".to_string()),
                 shadow_color: Some(HexColor("#11111B".to_string())),
                 dim: HexColor("#6C7086".to_string()),
+                warning: HexColor("#F9E2AF".to_string()),
+                error: HexColor("#F38BA8".to_string()),
+                success: HexColor("#A6E3A1".to_string()),
+                info: HexColor("#89B4FA".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#89DCEB".to_string())),
@@ -530,6 +568,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#272822".to_string()),
                 shadow_color: Some(HexColor("#141411".to_string())),
                 dim: HexColor("#75715E".to_string()),
+                warning: HexColor("#E6DB74".to_string()),
+                error: HexColor("#F92672".to_string()),
+                success: HexColor("#A6E22E".to_string()),
+                info: HexColor("#66D9EF".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#A6E22E".to_string())),
@@ -578,6 +620,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#FDF6E3".to_string()),
                 shadow_color: Some(HexColor("#E9E2D0".to_string())),
                 dim: HexColor("#586E75".to_string()),
+                warning: HexColor("#B58900".to_string()),
+                error: HexColor("#DC322F".to_string()),
+                success: HexColor("#859900".to_string()),
+                info: HexColor("#268BD2".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#2AA198".to_string())),
@@ -625,7 +671,11 @@ impl Theme {
                 search_highlight_bg: HexColor("#FFFF00".to_string()),
                 search_highlight_fg: HexColor("#000000".to_string()),
                 shadow_color: Some(HexColor("#E0E0E0".to_string())),
-                dim: HexColor("#222222".to_string()),
+                dim: HexColor("#555555".to_string()), // Darker for light mode
+                warning: HexColor("#AF5F00".to_string()), // Darker yellow/orange
+                error: HexColor("#D70000".to_string()),
+                success: HexColor("#005F00".to_string()),
+                info: HexColor("#005F87".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#005F87".to_string())),
@@ -674,6 +724,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#1a1b26".to_string()),
                 shadow_color: Some(HexColor("#16161e".to_string())),
                 dim: HexColor("#565f89".to_string()),
+                warning: HexColor("#e0af68".to_string()),
+                error: HexColor("#f7768e".to_string()),
+                success: HexColor("#9ece6a".to_string()),
+                info: HexColor("#7dcfff".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#7dcfff".to_string())),
@@ -722,6 +776,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#191724".to_string()),
                 shadow_color: Some(HexColor("#121019".to_string())),
                 dim: HexColor("#6e6a86".to_string()),
+                warning: HexColor("#f6c177".to_string()),
+                error: HexColor("#eb6f92".to_string()),
+                success: HexColor("#9ccfd8".to_string()),
+                info: HexColor("#ebbcba".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#ebbcba".to_string())),
@@ -770,6 +828,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#0d1b13".to_string()),
                 shadow_color: Some(HexColor("#060c08".to_string())),
                 dim: HexColor("#4f772d".to_string()),
+                warning: HexColor("#ecf39e".to_string()),
+                error: HexColor("#bc4749".to_string()),
+                success: HexColor("#a7c957".to_string()),
+                info: HexColor("#90a955".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#90a955".to_string())),
@@ -818,6 +880,10 @@ impl Theme {
                 search_highlight_fg: HexColor("#1e1e2e".to_string()),
                 shadow_color: Some(HexColor("#11111b".to_string())),
                 dim: HexColor("#6c7086".to_string()),
+                warning: HexColor("#f9e2af".to_string()),
+                error: HexColor("#f38ba8".to_string()),
+                success: HexColor("#a6e3a1".to_string()),
+                info: HexColor("#89b4fa".to_string()),
             },
             syntax: SyntaxTheme {
                 scene_heading: Some(HexColor("#cba6f7".to_string())),
@@ -866,6 +932,31 @@ impl Theme {
                 }
         }
         self.name.to_lowercase().contains("light") || self.name.to_lowercase() == "paper"
+    }
+
+    pub fn warning_style(&self) -> Style {
+        Style::default().fg(Color::from(self.ui.warning.clone()))
+    }
+
+    pub fn error_style(&self) -> Style {
+        Style::default().fg(Color::from(self.ui.error.clone()))
+    }
+
+    pub fn success_style(&self) -> Style {
+        Style::default().fg(Color::from(self.ui.success.clone()))
+    }
+
+    pub fn info_style(&self) -> Style {
+        Style::default().fg(Color::from(self.ui.info.clone()))
+    }
+
+    pub fn secondary_style(&self) -> Style {
+        let base = Style::default().fg(Color::from(self.ui.dim.clone()));
+        if self.is_light() {
+            base
+        } else {
+            base.add_modifier(Modifier::DIM)
+        }
     }
 }
 

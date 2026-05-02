@@ -54,10 +54,10 @@ pub fn draw_index_cards(f: &mut Frame, app: &mut App, area: Rect) {
         // --- DRAW CARD CONTENT ---
         let base_style = Style::default().bg(bg_color);
         
-        let mut border_style = base_style.fg(dim);
+        let mut border_style = theme.secondary_style();
         
         if is_selected {
-            border_style = base_style.fg(accent).add_modifier(Modifier::BOLD);
+            border_style = Style::default().fg(accent).add_modifier(Modifier::BOLD);
         }
         
         let block = Block::default()
@@ -73,7 +73,7 @@ pub fn draw_index_cards(f: &mut Frame, app: &mut App, area: Rect) {
         let header_style = if is_selected {
             Style::default().fg(accent).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(dim)
+            theme.secondary_style()
         };
         
         let header_label = if let Some(ref num) = card.scene_num {
@@ -108,7 +108,7 @@ pub fn draw_index_cards(f: &mut Frame, app: &mut App, area: Rect) {
         };
         
         let heading_style = if is_selected && app.is_card_editing && app.is_heading_editing {
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            theme.warning_style().add_modifier(Modifier::BOLD)
         } else {
             Style::default().fg(normal_fg).add_modifier(Modifier::BOLD)
         };
@@ -132,7 +132,7 @@ pub fn draw_index_cards(f: &mut Frame, app: &mut App, area: Rect) {
         } else if !card.synopsis.is_empty() {
             Style::default().fg(normal_fg).add_modifier(Modifier::ITALIC)
         } else {
-            Style::default().fg(dim).add_modifier(Modifier::ITALIC)
+            theme.secondary_style().add_modifier(Modifier::ITALIC)
         };
         
         card_lines.push(Line::from(Span::styled(syn_content, syn_style)));

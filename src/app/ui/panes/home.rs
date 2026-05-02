@@ -18,7 +18,9 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
         for x in area.left()..area.right() {
             if let Some(cell) = buf.cell_mut((x, y)) {
                 let current_style = cell.style();
-                cell.set_style(current_style.add_modifier(Modifier::DIM));
+                if !theme.is_light() {
+                    cell.set_style(current_style.add_modifier(Modifier::DIM));
+                }
             }
         }
     }
@@ -42,7 +44,7 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
-        .border_style(Style::default().fg(dim))
+        .border_style(theme.secondary_style())
         .style(Style::default().bg(Color::from(theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))).fg(normal_fg))
         .title(Span::styled(" [ Fount Home ] ", title_style));
     
@@ -92,10 +94,10 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
     
     home_lines.push(Line::from(Span::styled(
         quotes[quote_idx],
-        Style::default().fg(dim).add_modifier(Modifier::ITALIC),
+        theme.secondary_style().add_modifier(Modifier::ITALIC),
     )));
     home_lines.push(Line::from(""));
-    home_lines.push(Line::from(Span::styled("─".repeat(40), Style::default().fg(dim))));
+    home_lines.push(Line::from(Span::styled("─".repeat(40), theme.secondary_style())));
     home_lines.push(Line::from(""));
 
     // MAIN MENU
@@ -121,7 +123,7 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
     // RECENT DOCUMENTS
     if !app.recent_files.is_empty() {
         home_lines.push(Line::from(""));
-        home_lines.push(Line::from(Span::styled("[ Recent Files ]", Style::default().fg(dim).add_modifier(Modifier::BOLD))));
+        home_lines.push(Line::from(Span::styled("[ Recent Files ]", theme.secondary_style().add_modifier(Modifier::BOLD))));
         home_lines.push(Line::from(""));
         
         for (i, path) in app.recent_files.iter().take(4).enumerate() {
@@ -134,7 +136,7 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
             let style = if is_sel {
                 Style::default().fg(sel_fg).bg(sel_bg).add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(dim)
+                theme.secondary_style()
             };
             
             home_lines.push(Line::from(Span::styled(text, style)));

@@ -52,7 +52,7 @@ pub fn draw_sprint_stats(f: &mut Frame, app: &mut App) {
         .title(" [ Sprint History | Press E to Export ] ")
         .borders(Borders::ALL)
         .border_type(ratatui::widgets::BorderType::Rounded)
-        .border_style(Style::default().fg(Color::from(theme.ui.dim.clone())))
+        .border_style(theme.secondary_style())
         .style(Style::default().bg(Color::from(theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))).fg(Color::from(theme.ui.foreground.clone().unwrap_or(HexColor("White".to_string())))));
 
     let inner_area = modal_area.inner(ratatui::layout::Margin {
@@ -70,7 +70,7 @@ pub fn draw_sprint_stats(f: &mut Frame, app: &mut App) {
     .style(
         Style::default()
             .bg(mode_bg)
-            .fg(Color::Black)
+            .fg(theme.ui.selection_fg.clone().into())
             .add_modifier(Modifier::BOLD),
     );
 
@@ -139,7 +139,7 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
         ))
         .borders(Borders::ALL)
         .border_type(ratatui::widgets::BorderType::Rounded)
-        .border_style(Style::default().fg(Color::from(app.theme.ui.dim.clone())))
+        .border_style(app.theme.secondary_style())
         .style(Style::default().bg(Color::from(app.theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))).fg(Color::from(app.theme.ui.foreground.clone().unwrap_or(HexColor("White".to_string())))));
     f.render_widget(block, block_area);
 
@@ -161,20 +161,16 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
     // 1. Current Dir
     let dir_str = format!(" Dir: {}", state.current_dir.display());
     let dir_style = if state.naming_mode {
-        Style::default()
-            .fg(Color::Yellow)
-            .add_modifier(Modifier::BOLD)
+        app.theme.warning_style().add_modifier(Modifier::BOLD)
     } else {
-        Style::default()
-            .fg(Color::from(app.theme.ui.dim.clone()))
-            .add_modifier(Modifier::ITALIC)
+        app.theme.secondary_style().add_modifier(Modifier::ITALIC)
     };
     
     f.render_widget(
         Paragraph::new(Line::from(vec![
             Span::styled(dir_str, dir_style),
             if state.naming_mode {
-                Span::styled(" [LOCKED]", Style::default().fg(Color::LightRed).add_modifier(Modifier::BOLD))
+                Span::styled(" [LOCKED]", app.theme.error_style().add_modifier(Modifier::BOLD))
             } else {
                 Span::raw("")
             }
@@ -208,9 +204,9 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             };
 
             let (icon, color) = if is_dir {
-                ("[D] ", Color::LightBlue)
+                ("[D] ", app.theme.ui.navigator_mode_bg.clone().into())
             } else {
-                ("    ", Color::White)
+                ("    ", app.theme.ui.foreground.clone().map(Color::from).unwrap_or(Color::White))
             };
 
             let style = if is_selected {
@@ -253,14 +249,14 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
         let hints = if state.naming_mode {
             Line::from(vec![
                 Span::styled(" Filename: ", Style::default().fg(Color::from(app.theme.ui.normal_mode_bg.clone())).add_modifier(Modifier::BOLD)),
-                Span::styled(" [Enter] ", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-                Span::styled("to SAVE to locked folder", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
+                Span::styled(" [Enter] ", app.theme.success_style().add_modifier(Modifier::BOLD)),
+                Span::styled("to SAVE to locked folder", app.theme.secondary_style()),
             ])
         } else {
             Line::from(vec![
-                Span::styled(" Filename: ", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
+                Span::styled(" Filename: ", app.theme.secondary_style()),
                 Span::styled(" [Tab] ", Style::default().fg(Color::from(app.theme.ui.normal_mode_bg.clone())).add_modifier(Modifier::BOLD)),
-                Span::styled("to LOCK folder & type name", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
+                Span::styled("to LOCK folder & type name", app.theme.secondary_style()),
             ])
         };
         f.render_widget(Paragraph::new(hints), layout[2]);
@@ -287,10 +283,10 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
         let confirm_area = centered_rect(60, 30, area);
         f.render_widget(Clear, confirm_area);
         let confirm_block = Block::default()
-            .title(Span::styled(" [ Confirm Overwrite ] ", Style::default().fg(Color::LightRed).add_modifier(Modifier::BOLD)))
+            .title(Span::styled(" [ Confirm Overwrite ] ", app.theme.error_style().add_modifier(Modifier::BOLD)))
             .borders(Borders::ALL)
             .border_type(ratatui::widgets::BorderType::Double)
-            .border_style(Style::default().fg(Color::LightRed))
+            .border_style(app.theme.error_style())
             .style(Style::default().bg(Color::from(app.theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))));
         
         let file_name = state.target_path.as_ref().and_then(|p| p.file_name()).map(|n| n.to_string_lossy()).unwrap_or_default();
@@ -299,7 +295,7 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             Line::from(""),
             Line::from(vec![
                 Span::raw(" File "),
-                Span::styled(file_name, Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled(file_name, app.theme.warning_style().add_modifier(Modifier::BOLD)),
                 Span::raw(" already exists!"),
             ]),
             Line::from(""),
@@ -307,22 +303,22 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             Line::from(""),
             Line::from(vec![
                 if state.overwrite_confirmed {
-                    Span::styled("  > YES  ", Style::default().bg(Color::Green).fg(Color::Black).add_modifier(Modifier::BOLD))
+                    Style::default().bg(app.theme.ui.success.clone().into()).fg(app.theme.ui.selection_fg.clone().into()).add_modifier(Modifier::BOLD).patch(Span::styled("  > YES  ", Style::default())).style
                 } else {
-                    Span::styled("    Yes  ", Style::default().fg(Color::Green))
+                    app.theme.success_style().patch(Span::styled("    Yes  ", Style::default())).style
                 },
                 Span::raw("      "),
                 if !state.overwrite_confirmed {
-                    Span::styled("  > NO   ", Style::default().bg(Color::Red).fg(Color::Black).add_modifier(Modifier::BOLD))
+                    Style::default().bg(app.theme.ui.error.clone().into()).fg(app.theme.ui.selection_fg.clone().into()).add_modifier(Modifier::BOLD).patch(Span::styled("  > NO   ", Style::default())).style
                 } else {
-                    Span::styled("    No   ", Style::default().fg(Color::Red))
+                    app.theme.error_style().patch(Span::styled("    No   ", Style::default())).style
                 },
             ]),
             Line::from(""),
             Line::from(vec![
-                Span::styled(" [<-/->] ", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
+                Span::styled(" [<-/->] ", app.theme.secondary_style()),
                 Span::raw("Switch  "),
-                Span::styled(" [Enter] ", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
+                Span::styled(" [Enter] ", app.theme.secondary_style()),
                 Span::raw("Confirm"),
             ]),
         ];
@@ -344,7 +340,7 @@ pub fn draw_snapshots(f: &mut Frame, app: &mut App) {
         .title(" [ Snapshots | Enter: Replace | O: Open in New ] ")
         .borders(Borders::ALL)
         .border_type(ratatui::widgets::BorderType::Rounded)
-        .border_style(Style::default().fg(Color::from(theme.ui.dim.clone())))
+        .border_style(theme.secondary_style())
         .style(Style::default().bg(Color::from(theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))).fg(Color::from(theme.ui.foreground.clone().unwrap_or(HexColor("White".to_string())))));
 
     let header = Row::new(vec![
@@ -355,7 +351,7 @@ pub fn draw_snapshots(f: &mut Frame, app: &mut App) {
     .style(
         Style::default()
             .bg(mode_bg)
-            .fg(Color::Black)
+            .fg(theme.ui.selection_fg.clone().into())
             .add_modifier(Modifier::BOLD),
     );
 
@@ -404,7 +400,7 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
         .title(" [ Export ] ")
         .borders(Borders::ALL)
         .border_type(ratatui::widgets::BorderType::Rounded)
-        .border_style(Style::default().fg(dim_color))
+        .border_style(theme.secondary_style())
         .style(Style::default().bg(Color::from(theme.ui.background.clone().unwrap_or(HexColor("Reset".to_string())))));
     f.render_widget(block, modal_area);
 
@@ -437,7 +433,7 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
                         .add_modifier(Modifier::BOLD),
                 )
             } else {
-                Span::styled(t.to_string(), Style::default().fg(dim_color))
+                Span::styled(t.to_string(), theme.secondary_style())
             }
         })
         .collect();
@@ -449,7 +445,7 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
             tab_line.push(Span::styled("  ", Style::default()));
         }
     }
-    f.render_widget(Paragraph::new(Line::from(tab_line)).alignment(ratatui::layout::Alignment::Center).block(Block::default().borders(Borders::BOTTOM).border_style(Style::default().fg(dim_color))), layout[0]);
+    f.render_widget(Paragraph::new(Line::from(tab_line)).alignment(ratatui::layout::Alignment::Center).block(Block::default().borders(Borders::BOTTOM).border_style(theme.secondary_style())), layout[0]);
 
     // 2. Options
     let mut options = Vec::new();
@@ -502,9 +498,9 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
         
         options.push(ListItem::new(Line::raw("")));
         let export_style = if app.selected_export_option == 8 {
-            Style::default().bg(Color::Green).fg(Color::Black).add_modifier(Modifier::BOLD)
+            Style::default().bg(theme.ui.success.clone().into()).fg(theme.ui.selection_fg.clone().into()).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(Color::Green)
+            theme.success_style()
         };
         options.push(ListItem::new(Line::from(vec![
             Span::styled(if app.selected_export_option == 8 { " > " } else { "   " }, export_style),
@@ -526,9 +522,9 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
         
         options.push(ListItem::new(Line::raw("")));
         let export_style = if app.selected_export_option == 1 {
-            Style::default().bg(Color::Green).fg(Color::Black).add_modifier(Modifier::BOLD)
+            Style::default().bg(theme.ui.success.clone().into()).fg(theme.ui.selection_fg.clone().into()).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(Color::Green)
+            theme.success_style()
         };
         options.push(ListItem::new(Line::from(vec![
             Span::styled(if app.selected_export_option == 1 { " > " } else { "   " }, export_style),
@@ -541,11 +537,11 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
     // 3. Footer
     let footer_text = Line::from(vec![
         Span::styled(" [<-/->] ", Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)),
-        Span::styled("Switch Tabs  ", Style::default().fg(dim_color)),
+        Span::styled("Switch Tabs  ", theme.secondary_style()),
         Span::styled(" [^/v] ", Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)),
-        Span::styled("Select  ", Style::default().fg(dim_color)),
+        Span::styled("Select  ", theme.secondary_style()),
         Span::styled(" [Tab/Enter] ", Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)),
-        Span::styled("Toggle/Export", Style::default().fg(dim_color)),
+        Span::styled("Toggle/Export", theme.secondary_style()),
     ]);
     f.render_widget(Paragraph::new(footer_text).alignment(ratatui::layout::Alignment::Center), layout[2]);
 }
