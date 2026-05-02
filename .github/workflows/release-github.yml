@@ -81,6 +81,6 @@ jobs:
           bin: fount
           target: ${{ matrix.target }}
           archive: ${{ matrix.name }}
-          include: LICENSE,PORTABLE.txt,assets/linux/fount.desktop,assets/icons/FountCLI_Logo.png
+          include: LICENSE,PORTABLE.txt,assets/linux/fount.desktop,assets/icons/FountTUI_Logo.png
           tar: ${{ matrix.archive }}
           token: ${{ secrets.GITHUB_TOKEN }}

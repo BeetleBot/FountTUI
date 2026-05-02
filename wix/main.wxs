@@ -113,9 +113,9 @@
         <!-- ============================================ -->
         <Icon Id='fount.ico' SourceFile='assets\icons\fount.ico' />
         <Property Id='ARPPRODUCTICON' Value='fount.ico' />
-        <Property Id='ARPHELPLINK' Value='https://github.com/BeetleBot/FountCLI' />
-        <Property Id='ARPURLINFOABOUT' Value='https://github.com/BeetleBot/FountCLI' />
-        <Property Id='ARPURLUPDATEINFO' Value='https://github.com/BeetleBot/FountCLI/releases' />
+        <Property Id='ARPHELPLINK' Value='https://github.com/BeetleBot/FountTUI' />
+        <Property Id='ARPURLINFOABOUT' Value='https://github.com/BeetleBot/FountTUI' />
+        <Property Id='ARPURLUPDATEINFO' Value='https://github.com/BeetleBot/FountTUI/releases' />
         <Property Id='ARPNOREPAIR' Value='yes' Secure='yes' />
 
         <!-- ============================================ -->

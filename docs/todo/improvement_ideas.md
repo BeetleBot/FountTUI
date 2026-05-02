@@ -1,4 +1,4 @@
-# FountCLI Improvement Ideas
+# FountTUI Improvement Ideas
 
 ## Code Health
 

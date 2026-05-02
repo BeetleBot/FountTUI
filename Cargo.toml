@@ -7,8 +7,8 @@ authors = [
 edition = "2024"
 description = "A terminal-based Fountain screenplay editor"
 license = "GPL-3.0-only"
-homepage = "https://github.com/BeetleBot/FountCLI"
-repository = "https://github.com/BeetleBot/FountCLI"
+homepage = "https://github.com/BeetleBot/FountTUI"
+repository = "https://github.com/BeetleBot/FountTUI"
 
 [package.metadata]
 readme = "README.md"
@@ -70,7 +70,7 @@ assets = [
     ["target/release/fount", "/usr/bin/fount", "755"],
     ["README.md", "/usr/share/doc/fount/README.md", "644"],
     ["assets/linux/fount.desktop", "/usr/share/applications/fount.desktop", "644"],
-    ["assets/icons/FountCLI_Logo.png", "/usr/share/icons/hicolor/256x256/apps/fount.png", "644"],
+    ["assets/icons/FountTUI_Logo.png", "/usr/share/icons/hicolor/256x256/apps/fount.png", "644"],
 ]
 
 [package.metadata.generate-rpm]
@@ -80,5 +80,5 @@ license = "GPL-3.0-only"
 assets = [
     { source = "target/release/fount", dest = "/usr/bin/fount", mode = "755" },
     { source = "assets/linux/fount.desktop", dest = "/usr/share/applications/fount.desktop", mode = "644" },
-    { source = "assets/icons/FountCLI_Logo.png", dest = "/usr/share/icons/hicolor/256x256/apps/fount.png", mode = "644" },
+    { source = "assets/icons/FountTUI_Logo.png", dest = "/usr/share/icons/hicolor/256x256/apps/fount.png", mode = "644" },
 ]

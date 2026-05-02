@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icons/FountCLI_Banner.png" alt="Fount Banner" width="100%">
+  <img src="assets/icons/FountTUI_Banner.png" alt="Fount Banner" width="100%">
 </p>
 
 # Fount
@@ -14,8 +14,8 @@
   ```bash
   yay -S fount-bin
   ```
-- **Debian / Ubuntu**: Download the latest `.deb` package from the [Releases](https://github.com/BeetleBot/FountCLI/releases) page.
-- **Fedora / RHEL**: Download the latest `.rpm` package from the [Releases](https://github.com/BeetleBot/FountCLI/releases) page.
+- **Debian / Ubuntu**: Download the latest `.deb` package from the [Releases](https://github.com/BeetleBot/FountTUI/releases) page.
+- **Fedora / RHEL**: Download the latest `.rpm` package from the [Releases](https://github.com/BeetleBot/FountTUI/releases) page.
 
 ### Any Platform (via Cargo)
 ```bash
@@ -24,7 +24,7 @@ cargo install fount
 
 ### Windows
 - **MSI Installer (Primary Method for Casual Users)**:
-  Download the latest `.msi` package from the [Releases](https://github.com/BeetleBot/FountCLI/releases) page.
+  Download the latest `.msi` package from the [Releases](https://github.com/BeetleBot/FountTUI/releases) page.
   > [!IMPORTANT]
   > **Windows SmartScreen** will block the installation because the executable is not digitally signed. You **must** turn off SmartScreen completely in Windows Security settings before running the installer.
 

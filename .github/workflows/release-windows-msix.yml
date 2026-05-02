@@ -1,0 +1,79 @@
+name: Windows MSIX
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-msix:
+    name: Windows Store Package (.msix)
+    runs-on: windows-latest
+    env:
+      RUSTFLAGS: -C target-feature=+crt-static
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Extract version
+        id: version
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}" -replace '^v',''
+          echo "SEMVER=$ver" >> $env:GITHUB_OUTPUT
+          echo "MSIX_VER=$ver.0" >> $env:GITHUB_OUTPUT
+
+      - name: Stamp version into manifest
+        shell: pwsh
+        run: |
+          $manifest = Get-Content packaging/msix/AppxManifest.xml -Raw
+          $manifest = $manifest -replace 'Version="[^"]*"', "Version=`"${{ steps.version.outputs.MSIX_VER }}`""
+          Set-Content packaging/msix/AppxManifest.xml $manifest
+
+      - name: Prepare package layout
+        shell: pwsh
+        run: |
+          $layout = "target/msix/layout"
+          New-Item -ItemType Directory -Path "$layout/Assets" -Force | Out-Null
+
+          Copy-Item target/release/fount.exe $layout/
+          Copy-Item packaging/msix/AppxManifest.xml $layout/
+
+          $sizes = @{
+            "StoreLogo" = "50x50"
+            "Square44x44Logo" = "44x44"
+            "Square150x150Logo" = "150x150"
+            "Wide310x150Logo" = "310x150"
+            "LargeSquareLogo" = "310x310"
+          }
+
+          foreach ($entry in $sizes.GetEnumerator()) {
+            magick assets/icons/FountTUI_Logo.png `
+              -resize $entry.Value `
+              -gravity center `
+              -background "#1a1b26" `
+              -extent $entry.Value `
+              "$layout/Assets/$($entry.Key).png"
+          }
+
+      - name: Create MSIX
+        shell: pwsh
+        run: |
+          $sdkDir = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\10.*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          $makeappx = Join-Path $sdkDir.FullName "x64\MakeAppx.exe"
+          & $makeappx pack /d target/msix/layout /p target/msix/Fount-${{ steps.version.outputs.SEMVER }}.msix /o
+
+      - name: Upload MSIX
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: target/msix/Fount-${{ steps.version.outputs.SEMVER }}.msix
+          token: ${{ secrets.GITHUB_TOKEN }}

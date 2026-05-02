@@ -1,10 +1,10 @@
 # Plugin System Architecture
 
-This document outlines the strategy for introducing a scripting engine to FountCLI. The primary goal is to allow users to extend the editor's functionality without requiring modifications to the core Rust codebase.
+This document outlines the strategy for introducing a scripting engine to FountTUI. The primary goal is to allow users to extend the editor's functionality without requiring modifications to the core Rust codebase.
 
 ## Objective
 
-We want to transform FountCLI into a platform for screenwriters who need custom tools—be it specialized export formats, advanced scene analysis, or automated workflow triggers. By integrating a scripting language, we can provide a safe sandbox for these extensions.
+We want to transform FountTUI into a platform for screenwriters who need custom tools—be it specialized export formats, advanced scene analysis, or automated workflow triggers. By integrating a scripting language, we can provide a safe sandbox for these extensions.
 
 ## Language Selection: Lua 5.4
 
