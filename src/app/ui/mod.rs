@@ -500,7 +500,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                             .add_modifier(Modifier::BOLD)
                     };
 
-                    let prefix = if is_selected { " › " } else { "   " };
+                    let prefix = if is_selected { " > " } else { "   " };
                     lines.push(Line::from(vec![
                         Span::styled(prefix, style),
                         Span::styled(item.label.to_uppercase(), style),
@@ -539,7 +539,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                         Style::default().fg(dim_color).add_modifier(Modifier::DIM)
                     };
 
-                    let prefix = if is_selected { " › " } else { "   " };
+                    let prefix = if is_selected { " > " } else { "   " };
 
                     // Determine if this is the last scene in the section
                     let is_last_in_section =
@@ -715,7 +715,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                     Style::default().fg(dim_color).add_modifier(Modifier::DIM)
                 };
 
-                let prefix = if is_selected { " › " } else { "   " };
+                let prefix = if is_selected { " > " } else { "   " };
 
                 match item {
                     EnsembleItem::CharacterHeader(char_idx) => {
@@ -814,40 +814,25 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 };
 
                 let (icon, icon_style) = if label == "Theme" {
-                    if app.config.use_nerd_fonts {
-                        (
-                            "󰔎 ",
-                            Style::default().fg(Color::from(theme.ui.normal_mode_bg.clone())),
-                        )
-                    } else {
-                        (
-                            "• ",
-                            Style::default().fg(Color::from(theme.ui.normal_mode_bg.clone())),
-                        )
-                    }
+                    (
+                        "[T] ",
+                        Style::default().fg(Color::from(theme.ui.normal_mode_bg.clone())),
+                    )
                 } else if *value {
-                    if app.config.use_nerd_fonts {
-                        ("󰄬 ", Style::default().fg(Color::Green))
-                    } else {
-                        ("✓ ", Style::default().fg(Color::Green))
-                    }
+                    ("[X] ", Style::default().fg(Color::Green))
                 } else {
-                    if app.config.use_nerd_fonts {
-                        ("󰄱 ", Style::default().fg(Color::DarkGray))
-                    } else {
-                        ("[ ] ", Style::default().fg(Color::DarkGray))
-                    }
+                    ("[ ] ", Style::default().fg(Color::DarkGray))
                 };
 
                 let line = if label == "Theme" {
                     Line::from(vec![
-                        Span::styled(if is_selected { " › " } else { "   " }, style),
+                        Span::styled(if is_selected { " > " } else { "   " }, style),
                         Span::styled(icon, if is_selected { style } else { icon_style }),
                         Span::styled(format!("{}: {}", label, theme_name), style),
                     ])
                 } else {
                     Line::from(vec![
-                        Span::styled(if is_selected { " › " } else { "   " }, style),
+                        Span::styled(if is_selected { " > " } else { "   " }, style),
                         Span::styled(icon, if is_selected { style } else { icon_style }),
                         Span::styled(label, style),
                     ])
@@ -1083,7 +1068,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             .unwrap_or_else(|| "New Script".to_string());
         let dirty_str = if app.dirty { "*" } else { "" };
         let lock_str = if app.config.production_lock {
-            " 🔒"
+            " [L]"
         } else {
             ""
         };
@@ -1097,7 +1082,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             let elapsed = time.elapsed().as_secs_f32();
             if elapsed < 2.0 {
                 spans.push(Span::styled(
-                    "  ✓ Saved",
+                    "  [X] Saved",
                     Style::default()
                         .fg(Color::Green)
                         .add_modifier(Modifier::BOLD),
@@ -1164,7 +1149,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                         spans.push(Span::styled(count_msg, Style::default().fg(dim_color)));
                     }
                     spans.push(Span::styled(
-                        " [Alt+↑/↓] Navigate",
+                        " [Alt+^/v] Navigate",
                         Style::default().fg(dim_color),
                     ));
                 }
@@ -1194,7 +1179,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
             if app.show_search_highlight && !app.search_matches.is_empty() {
                 spans.push(Span::styled(
-                    " [Alt+↑/↓] Nav [r] Replace [R] Replace All",
+                    " [Alt+^/v] Nav [r] Replace [R] Replace All",
                     Style::default().fg(dim_color),
                 ));
             }
@@ -1231,8 +1216,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
             let sprint_msg = format!(
                 " | Sprint [{}{}] {:02}:{:02} +{}w",
-                "█".repeat(filled),
-                "░".repeat(empty),
+                "#".repeat(filled),
+                ".".repeat(empty),
                 rem_min,
                 rem_sec,
                 words_written
@@ -1309,7 +1294,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
                 .unwrap_or_else(|| "New Script".to_string());
             let dirty_str = if app.dirty { "*" } else { "" };
             let lock_str = if app.config.production_lock {
-                " 🔒"
+                " [L]"
             } else {
                 ""
             };

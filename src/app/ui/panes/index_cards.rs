@@ -101,7 +101,7 @@ pub fn draw_index_cards(f: &mut Frame, app: &mut App, area: Rect) {
         
         // Heading
         let heading_content = if is_selected && app.is_card_editing && app.is_heading_editing {
-            format!("{}█", app.card_input_buffer)
+            format!("{}|", app.card_input_buffer)
         } else {
             let h = card.heading.trim_start_matches('.').to_string();
             if h.is_empty() { "[No Heading]".to_string() } else { h }
@@ -118,7 +118,7 @@ pub fn draw_index_cards(f: &mut Frame, app: &mut App, area: Rect) {
         
         // Synopsis
         let syn_content = if is_selected && app.is_card_editing && !app.is_heading_editing {
-            format!("{}█", app.card_input_buffer)
+            format!("{}|", app.card_input_buffer)
         } else if !card.synopsis.is_empty() {
             card.synopsis.clone()
         } else if !card.preview.is_empty() {

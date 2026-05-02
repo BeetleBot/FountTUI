@@ -108,7 +108,7 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
 
     for (i, label) in menu_options.iter().enumerate() {
         let is_sel = i == app.home_selected;
-        let text = if is_sel { format!(" › {} ", label) } else { format!("   {}   ", label) };
+        let text = if is_sel { format!(" > {} ", label) } else { format!("   {}   ", label) };
         let style = if is_sel {
             Style::default().fg(sel_fg).bg(sel_bg).add_modifier(Modifier::BOLD)
         } else {
@@ -129,7 +129,7 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
             let is_sel = idx == app.home_selected;
             
             let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "Unknown".to_string());
-            let text = if is_sel { format!(" › {} ", name) } else { format!("   {}   ", name) };
+            let text = if is_sel { format!(" > {} ", name) } else { format!("   {}   ", name) };
             
             let style = if is_sel {
                 Style::default().fg(sel_fg).bg(sel_bg).add_modifier(Modifier::BOLD)

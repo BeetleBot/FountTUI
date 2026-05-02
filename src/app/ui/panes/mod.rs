@@ -208,17 +208,9 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             };
 
             let (icon, color) = if is_dir {
-                if app.config.use_nerd_fonts {
-                    (" ", Color::LightBlue)
-                } else {
-                    ("/ ", Color::LightBlue)
-                }
+                ("[D] ", Color::LightBlue)
             } else {
-                if app.config.use_nerd_fonts {
-                    ("󰈙 ", Color::White)
-                } else {
-                    ("  ", Color::White)
-                }
+                ("    ", Color::White)
             };
 
             let style = if is_selected {
@@ -228,7 +220,7 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             };
 
             ListItem::new(Line::from(vec![
-                Span::styled(if is_selected { " › " } else { "   " }, style),
+                Span::styled(if is_selected { " > " } else { "   " }, style),
                 Span::styled(icon, style),
                 Span::styled(name, style),
             ]))
@@ -244,8 +236,8 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             Style::default().fg(Color::from(app.theme.ui.normal_mode_bg.clone()))
         };
         display_items.push(ListItem::new(Line::from(vec![
-            Span::styled(if is_selected { " › " } else { "   " }, style),
-            Span::styled(if app.config.use_nerd_fonts { "󰒓 " } else { "* " }, style),
+            Span::styled(if is_selected { " > " } else { "   " }, style),
+            Span::styled("[!] ", style),
             Span::styled(
                 format!("Confirm: {}", state.filename_input),
                 style.add_modifier(Modifier::BOLD),
@@ -315,20 +307,20 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             Line::from(""),
             Line::from(vec![
                 if state.overwrite_confirmed {
-                    Span::styled("  ▶ YES  ", Style::default().bg(Color::Green).fg(Color::Black).add_modifier(Modifier::BOLD))
+                    Span::styled("  > YES  ", Style::default().bg(Color::Green).fg(Color::Black).add_modifier(Modifier::BOLD))
                 } else {
                     Span::styled("    Yes  ", Style::default().fg(Color::Green))
                 },
                 Span::raw("      "),
                 if !state.overwrite_confirmed {
-                    Span::styled("  ▶ NO   ", Style::default().bg(Color::Red).fg(Color::Black).add_modifier(Modifier::BOLD))
+                    Span::styled("  > NO   ", Style::default().bg(Color::Red).fg(Color::Black).add_modifier(Modifier::BOLD))
                 } else {
                     Span::styled("    No   ", Style::default().fg(Color::Red))
                 },
             ]),
             Line::from(""),
             Line::from(vec![
-                Span::styled(" [←/→] ", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
+                Span::styled(" [<-/->] ", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
                 Span::raw("Switch  "),
                 Span::styled(" [Enter] ", Style::default().fg(Color::from(app.theme.ui.dim.clone()))),
                 Span::raw("Confirm"),
@@ -479,7 +471,7 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
         };
 
         ListItem::new(Line::from(vec![
-            Span::styled(if is_selected { " › " } else { "   " }, style),
+            Span::styled(if is_selected { " > " } else { "   " }, style),
             Span::styled(format!("{:<18}", label), style),
             Span::styled(value.to_string(), val_style),
         ]))
@@ -515,7 +507,7 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
             Style::default().fg(Color::Green)
         };
         options.push(ListItem::new(Line::from(vec![
-            Span::styled(if app.selected_export_option == 8 { " › " } else { "   " }, export_style),
+            Span::styled(if app.selected_export_option == 8 { " > " } else { "   " }, export_style),
             Span::styled(" [ EXPORT SCREENPLAY ] ", export_style),
         ])));
     } else {
@@ -539,7 +531,7 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
             Style::default().fg(Color::Green)
         };
         options.push(ListItem::new(Line::from(vec![
-            Span::styled(if app.selected_export_option == 1 { " › " } else { "   " }, export_style),
+            Span::styled(if app.selected_export_option == 1 { " > " } else { "   " }, export_style),
             Span::styled(" [ EXPORT REPORT ] ", export_style),
         ])));
     }
@@ -548,9 +540,9 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
 
     // 3. Footer
     let footer_text = Line::from(vec![
-        Span::styled(" [←/→] ", Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)),
+        Span::styled(" [<-/->] ", Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)),
         Span::styled("Switch Tabs  ", Style::default().fg(dim_color)),
-        Span::styled(" [↑/↓] ", Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)),
+        Span::styled(" [^/v] ", Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)),
         Span::styled("Select  ", Style::default().fg(dim_color)),
         Span::styled(" [Tab/Enter] ", Style::default().fg(mode_bg).add_modifier(Modifier::BOLD)),
         Span::styled("Toggle/Export", Style::default().fg(dim_color)),

@@ -104,8 +104,8 @@ unset force_ansi
 # Unicode support automatically.
 unset force_ascii
 
-# Enable Nerd Font icons (e.g., modern symbols for checkmarks).
-# Default is true on most systems, but can be unset for standard Unicode.
+# Enable terminal-compatible icons and symbols.
+# (Note: These are now standard characters that work on all systems).
 set use_nerd_fonts
 
 ## PDF Export

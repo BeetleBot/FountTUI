@@ -115,9 +115,9 @@ pub fn draw_xray(f: &mut Frame, app: &mut App) {
     // Footer
     f.render_widget(
         Paragraph::new(Line::from(vec![
-            Span::styled(" ←/→ ", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
+            Span::styled(" <-/-> ", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
             Span::styled("Switch Tab", Style::default().fg(dim)),
-            Span::styled("  ↑/↓ ", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
+            Span::styled("  ^/v ", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
             Span::styled("Scroll", Style::default().fg(dim)),
             Span::styled("  Esc ", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
             Span::styled("Close", Style::default().fg(dim)),
@@ -170,7 +170,7 @@ fn draw_dialogue_tab(
 
             let filled = ((ch.percentage / 100.0) * bar_max_w as f32).round() as usize;
             let empty = bar_max_w.saturating_sub(filled);
-            let bar = format!("{}{}", "█".repeat(filled), "░".repeat(empty));
+            let bar = format!("{}{}", "#".repeat(filled), ".".repeat(empty));
 
             let pct_str = format!("{:5.1}%", ch.percentage);
             let line_str = format!("{:>4}L", ch.dialogue_lines);
@@ -218,9 +218,9 @@ fn draw_pacing_tab(
         // Legend
         lines.push(Line::from(vec![
             Span::styled("  ", Style::default()),
-            Span::styled("▓", Style::default().fg(accent)),
+            Span::styled("#", Style::default().fg(accent)),
             Span::styled(" = Action   ", Style::default().fg(dim)),
-            Span::styled("░", Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
+            Span::styled(".", Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
             Span::styled(" = Dialogue", Style::default().fg(dim)),
         ]));
         lines.push(Line::from(""));
@@ -245,8 +245,8 @@ fn draw_pacing_tab(
 
             lines.push(Line::from(vec![
                 Span::styled(format!("  pg{:<3} ", block.page), Style::default().fg(dim)),
-                Span::styled("▓".repeat(action_cells), Style::default().fg(accent)),
-                Span::styled("░".repeat(dialogue_cells), Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
+                Span::styled("#".repeat(action_cells), Style::default().fg(accent)),
+                Span::styled(".".repeat(dialogue_cells), Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
                 Span::styled(format!(" {}", pct_str), Style::default().fg(dim)),
             ]));
         }
@@ -296,7 +296,7 @@ fn draw_scenes_tab(
                 )
             } else {
                 Span::styled(
-                    "  ·  All scenes within limit ✓",
+                    "  *  All scenes within limit [X]",
                     Style::default().fg(Color::Green),
                 )
             },
@@ -319,7 +319,7 @@ fn draw_scenes_tab(
         for scene in &data.scenes {
             let num_str = scene.scene_num.as_deref().unwrap_or("-").to_string();
             let label = if scene.label.len() > max_label_w {
-                format!("{:.width$}…", &scene.label[..max_label_w.saturating_sub(1)], width = max_label_w - 1)
+                format!("{:.width$}...", &scene.label[..max_label_w.saturating_sub(3)], width = max_label_w - 3)
             } else {
                 format!("{:<width$}", scene.label, width = max_label_w)
             };
@@ -327,9 +327,9 @@ fn draw_scenes_tab(
             let pages_str = format!("{:.1}", scene.page_count);
 
             let (status, status_style) = if scene.is_over_limit {
-                ("⚠ TOO LONG", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+                ("[!] TOO LONG", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
             } else {
-                ("✓", Style::default().fg(Color::Green))
+                ("[X]", Style::default().fg(Color::Green))
             };
 
             let line_style = if scene.is_over_limit {
