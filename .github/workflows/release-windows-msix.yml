@@ -35,9 +35,9 @@ jobs:
       - name: Stamp version into manifest
         shell: pwsh
         run: |
-          $manifest = Get-Content packaging/msix/AppxManifest.xml -Raw
-          $manifest = $manifest -replace 'Version="[^"]*"', "Version=`"${{ steps.version.outputs.MSIX_VER }}`""
-          Set-Content packaging/msix/AppxManifest.xml $manifest
+          $xml = [xml](Get-Content packaging/msix/AppxManifest.xml)
+          $xml.Package.Identity.Version = "${{ steps.version.outputs.MSIX_VER }}"
+          $xml.Save("packaging/msix/AppxManifest.xml")
 
       - name: Prepare package layout
         shell: pwsh
