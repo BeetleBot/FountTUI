@@ -7,14 +7,14 @@
   IgnorableNamespaces="uap rescap desktop">
 
   <Identity
-    Name="REPLACE_WITH_STORE_IDENTITY_NAME"
-    Publisher="REPLACE_WITH_STORE_PUBLISHER_CN"
+    Name="WriteUpFilmServiceCompany.Fount"
+    Publisher="CN=A5C810D1-3C33-4DED-95DA-33D6BC28A3B0"
     Version="0.9.2.0"
     ProcessorArchitecture="x64" />
 
   <Properties>
     <DisplayName>Fount</DisplayName>
-    <PublisherDisplayName>BeetleBot</PublisherDisplayName>
+    <PublisherDisplayName>Write Up Film Service Company</PublisherDisplayName>
     <Description>A terminal-based Fountain screenplay editor</Description>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
