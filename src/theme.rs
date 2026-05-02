@@ -1,4 +1,4 @@
-use ratatui::style::Color;
+use ratatui::style::{Color, Style, Modifier};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;

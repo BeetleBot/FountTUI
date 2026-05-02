@@ -24,6 +24,7 @@ use unicode_width::UnicodeWidthStr;
 pub fn draw(f: &mut Frame, app: &mut App) {
     let area = f.area();
     let theme = &app.theme;
+    let dim_color = Color::from(theme.ui.dim.clone());
 
     let mut base_ui_style = Style::default();
     if let Some(bg) = &theme.ui.background {
@@ -255,14 +256,14 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         }
     }
 
-    let mut dark_gray_style = theme.secondary_style();
+    let dark_gray_style = theme.secondary_style();
 
     let mut sug_style = theme.secondary_style();
     if !app.config.no_formatting {
         sug_style = sug_style.add_modifier(Modifier::BOLD);
     }
 
-    let mut page_num_style = theme.secondary_style();
+    let page_num_style = theme.secondary_style();
 
     let current_view_mode = if app.mode == AppMode::Command || app.mode == AppMode::Search {
         app.previous_mode
@@ -450,7 +451,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         let selected_bg = Color::from(theme.ui.selection_bg.clone());
         let selected_fg = Color::from(theme.ui.selection_fg.clone());
         let dim_color = Color::from(theme.ui.dim.clone());
-        let border_color = dim_color;
+        let _border_color = dim_color;
         let header_color = theme
             .sidebar
             .section_header
@@ -640,7 +641,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     }
 
     if app.mode == AppMode::CharacterNavigator {
-        let border_color = theme
+        let _border_color = theme
             .sidebar
             .border
             .clone()
@@ -1309,7 +1310,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     // -- Screen Blink Effect --
     if app.flash_timer.is_some() {
         f.render_widget(
-            Block::default().style(Style::default().bg(theme.ui.foreground.clone().into())),
+            Block::default().style(Style::default().bg(theme.ui.foreground.clone().unwrap_or(HexColor("White".to_string())).into())),
             area,
         );
     }

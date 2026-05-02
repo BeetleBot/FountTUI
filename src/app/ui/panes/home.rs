@@ -34,7 +34,7 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
     f.render_widget(Clear, modal_area);
 
     let accent = Color::from(theme.ui.normal_mode_bg.clone());
-    let dim = Color::from(theme.ui.dim.clone());
+    let _dim = Color::from(theme.ui.dim.clone());
     let sel_bg = Color::from(theme.ui.selection_bg.clone());
     let sel_fg = Color::from(theme.ui.selection_fg.clone());
     let normal_fg = theme.ui.foreground.clone().map(Color::from).unwrap_or(Color::White);

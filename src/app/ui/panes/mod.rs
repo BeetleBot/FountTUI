@@ -303,15 +303,15 @@ pub fn draw_file_picker(f: &mut Frame, app: &mut App, area: Rect) {
             Line::from(""),
             Line::from(vec![
                 if state.overwrite_confirmed {
-                    Style::default().bg(app.theme.ui.success.clone().into()).fg(app.theme.ui.selection_fg.clone().into()).add_modifier(Modifier::BOLD).patch(Span::styled("  > YES  ", Style::default())).style
+                    Span::styled("  > YES  ", Style::default().bg(Color::from(app.theme.ui.success.clone())).fg(Color::from(app.theme.ui.selection_fg.clone())).add_modifier(Modifier::BOLD))
                 } else {
-                    app.theme.success_style().patch(Span::styled("    Yes  ", Style::default())).style
+                    Span::styled("    Yes  ", app.theme.success_style())
                 },
                 Span::raw("      "),
                 if !state.overwrite_confirmed {
-                    Style::default().bg(app.theme.ui.error.clone().into()).fg(app.theme.ui.selection_fg.clone().into()).add_modifier(Modifier::BOLD).patch(Span::styled("  > NO   ", Style::default())).style
+                    Span::styled("  > NO   ", Style::default().bg(Color::from(app.theme.ui.error.clone())).fg(Color::from(app.theme.ui.selection_fg.clone())).add_modifier(Modifier::BOLD))
                 } else {
-                    app.theme.error_style().patch(Span::styled("    No   ", Style::default())).style
+                    Span::styled("    No   ", app.theme.error_style())
                 },
             ]),
             Line::from(""),
@@ -391,7 +391,7 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
     let area = f.area();
     let theme = &app.theme;
     let mode_bg = Color::from(theme.ui.normal_mode_bg.clone());
-    let dim_color = Color::from(theme.ui.dim.clone());
+    let _dim_color = Color::from(theme.ui.dim.clone());
 
     let modal_area = centered_rect(60, 60, area);
     f.render_widget(Clear, modal_area);

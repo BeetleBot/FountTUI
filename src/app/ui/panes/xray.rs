@@ -134,9 +134,9 @@ fn draw_dialogue_tab(
     data: &crate::app::XRayData,
     scroll: usize,
     accent: Color,
-    dim: Color,
+    _dim: Color,
     normal_fg: Color,
-    _theme: &crate::theme::Theme,
+    theme: &crate::theme::Theme,
 ) {
     let mut lines = Vec::new();
 
@@ -199,7 +199,7 @@ fn draw_pacing_tab(
     data: &crate::app::XRayData,
     scroll: usize,
     accent: Color,
-    dim: Color,
+    _dim: Color,
     _normal_fg: Color,
     theme: &crate::theme::Theme,
 ) {
@@ -269,7 +269,7 @@ fn draw_scenes_tab(
     accent: Color,
     dim: Color,
     normal_fg: Color,
-    _theme: &crate::theme::Theme,
+    theme: &crate::theme::Theme,
 ) {
     let mut lines = Vec::new();
 

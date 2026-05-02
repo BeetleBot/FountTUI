@@ -10,7 +10,7 @@ use ratatui::{
 pub fn draw_index_cards(f: &mut Frame, app: &mut App, area: Rect) {
     let theme = &app.theme;
     let accent = Color::from(theme.ui.normal_mode_bg.clone());
-    let dim = Color::from(theme.ui.dim.clone());
+    let _dim = Color::from(theme.ui.dim.clone());
     let normal_fg = theme.ui.foreground.clone().map(Color::from).unwrap_or(Color::White);
     let selection_bg = Color::from(theme.ui.selection_bg.clone());
     let selection_fg = Color::from(theme.ui.selection_fg.clone());
