@@ -5,6 +5,10 @@ F1 | Cheat sheet | Toggle this help screen (Legend)
 Esc | Back / Cancel | Close current mode or clear selection
 ^P | Settings pane | Toggle global settings menu
 ^E | Export pane | Open export & reports menu
+^S | Save | Quick save current buffer
+^O | Open | Open file picker
+^N | New file | Create a fresh empty buffer
+^F | Search | Quick search in current buffer
 ^H | Scene Navigator | Browse and jump to scenes
 ^L | Ensemble | View character stats and frequency
 Tab | Autocomplete | Accept character or scene suggestion

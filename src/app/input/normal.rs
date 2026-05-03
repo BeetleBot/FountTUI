@@ -69,7 +69,45 @@ impl App {
                             self.mode = AppMode::SettingsPane;
                             self.selected_setting = 0;
                         }
-                        KeyCode::Char('f') if ctrl => {}
+                        KeyCode::Char('f') if ctrl => {
+                            self.mode = AppMode::Search;
+                            self.search_query.clear();
+                            self.show_search_highlight = true;
+                            self.update_search_regex();
+                        }
+                        KeyCode::Char('s') if ctrl => {
+                            if self.file.is_some() {
+                                if let Err(e) = self.save() {
+                                    self.set_error(&format!("Error saving: {}", e));
+                                }
+                            } else {
+                                self.open_file_picker(
+                                    crate::app::FilePickerAction::Save,
+                                    vec!["fountain".to_string()],
+                                    Some("unnamed.fountain".to_string()),
+                                );
+                            }
+                        }
+                        KeyCode::Char('o') if ctrl => {
+                            self.open_file_picker(
+                                crate::app::FilePickerAction::Open,
+                                vec!["fountain".to_string()],
+                                None,
+                            );
+                        }
+                        KeyCode::Char('n') if ctrl => {
+                            let new_buf = crate::app::BufferState {
+                                lines: vec![String::new()],
+                                ..Default::default()
+                            };
+                            self.buffers.push(new_buf);
+                            let new_idx = self.buffers.len() - 1;
+                            self.has_multiple_buffers = true;
+                            self.switch_buffer(new_idx);
+                            self.set_status("New file opened");
+                            *text_changed = true;
+                            *cursor_moved = true;
+                        }
                         KeyCode::Char('/') => {
                             if key.modifiers.contains(KeyModifiers::ALT) {
                                 if !self.last_command.is_empty() {
