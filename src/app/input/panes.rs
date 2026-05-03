@@ -554,7 +554,9 @@ impl App {
                                     if state.overwrite_confirmed {
                                         state.show_overwrite_confirm = false;
                                         let path = state.target_path.clone().unwrap();
-                                        self.handle_file_picker_choice(path).map_err(|e| io::Error::other(e.to_string()))?;
+                                        if let Err(e) = self.handle_file_picker_choice(path) {
+                                            self.set_error(&format!("Error: {}", e));
+                                        }
                                     } else {
                                         state.show_overwrite_confirm = false;
                                     }
@@ -562,7 +564,9 @@ impl App {
                                 KeyCode::Char('y') | KeyCode::Char('Y') => {
                                     state.show_overwrite_confirm = false;
                                     let path = state.target_path.clone().unwrap();
-                                    self.handle_file_picker_choice(path).map_err(|e| io::Error::other(e.to_string()))?;
+                                    if let Err(e) = self.handle_file_picker_choice(path) {
+                                        self.set_error(&format!("Error: {}", e));
+                                    }
                                 }
                                 KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
                                     state.show_overwrite_confirm = false;
@@ -602,8 +606,10 @@ impl App {
                             }
                         }
                         KeyCode::Enter => {
-                            if self.file_picker_enter().map_err(|e| io::Error::other(e.to_string()))? {
-                                return Ok(true);
+                            match self.file_picker_enter() {
+                                Ok(true) => return Ok(true),
+                                Ok(false) => {}
+                                Err(e) => self.set_error(&format!("Error: {}", e)),
                             }
                         }
                         KeyCode::Backspace => {
@@ -649,11 +655,15 @@ impl App {
                         }
                         KeyCode::Enter | KeyCode::Char('r') => {
                             let selected = self.snapshot_list_state.selected().unwrap_or(0);
-                            self.restore_snapshot(selected, false)?;
+                            if let Err(e) = self.restore_snapshot(selected, false) {
+                                self.set_error(&format!("Restore failed: {}", e));
+                            }
                         }
                         KeyCode::Char('o') => {
                             let selected = self.snapshot_list_state.selected().unwrap_or(0);
-                            self.restore_snapshot(selected, true)?;
+                            if let Err(e) = self.restore_snapshot(selected, true) {
+                                self.set_error(&format!("Restore failed: {}", e));
+                            }
                         }
                         _ => {}
                     }

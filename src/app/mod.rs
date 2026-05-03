@@ -944,9 +944,13 @@ impl App {
             }
             "w" => {
                 if let Some(path_str) = args.first() {
-                    self.save_as(PathBuf::from(path_str))?;
+                    if let Err(e) = self.save_as(PathBuf::from(path_str)) {
+                        self.set_error(&format!("Error saving: {}", e));
+                    }
                 } else if self.file.is_some() {
-                    self.save()?;
+                    if let Err(e) = self.save() {
+                        self.set_error(&format!("Error saving: {}", e));
+                    }
                 } else {
                     // Open picker for unnamed buffer save
                     self.open_file_picker(
@@ -985,12 +989,18 @@ impl App {
             }
             "wq" => {
                 if self.file.is_some() {
-                    self.save()?;
+                    if let Err(e) = self.save() {
+                        self.set_error(&format!("Error saving: {}", e));
+                        return Ok(false);
+                    }
                     if self.close_current_buffer() {
                         return Ok(true);
                     }
                 } else if let Some(path_str) = args.first() {
-                    self.save_as(PathBuf::from(path_str))?;
+                    if let Err(e) = self.save_as(PathBuf::from(path_str)) {
+                        self.set_error(&format!("Error saving: {}", e));
+                        return Ok(false);
+                    }
                     if self.close_current_buffer() {
                         return Ok(true);
                     }

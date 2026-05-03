@@ -71,8 +71,10 @@ impl App {
                                 return Ok(false);
                             }
 
-                            if self.execute_command(text_changed, cursor_moved, update_target_x)? {
-                                return Ok(true);
+                            match self.execute_command(text_changed, cursor_moved, update_target_x) {
+                                Ok(true) => return Ok(true),
+                                Ok(false) => {}
+                                Err(e) => self.set_error(&format!("Command error: {}", e)),
                             }
                         }
                         KeyCode::Char(c) => {

@@ -104,26 +104,34 @@ impl App {
 
         match action {
             FilePickerAction::Open => {
-                let content = std::fs::read_to_string(&path)?;
-                let lines: Vec<String> = content.replace('\t', "    ").lines().map(str::to_string).collect();
-                let new_buf = crate::app::BufferState {
-                    lines: if lines.is_empty() { vec![String::new()] } else { lines },
-                    file: Some(path.clone()),
-                    ..Default::default()
-                };
-                self.buffers.push(new_buf);
-                let new_idx = self.buffers.len() - 1;
-                self.has_multiple_buffers = self.buffers.len() > 1;
-                self.switch_buffer(new_idx);
-                self.add_recent_file(path.clone());
-                self.parse_document();
-                self.update_autocomplete();
-                self.update_layout();
-                let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-                self.set_status(&format!("Opened: {}", name));
+                match std::fs::read_to_string(&path) {
+                    Ok(content) => {
+                        let lines: Vec<String> = content.replace('\t', "    ").lines().map(str::to_string).collect();
+                        let new_buf = crate::app::BufferState {
+                            lines: if lines.is_empty() { vec![String::new()] } else { lines },
+                            file: Some(path.clone()),
+                            ..Default::default()
+                        };
+                        self.buffers.push(new_buf);
+                        let new_idx = self.buffers.len() - 1;
+                        self.has_multiple_buffers = self.buffers.len() > 1;
+                        self.switch_buffer(new_idx);
+                        self.add_recent_file(path.clone());
+                        self.parse_document();
+                        self.update_autocomplete();
+                        self.update_layout();
+                        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                        self.set_status(&format!("Opened: {}", name));
+                    }
+                    Err(e) => {
+                        self.set_error(&format!("Could not read file: {}", e));
+                    }
+                }
             }
             FilePickerAction::Save => {
-                self.save_as(path)?;
+                if let Err(e) = self.save_as(path) {
+                    self.set_error(&format!("Could not save file: {}", e));
+                }
             }
             FilePickerAction::ExportScript => {
                 let result = match self.config.export_format.as_str() {
