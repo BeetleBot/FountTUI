@@ -172,7 +172,7 @@ fn draw_dialogue_tab(
 
             let filled = ((ch.percentage / 100.0) * bar_max_w as f32).round() as usize;
             let empty = bar_max_w.saturating_sub(filled);
-            let bar = format!("{}{}", "#".repeat(filled), ".".repeat(empty));
+            let bar = format!("{}{}", "█".repeat(filled), "░".repeat(empty));
 
             let pct_str = format!("{:5.1}%", ch.percentage);
             let line_str = format!("{:>4}L", ch.dialogue_lines);
@@ -220,9 +220,9 @@ fn draw_pacing_tab(
         // Legend
         lines.push(Line::from(vec![
             Span::styled("  ", Style::default()),
-            Span::styled("#", Style::default().fg(accent)),
+            Span::styled("█", Style::default().fg(accent)),
             Span::styled(" = Action   ", theme.secondary_style()),
-            Span::styled(".", Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
+            Span::styled("░", Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
             Span::styled(" = Dialogue", theme.secondary_style()),
         ]));
         lines.push(Line::from(""));
@@ -247,8 +247,8 @@ fn draw_pacing_tab(
 
             lines.push(Line::from(vec![
                 Span::styled(format!("  pg{:<3} ", block.page), theme.secondary_style()),
-                Span::styled("#".repeat(action_cells), Style::default().fg(accent)),
-                Span::styled(".".repeat(dialogue_cells), Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
+                Span::styled("█".repeat(action_cells), Style::default().fg(accent)),
+                Span::styled("░".repeat(dialogue_cells), Style::default().fg(Color::from(theme.ui.search_highlight_bg.clone()))),
                 Span::styled(format!(" {}", pct_str), theme.secondary_style()),
             ]));
         }
@@ -309,7 +309,7 @@ fn draw_scenes_tab(
         let max_label_w = area.width.saturating_sub(28) as usize;
         lines.push(Line::from(vec![
             Span::styled(
-                format!("  {:>4}  {:<width$}  {:>6}  Status", "#", "Scene", "Pages", width = max_label_w),
+                format!("  {:>4}  {:<width$}  {:>6}  Status", "№", "Scene", "Pages", width = max_label_w),
                 theme.secondary_style().add_modifier(Modifier::BOLD),
             ),
         ]));

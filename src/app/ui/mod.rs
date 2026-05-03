@@ -1191,8 +1191,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
             let sprint_msg = format!(
                 " | Sprint [{}{}] {:02}:{:02} +{}w",
-                "#".repeat(filled),
-                ".".repeat(empty),
+                "█".repeat(filled),
+                "░".repeat(empty),
                 rem_min,
                 rem_sec,
                 words_written
