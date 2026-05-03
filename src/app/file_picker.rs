@@ -6,23 +6,69 @@ use directories::UserDirs;
 
 impl App {
     pub fn open_file_picker(&mut self, action: FilePickerAction, filter: Vec<String>, initial_filename: Option<String>) {
-        let current_dir = self.file.as_ref()
-            .and_then(|p| p.parent())
-            .map(|p| p.to_path_buf())
-            .unwrap_or_else(|| {
-                UserDirs::new()
-                    .map(|u| u.home_dir().to_path_buf())
-                    .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
-            });
+        let default_dir = self.get_default_directory();
+        
+        if self.is_gui_available() {
+            let filter_strs: Vec<&str> = filter.iter().map(|s| s.as_str()).collect();
+            let result = match action {
+                FilePickerAction::Open => {
+                    native_dialog::FileDialog::new()
+                        .set_location(&default_dir)
+                        .add_filter("Fountain Files", &filter_strs)
+                        .show_open_single_file()
+                }
+                FilePickerAction::Save | FilePickerAction::ExportScript | FilePickerAction::ExportReport | FilePickerAction::ExportSprints => {
+                    let mut dlg = native_dialog::FileDialog::new()
+                        .set_location(&default_dir);
+                    if !filter_strs.is_empty() {
+                        dlg = dlg.add_filter("Files", &filter_strs);
+                    }
+                    if let Some(ref name) = initial_filename {
+                        dlg = dlg.set_filename(name);
+                    }
+                    dlg.show_save_single_file()
+                }
+            };
 
-        let items = get_dir_items(&current_dir);
+            match result {
+                Ok(Some(path)) => {
+                    // Set file_picker state briefly so handle_file_picker_choice knows the action.
+                    self.file_picker = Some(FilePickerState {
+                        current_dir: default_dir.clone(),
+                        items: vec![],
+                        list_state: ListState::default(),
+                        action: action.clone(),
+                        filename_input: String::new(),
+                        extension_filter: filter.clone(),
+                        show_overwrite_confirm: false,
+                        overwrite_confirmed: false,
+                        naming_mode: false,
+                        target_path: None,
+                    });
+                    if let Err(e) = self.handle_file_picker_choice(path) {
+                        self.set_error(&format!("Error: {}", e));
+                    }
+                    return;
+                }
+                Ok(None) => {
+                    // User cancelled the dialog
+                    return;
+                }
+                Err(_) => {
+                    // Native dialog failed (e.g. zenity not installed) — fall through to TUI picker
+                }
+            }
+        }
+
+        // FALLBACK: TUI Picker
+        let items = get_dir_items(&default_dir);
         let mut list_state = ListState::default();
         if !items.is_empty() {
             list_state.select(Some(0));
         }
         
         self.file_picker = Some(FilePickerState {
-            current_dir,
+            current_dir: default_dir,
             items,
             list_state,
             action,
@@ -34,6 +80,38 @@ impl App {
             target_path: None,
         });
         self.mode = AppMode::FilePicker;
+    }
+
+    fn is_gui_available(&self) -> bool {
+        #[cfg(target_os = "linux")]
+        {
+            std::env::var("DISPLAY").is_ok() || std::env::var("WAYLAND_DISPLAY").is_ok()
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            true
+        }
+    }
+
+    fn get_default_directory(&self) -> PathBuf {
+        if let Some(p) = self.file.as_ref().and_then(|p| p.parent()) {
+            return p.to_path_buf();
+        }
+
+        if let Some(dirs) = UserDirs::new() {
+            #[cfg(target_os = "linux")]
+            {
+                return dirs.home_dir().to_path_buf();
+            }
+            #[cfg(not(target_os = "linux"))]
+            {
+                return dirs.document_dir()
+                    .map(|p| p.to_path_buf())
+                    .unwrap_or_else(|| dirs.home_dir().to_path_buf());
+            }
+        }
+
+        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
     }
 
     pub fn file_picker_enter(&mut self) -> Result<bool, Box<dyn std::error::Error>> {
