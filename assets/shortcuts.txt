@@ -1,5 +1,5 @@
 # Essential Controls
-/ | Command bar | Open the command entry
+/ | Command bar | Open command entry (Type // for literal /)
 Alt+/ | Command history | Show last successfully run command
 F1 | Cheat sheet | Toggle this help screen (Legend)
 Esc | Back / Cancel | Close current mode or clear selection

@@ -9,11 +9,17 @@ impl App {
 
         for s in all_shortcuts {
             if s.key.starts_with('/') {
-                let cmd = s.key.trim_start_matches('/').split_whitespace().next().unwrap_or("");
-                if !cmd.is_empty() && !commands.contains(&cmd.to_string()) {
-                    commands.push(cmd.to_string());
+                let full_cmd = s.key.trim_start_matches('/').to_string();
+                if !full_cmd.is_empty() && !commands.contains(&full_cmd) {
+                    commands.push(full_cmd);
                 }
-            } else if s.category == "Settings (/set)" {
+                
+                // Also add the base command (e.g., 'set' from '/set focus')
+                let base_cmd = s.key.trim_start_matches('/').split_whitespace().next().unwrap_or("").to_string();
+                if !base_cmd.is_empty() && !commands.contains(&base_cmd) {
+                    commands.push(base_cmd);
+                }
+            } else if s.category.contains("Settings (/set)") {
                 commands.push(format!("set {}", s.key));
             }
         }

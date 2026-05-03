@@ -77,6 +77,13 @@ impl App {
                                 Err(e) => self.set_error(&format!("Command error: {}", e)),
                             }
                         }
+                        KeyCode::Char('/') if self.command_input.is_empty() && self.mode == AppMode::Command => {
+                            self.mode = AppMode::Normal;
+                            self.insert_char('/');
+                            *text_changed = true;
+                            *cursor_moved = true;
+                            *update_target_x = true;
+                        }
                         KeyCode::Char(c) => {
                             self.command_input.push(c);
                             self.command_error = false;
