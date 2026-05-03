@@ -83,6 +83,7 @@ impl<'a> Parser<'a> {
                     if self.try_section(trimmed, i)
                         || self.try_page_break(trimmed, i)
                         || self.try_synopsis(trimmed, i)
+                        || self.try_shot(trimmed, i)
                         || self.try_forced_action(trimmed, i)
                         || self.try_centered(trimmed, i)
                         || self.try_lyrics(trimmed, i)
@@ -187,10 +188,24 @@ impl<'a> Parser<'a> {
         )
     }
 
+    fn try_shot(&mut self, line: &str, line_idx: usize) -> bool {
+        self.try_(
+            line,
+            |_, s| s.trim_start().strip_prefix("!!").or_else(|| s.trim_start().strip_prefix("！！")),
+            |this, inner| {
+                this.elements.push(Span::new(
+                    Element::Shot(RichString::from(inner)),
+                    line_idx,
+                ));
+                this.state = State::InBlock;
+            },
+        )
+    }
+
     fn try_forced_action(&mut self, line: &str, line_idx: usize) -> bool {
         self.try_(
             line,
-            |_, s| s.trim_start().strip_prefix('!'),
+            |_, s| s.trim_start().strip_prefix('!').or_else(|| s.trim_start().strip_prefix('！')),
             |this, inner| {
                 this.elements.push(Span::new(
                     Element::Action(RichString::from(inner)),

@@ -502,6 +502,16 @@ impl PdfExporter {
                     Element::CenteredText(s) => {
                         write_element!(s, &MARGINS.centered, Alignment::Centered);
                     }
+                    Element::Shot(s) => {
+                        let mut s_styled = s.clone();
+                        s_styled.to_uppercase();
+                        if self.bold_scene_headings {
+                            for element in &mut s_styled.elements {
+                                element.set_bold();
+                            }
+                        }
+                        write_element!(&s_styled, &MARGINS.action, Alignment::LeftToRight);
+                    }
                     Element::Synopsis(s) => {
                         if self.synopses {
                             let mut s_styled = s.clone();
@@ -800,12 +810,9 @@ fn write_line(
                 (true, true) => &ctx.layout_info.fonts.bold_italic,
             }
         };
-        let mut char_indices = string_element.text.char_indices();
-        let start_byte_index = char_indices.nth(relative_index).unwrap().0;
-        let end_byte_index = match char_indices.nth(relative_break_index - relative_index) {
-            Some((i, _)) => i,
-            Option::None => string_element.text.len(),
-        };
+        let start_byte_index = string_element.text.char_indices().nth(relative_index).unwrap().0;
+        let end_byte_index = string_element.text.char_indices().nth(relative_break_index)
+            .map_or(string_element.text.len(), |(i, _)| i);
 
         ctx.surface.draw_text(
             Point::from_xy(x + (glyph_index as f32 * FONT_WIDTH), y),

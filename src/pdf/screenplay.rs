@@ -61,6 +61,7 @@ pub enum Element {
     CenteredText(RichString),
     Synopsis(RichString),
     Section(RichString),
+    Shot(RichString),
     PageBreak,
 }
 
