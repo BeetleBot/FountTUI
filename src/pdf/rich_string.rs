@@ -137,7 +137,10 @@ impl RichString {
         RichIterator {
             rich_string: self,
             element_idx: 0,
-            chars_iterator: self.elements[0].text.chars(),
+            chars_iterator: self
+                .elements
+                .first()
+                .map_or_else(|| "".chars(), |e| e.text.chars()),
         }
     }
 
