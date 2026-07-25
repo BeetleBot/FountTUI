@@ -14,12 +14,13 @@
 ## 🚀 Installation
 
 ### Linux
-- **Arch Linux (AUR)**:
-  ```bash
-  yay -S fount-bin
-  ```
-- **Debian / Ubuntu**: Download the latest `.deb` package from the [Releases](https://github.com/BeetleBot/FountTUI/releases) page.
-- **Fedora / RHEL**: Download the latest `.rpm` package from the [Releases](https://github.com/BeetleBot/FountTUI/releases) page.
+
+Download the latest `Fount-Linux-x64-<version>.tar.gz` from the [Releases](https://github.com/BeetleBot/FountTUI/releases) page:
+
+```bash
+tar -xzf Fount-Linux-x64-*.tar.gz
+sudo ./install.sh
+```
 
 ### Any Platform (via Cargo)
 ```bash

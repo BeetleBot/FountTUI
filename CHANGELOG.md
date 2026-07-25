@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.11.2] - 2026-07-25
+
+### Infrastructure
+- **Linux Tarball Distribution**: Replaced AUR-based distribution with a portable `.tar.gz` tarball distribution system (same as ActOne). The tarball ships with `install.sh` and `uninstall.sh` scripts for system-wide installation.
+- **GitHub Release Automation**: Replaced the AUR publish script with `publish-github-release.sh`, which builds the tarball and pushes it as a GitHub release asset.
+
+## [0.11.1] - 2026-06-29
+
+### Fixes
+- **PDF Export Crash**: Fixed a crash when exporting large files with dirty formatted Fountain markup.
+
 ## [0.11.0] - 2026-05-20
 
 ### Maturity Milestone

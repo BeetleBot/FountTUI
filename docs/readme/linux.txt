@@ -1,15 +1,16 @@
-FOUNT FOR LINUX (PORTABLE)
+FOUNT FOR LINUX
 
-Thank you for downloading the portable version of Fount, the minimal Fountain screenplay editor.
+Thank you for downloading Fount, the minimal Fountain screenplay editor.
 
-QUICK START:
-1. Extract the tarball.
-2. Open a terminal in the folder.
-3. Grant execution permission: chmod +x fount
-4. Run: ./fount
+INSTALL (Recommended):
+1. Extract the tarball: tar -xzf Fount-Linux-x64-*.tar.gz
+2. Run: sudo ./install.sh
+3. Launch: fount
 
-Optional: To open a specific script:
-./fount my_screenplay.fountain
+PORTABLE (no install):
+1. Extract the tarball
+2. Grant execution: chmod +x fount
+3. Run: ./fount
 
 CONFIGURATION:
 Fount stores settings in: ~/.config/fount/fount.conf
