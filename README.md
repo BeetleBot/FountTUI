@@ -7,6 +7,9 @@
 </p>
 
 # Fount
+
+> 🌐 **Official Website**: [www.iyal.ink/fount](https://www.iyal.ink/fount/)
+
 **Fount** is a minimal, distraction-free Fountain screenplay editor built for writers who live in the terminal. It blends the raw efficiency of Rust with a "Zen Studio" aesthetic, providing a writing experience that feels professional, focused, and deeply personal.
 
 ---
