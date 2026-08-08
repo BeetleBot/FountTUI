@@ -1,63 +1,126 @@
-<p align="center">
-  <img src="assets/icons/FountTUI_Logo.png" alt="Fount Logo" width="180">
-  <br>
-  <b>FOUNT</b>
-  <br>
-  <i>Blockbusters in Terminal</i>
-</p>
+<div align="center">
 
-<p align="center">
-  <a href="https://fount.iyal.ink">
-    <img src="https://img.shields.io/badge/Download%20Fount%20for%20Free-Terminal%20Screenplay%20Editor-7aa2f7?style=for-the-badge&logo=terminal&logoColor=white" alt="Download Fount for Free" />
-  </a>
-</p>
+  <img src="assets/icons/FountTUI_Logo.png" alt="Fount Logo" width="160">
 
-<p align="center">
-  <a href="https://actone.iyal.ink">
-    <img src="https://img.shields.io/badge/Download%20ActOne%20for%20Free-Best%20GUI%20Fountain%20Editor-bb9af7?style=for-the-badge&logo=windows&logoColor=white" alt="Download ActOne for Free" />
-  </a>
-</p>
+  # FOUNT
+  ### *Blockbusters in Terminal*
 
-# Fount
+  <p align="center">
+    <a href="https://fount.iyal.ink">
+      <img src="https://img.shields.io/badge/Official%20Website-fount.iyal.ink-7aa2f7?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website" />
+    </a>
+    &nbsp;
+    <a href="https://github.com/iyal-ink/FountTUI/releases">
+      <img src="https://img.shields.io/badge/Download%20Fount-v0.11.3-7aa2f7?style=for-the-badge&logo=linux&logoColor=white" alt="Download Fount" />
+    </a>
+    &nbsp;
+    <a href="https://actone.iyal.ink">
+      <img src="https://img.shields.io/badge/Try%20ActOne%20GUI-actone.iyal.ink-bb9af7?style=for-the-badge&logo=windows&logoColor=white" alt="Try ActOne Screenplay" />
+    </a>
+  </p>
 
-> 🌐 **Official Website**: [fount.iyal.ink](https://fount.iyal.ink/) | Product of [iyal.ink](https://iyal.ink)
-> 🎬 **Prefer a GUI Screenwriting App?** Download [ActOne Screenplay](https://actone.iyal.ink) for Windows and Linux!
+  <p align="center">
+    <b>A minimal, distraction-free Fountain screenplay editor for screenwriters who live in the terminal.</b>
+    <br>
+    <i>Built with Rust & Ratatui • Engineered by <a href="https://iyal.ink">iyal.ink</a></i>
+  </p>
 
-**Fount** is a minimal, distraction-free Fountain screenplay editor built for writers who live in the terminal. It blends the raw efficiency of Rust with a "Zen Studio" aesthetic, providing a writing experience that feels professional, focused, and deeply personal.
+</div>
 
 ---
 
-## 🚀 Installation
+## 🌟 Overview
 
-### Linux
+**Fount** brings the pure focus of Zen-mode screenwriting into your terminal. Powered by the open plain-text [Fountain standard](https://fountain.io), Fount provides dynamic screenplay formatting, structural beat outlines, character stats, interactive scene trees, index cards, and Final Draft-standard PDF export—all without touching a mouse.
 
-Download the latest `Fount-Linux-x64-<version>.tar.gz` from the [Releases](https://github.com/iyal-ink/FountTUI/releases) page:
+> 🎬 **Prefer a GUI Application?**  
+> Check out **[ActOne Screenplay](https://actone.iyal.ink)**—our feature-rich desktop screenplay editor for Windows & Linux!
+
+---
+
+## ⚡ Quick Start & Installation
+
+### 🐧 Linux (Recommended)
+Download the latest pre-built package from our **[Releases](https://github.com/iyal-ink/FountTUI/releases)**:
 
 ```bash
 tar -xzf Fount-Linux-x64-*.tar.gz
 sudo ./install.sh
+fount
 ```
 
-### Any Platform (via Cargo)
+### 💻 Cross-Platform via Cargo
 ```bash
 cargo install fount
 ```
 
-### Windows
+### 🪟 Windows (Microsoft Store)
 <a href="https://apps.microsoft.com/detail/9nz3hv7n30s2?hl=en-US&gl=IN">
   <img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Get it from Microsoft Store"/>
 </a>
 
-### macOS
-- **Cargo**: `cargo install fount` (for best results, use a terminal with Truecolor support like iTerm2 or Ghostty)
+### 🍎 macOS
+```bash
+cargo install fount
+```
+> *Tip: For optimal rendering and true-color themes, use modern terminals like Ghostty, iTerm2, or WezTerm.*
 
 ---
 
-## ✍️ Developer's Note
+## ✨ Features at a Glance
 
-> [!NOTE]
-> **Project Status (v0.11.0)**
-> Fount has reached a highly mature milestone. With version 0.11.0, the application is running smoothly, passing all unit tests, compiler checks, and code lints. Since the core feature set is now complete and solid for daily writing, development will transition to a slower pace, focusing primarily on bug fixes, performance maintenance, and ensuring long-term compatibility rather than major new features.
+| Feature | Description |
+| :--- | :--- |
+| ⚡ **Live Fountain Engine** | Auto-formats Scene Headings, Character Cues, Dialogue, Parentheticals & Transitions on the fly. |
+| 🌲 **Scene Tree Sidebar** | Instant overview and keyboard navigation across sequences, scenes, and acts. |
+| 🃏 **Index Cards View** | Grid-based story architect to plot synopses, beats, and structure visually. |
+| 📊 **X-Ray Studio** | Real-time analytics for character interactions, scene lengths, and narrative pacing. |
+| 📄 **Final Draft PDF Engine** | Industry-standard 100% exact pagination, dynamic right margins, and A4 / US Letter layout export. |
+| ⏱️ **Session Auto-Snapshots** | Background auto-saving system preventing any data loss while you write. |
+| 🎨 **Curated Themes** | Switch instantly between *Lilac*, *Catppuccin*, *Nord*, *Everforest*, and *Paper*. |
+
+---
+
+## 🎬 Visual Walkthrough
+
+### 🏠 Homescreen Dashboard
+<p align="center">
+  <a href="https://asciinema.org/a/1076515">
+    <img src="https://asciinema.org/a/1076515.svg" width="850" alt="Homescreen Dashboard">
+  </a>
+</p>
+
+### 📝 Live Syntax & Markup
+<p align="center">
+  <a href="https://asciinema.org/a/1076522">
+    <img src="https://asciinema.org/a/1076522.svg" width="850" alt="Syntax Markup">
+  </a>
+</p>
+
+### 🌲 Scene Tree Navigator
+<p align="center">
+  <a href="https://asciinema.org/a/1076518">
+    <img src="https://asciinema.org/a/1076518.svg" width="850" alt="Scene Tree Navigator">
+  </a>
+</p>
+
+### 🃏 Index Cards & Story Architect
+<p align="center">
+  <a href="https://asciinema.org/a/1076517">
+    <img src="https://asciinema.org/a/1076517.svg" width="850" alt="Index Cards">
+  </a>
+</p>
+
+### 📊 X-Ray Analytics & Pacing
+<p align="center">
+  <a href="https://asciinema.org/a/1076524">
+    <img src="https://asciinema.org/a/1076524.svg" width="850" alt="X-Ray Analytics">
+  </a>
+</p>
+
+---
+
+## ✍️ A Note from the Creator
 
 > [!NOTE]
 > **A Letter from the Creator**
@@ -68,86 +131,29 @@ cargo install fount
 
 > [!IMPORTANT]
 > **A Note on Pagination**
-> Due to TUI constraints, page counts shown in the editor are only approximate. Layouts for A4 and US Letter may have up to a +/- 2 pages difference in the TUI view. The TUI pagination is an approximation; only the final export contains the true, definitive page count.
+> Due to TUI constraints, page counts shown in the editor are approximate (+/- 2 pages). The final PDF export contains the true, definitive pagination matching Final Draft standards.
 
 ---
 
-## ✨ Feature Showcase
+## 🏛️ Credits & Inspiration
 
-Fount is a dedicated writing environment designed to disappear while you work.
+Fount stands proudly on the shoulders of open-source projects:
 
-### 🏠 Homescreen Dashboard
-A walkthrough of the beautiful homescreen dashboard in Fount, showing recent screenplay files and quick actions.
-
-[![asciicast](https://asciinema.org/a/1076515.svg)](https://asciinema.org/a/1076515)
-
----
-
-### 📝 Fountain Syntax Markup Syntax
-Live editing showcasing bold, italic, underlined, lyrics, centered text, and inline notes syntax rendering in FountTUI.
-
-[![asciicast](https://asciinema.org/a/1076522.svg)](https://asciinema.org/a/1076522)
+1. **[Lottie](https://github.com/coignard/lottie)** — Foundational terminal editor that inspired Fount's codebase.
+2. **[Beat](https://github.com/lmparppei/Beat)** — The benchmark for minimalist screenwriting software.
+3. **[Fountain.io](https://fountain.io)** — The open plain-text format powering modern independent cinema.
 
 ---
 
-### 🌲 Scene Tree Navigation
-Interactive side-panel and tree-structured view of scenes and sequences inside the screenplay, with instant search and jump.
+<div align="center">
 
-[![asciicast](https://asciinema.org/a/1076518.svg)](https://asciinema.org/a/1076518)
+  <br>
 
----
-
-### 🃏 Story Architect (Index Cards View & Scene Editing)
-Plot your story at a high level using the grid-based index cards to organize and edit scene synopses with smooth word-wrap.
-
-[![asciicast](https://asciinema.org/a/1076517.svg)](https://asciinema.org/a/1076517)
-
----
-
-### 🗺️ Outline & Structures
-Import structural templates (e.g. Hero's Journey, 3-Act Structure) directly into FountTUI to scaffold a screenplay outline instantly.
-
-[![asciicast](https://asciinema.org/a/1076516.svg)](https://asciinema.org/a/1076516)
-
----
-
-### 📊 Xray Mode
-Visualize your screenplay's pacing, character frequency, and scene length distribution in real-time using X-Ray mode.
-
-[![asciicast](https://asciinema.org/a/1076524.svg)](https://asciinema.org/a/1076524)
-
----
-
-### 🎨 Theme Customisation
-Cycle through curated themes like **Catppuccin**, **Nord**, **Everforest**, and the new **Lilac** to suit your mood.
-
-[![asciicast](https://asciinema.org/a/1076523.svg)](https://asciinema.org/a/1076523)
-
----
-
-### ⏱️ Automated Session Snapshots
-Under the hood look at Fount's background snapshotting system that periodically auto-saves buffer states to prevent data loss.
-
-[![asciicast](https://asciinema.org/a/1076520.svg)](https://asciinema.org/a/1076520)
-
----
-
-## 🏛️ Inspiration & Credits
-
-Fount stands on the shoulders of giants. This project would not have been possible without the inspiration and foundational work of the following:
-
-1.  **[Lottie](https://github.com/coignard/lottie)**: My immediate inspiration. Fount began as a fork and evolution of this beautiful terminal editor.
-2.  **[Beat](https://github.com/lmparppei/Beat)**: The gold standard for minimalist screenwriting software. Fount is my attempt to bring the spirit of Beat to the Linux terminal.
-3.  **[Fountain.io](https://github.com/nyousefi/Fountain)**: The universal screenplay format that powers modern independent screenwriting.
-
-> [!IMPORTANT]
-> A massive thank you to the creators of these tools. Their commitment to the craft of writing and software design continues to inspire creators worldwide.
-
----
-
-<p align="center">
-  <b>FountTUI is engineered with care by <a href="https://iyal.ink">iyal.ink</a></b><br>
+  <b>FountTUI is engineered with care by <a href="https://iyal.ink">iyal.ink</a></b>  
   <i>Crafting free, open, and focused storytelling tools for independent screenwriters worldwide.</i>
+
   <br><br>
-  🌐 <b><a href="https://iyal.ink">iyal.ink</a></b> &nbsp;|&nbsp; 🎬 <b><a href="https://actone.iyal.ink">ActOne Screenplay</a></b> &nbsp;|&nbsp; ⌨️ <b><a href="https://fount.iyal.ink">FountTUI</a></b>
-</p>
+
+  🌐 <b><a href="https://iyal.ink">iyal.ink</a></b> &nbsp;•&nbsp; 🎬 <b><a href="https://actone.iyal.ink">ActOne Screenplay</a></b> &nbsp;•&nbsp; ⌨️ <b><a href="https://fount.iyal.ink">FountTUI</a></b>
+
+</div>
