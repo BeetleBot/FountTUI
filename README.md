@@ -1,24 +1,20 @@
 <p align="center">
-  <a href="https://iyal.ink" target="_blank" rel="noopener noreferrer">
-    <img src="https://iyal.ink/assets/IyalLogo.svg" alt="iyal.ink" height="38">
-  </a>
-  &nbsp;&nbsp;
-  <img src="https://img.shields.io/badge/%E2%9C%96-collaboration-7aa2f7?style=for-the-badge&logoColor=white&color=1a1b26" alt="x" />
-  &nbsp;&nbsp;
-  <a href="https://fount.iyal.ink">
-    <img src="assets/icons/FountTUI_Logo.png" alt="Fount Logo" height="42">
-  </a>
+  <img src="assets/icons/FountTUI_Logo.png" alt="Fount Logo" width="180">
+  <br>
+  <b>FOUNT</b>
+  <br>
+  <i>Blockbusters in Terminal</i>
 </p>
 
 <p align="center">
-  <b>FOUNT</b> • <i>Blockbusters in Terminal</i>
-  <br>
-  <a href="https://iyal.ink"><b>iyal.ink</b></a> Studio Family Project
+  <a href="https://fount.iyal.ink">
+    <img src="https://img.shields.io/badge/Download%20Fount%20for%20Free-Terminal%20Screenplay%20Editor-7aa2f7?style=for-the-badge&logo=terminal&logoColor=white" alt="Download Fount for Free" />
+  </a>
 </p>
 
 <p align="center">
   <a href="https://actone.iyal.ink">
-    <img src="https://img.shields.io/badge/Get%20ActOne%20Screenplay-Best%20GUI%20Fountain%20Editor-bb9af7?style=for-the-badge&logo=windows&logoColor=white" alt="ActOne Banner" />
+    <img src="https://img.shields.io/badge/Download%20ActOne%20for%20Free-Best%20GUI%20Fountain%20Editor-bb9af7?style=for-the-badge&logo=windows&logoColor=white" alt="Download ActOne for Free" />
   </a>
 </p>
 
@@ -148,20 +144,6 @@ Fount stands on the shoulders of giants. This project would not have been possib
 > A massive thank you to the creators of these tools. Their commitment to the craft of writing and software design continues to inspire creators worldwide.
 
 ---
-
-<br>
-
-<p align="center">
-  <a href="https://iyal.ink">
-    <img src="https://iyal.ink/assets/IyalLogo.svg" alt="iyal.ink" height="42">
-  </a>
-  &nbsp;&nbsp;
-  <img src="https://img.shields.io/badge/%E2%9C%96-part%20of%20the%20family-7aa2f7?style=for-the-badge&logoColor=white&color=1a1b26" alt="x" />
-  &nbsp;&nbsp;
-  <a href="https://fount.iyal.ink">
-    <img src="assets/icons/FountTUI_Logo.png" alt="Fount Logo" height="42">
-  </a>
-</p>
 
 <p align="center">
   <b>FountTUI is engineered with care by <a href="https://iyal.ink">iyal.ink</a></b><br>
