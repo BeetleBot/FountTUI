@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.3] - 2026-08-08
+
+### Infrastructure & Branding
+- **Publisher Metadata**: Updated author and publisher metadata across project configurations to `iyal.ink`.
+- **ActOne Screenplay Banner**: Added interactive ActOne promo banner to the home screen dashboard (`a` key or `F2` function key globally to visit `https://actone.iyal.ink`).
+- **Website Links**: Added quick links to `iyal.ink`, `fount.iyal.ink`, and `actone.iyal.ink` across the app and documentation.
+- **Linux Release Packaging**: Included `readme.txt` with Linux installation instructions directly in release tarballs.
+
 ## [0.11.2] - 2026-07-25
 
 ### Infrastructure
