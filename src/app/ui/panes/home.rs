@@ -40,12 +40,20 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
     let normal_fg = theme.primary_fg();
     let dim = Color::from(theme.ui.dim.clone());
 
+    let recent_count = app.recent_files.len().min(4);
+    let content_height = if recent_count > 0 {
+        28 + (recent_count * 2) + 2
+    } else {
+        28
+    };
+    let dashboard_height = (content_height + 2) as u16;
+
     // Vertical centering
     let vertical_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Min(0),
-            Constraint::Length(35), // Height of our dashboard
+            Constraint::Length(dashboard_height),
             Constraint::Min(0),
         ])
         .split(area);
@@ -105,46 +113,22 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
         content.push(Line::from(spans).alignment(Alignment::Center));
     }
 
-    // Version
+    content.push(Line::from("")); // Space after logo
+
+    // Version & GUI Hint
     content.push(Line::from(vec![
         Span::styled(format!("v{}", env!("CARGO_PKG_VERSION")), Style::default().fg(dim)),
         Span::styled("  |  ", Style::default().fg(dim)),
         Span::styled("fount.iyal.ink", Style::default().fg(accent)),
     ]).alignment(Alignment::Center));
 
-    content.push(Line::from(""));
-
-    // ── ACTONE BANNER ──
-    let recent_count = app.recent_files.len().min(4);
-    let actone_sel = app.home_selected == 5 + recent_count;
-    let banner_border_style = if actone_sel {
-        Style::default().fg(accent).add_modifier(Modifier::BOLD)
-    } else {
-        Style::default().fg(dim)
-    };
-    let banner_title_style = if actone_sel {
-        Style::default().fg(normal_fg).add_modifier(Modifier::BOLD)
-    } else {
-        Style::default().fg(normal_fg)
-    };
-    let key_style = Style::default().fg(accent).add_modifier(Modifier::BOLD);
+    content.push(Line::from("")); // Space between version and ActOne prompt
 
     content.push(Line::from(vec![
-        Span::styled("┌─ ", banner_border_style),
-        Span::styled("Use the best Fountain editor for Windows and Linux - ActOne Screenplay", banner_title_style),
-        Span::styled(" ─┐", banner_border_style),
-    ]).alignment(Alignment::Center));
-    content.push(Line::from(vec![
-        Span::styled("│  type ", banner_border_style),
-        Span::styled("a", key_style),
-        Span::styled(" or press ", banner_border_style),
-        Span::styled("F2", key_style),
-        Span::styled(" for ", banner_border_style),
-        Span::styled("actone.iyal.ink", banner_title_style),
-        Span::styled(" (Get it now)  │", banner_border_style),
-    ]).alignment(Alignment::Center));
-    content.push(Line::from(vec![
-        Span::styled("└───────────────────────────────────────────────────────────────┘", banner_border_style),
+        Span::styled("Looking for GUI editor? Press ", Style::default().fg(dim)),
+        Span::styled("a", Style::default().fg(dim).add_modifier(Modifier::BOLD)),
+        Span::styled(" for ", Style::default().fg(dim)),
+        Span::styled("actone.iyal.ink", Style::default().fg(dim)),
     ]).alignment(Alignment::Center));
 
     content.push(Line::from(""));
@@ -195,9 +179,8 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
     }
 
     // ── FOOTER ──
-    let wiki_sel = app.home_selected == 5 + recent_count + 1;
-    let github_sel = app.home_selected == 5 + recent_count + 2;
-    let iyal_sel = app.home_selected == 5 + recent_count + 3;
+    let wiki_sel = app.home_selected == 5 + recent_count;
+    let github_sel = app.home_selected == 5 + recent_count + 1;
 
     content.push(Line::from(vec![
         Span::styled("type  ", Style::default().fg(dim)),
@@ -209,11 +192,6 @@ pub fn draw_home(f: &mut Frame, app: &mut App) {
         Span::styled("g", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
         Span::styled("  for  ", Style::default().fg(dim)),
         Span::styled("GitHub", if github_sel { Style::default().fg(normal_fg).add_modifier(Modifier::BOLD) } else { Style::default().fg(normal_fg) }),
-        Span::styled("  |  ", Style::default().fg(dim)),
-        Span::styled("type  ", Style::default().fg(dim)),
-        Span::styled("i", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
-        Span::styled("  for  ", Style::default().fg(dim)),
-        Span::styled("iyal.ink", if iyal_sel { Style::default().fg(normal_fg).add_modifier(Modifier::BOLD) } else { Style::default().fg(normal_fg) }),
     ]).alignment(Alignment::Center));
 
     f.render_widget(Paragraph::new(content), inner_dashboard_area);

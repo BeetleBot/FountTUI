@@ -563,7 +563,7 @@ impl App {
                 }
                 AppMode::Home => {
                     let recent_count = self.recent_files.len().min(4);
-                    let home_items = 5 + recent_count + 4; // Menu(5) + Recent(max 4) + ActOne + Wiki + GitHub + iyal.ink
+                    let home_items = 5 + recent_count + 2; // Menu(5) + Recent(max 4) + Wiki + GitHub
                     match key.code {
                         KeyCode::Esc if self.file.is_some() || !self.lines.iter().all(|l| l.is_empty()) => {
                             self.mode = AppMode::Normal;
@@ -571,7 +571,7 @@ impl App {
                         KeyCode::Char('c') | KeyCode::Char('g') if ctrl => {
                             self.mode = AppMode::Normal;
                         }
-                        KeyCode::F(2) => {
+                        KeyCode::Char('a') | KeyCode::Char('A') => {
                             std::thread::spawn(|| {
                                 let _ = open::that("https://actone.iyal.ink");
                             });
@@ -579,7 +579,7 @@ impl App {
                         KeyCode::Tab => {
                             // Cycle between Main Menu and Footer
                             if self.home_selected < 5 + recent_count {
-                                self.home_selected = 5 + recent_count; // Jump to ActOne banner / footer
+                                self.home_selected = 5 + recent_count; // Jump to footer
                             } else {
                                 self.home_selected = 0; // Jump to start
                             }
@@ -599,10 +599,8 @@ impl App {
                         KeyCode::Char('s') | KeyCode::Char('S') |
                         KeyCode::Char('o') | KeyCode::Char('O') |
                         KeyCode::Char('t') | KeyCode::Char('T') |
-                        KeyCode::Char('a') | KeyCode::Char('A') |
                         KeyCode::Char('w') | KeyCode::Char('W') |
                         KeyCode::Char('g') | KeyCode::Char('G') |
-                        KeyCode::Char('i') | KeyCode::Char('I') |
                         KeyCode::Char('1') | KeyCode::Char('2') | KeyCode::Char('3') | KeyCode::Char('4') |
                         KeyCode::Char('q') | KeyCode::Char('Q') => {
                             match key.code {
@@ -615,10 +613,8 @@ impl App {
                                 KeyCode::Char('2') if recent_count >= 2 => self.home_selected = 6,
                                 KeyCode::Char('3') if recent_count >= 3 => self.home_selected = 7,
                                 KeyCode::Char('4') if recent_count >= 4 => self.home_selected = 8,
-                                KeyCode::Char('a') | KeyCode::Char('A') => self.home_selected = 5 + recent_count,
-                                KeyCode::Char('w') | KeyCode::Char('W') => self.home_selected = 5 + recent_count + 1,
-                                KeyCode::Char('g') | KeyCode::Char('G') => self.home_selected = 5 + recent_count + 2,
-                                KeyCode::Char('i') | KeyCode::Char('I') => self.home_selected = 5 + recent_count + 3,
+                                KeyCode::Char('w') | KeyCode::Char('W') => self.home_selected = 5 + recent_count,
+                                KeyCode::Char('g') | KeyCode::Char('G') => self.home_selected = 5 + recent_count + 1,
                                 _ => {},
                             }
                             match self.home_selected {
@@ -685,27 +681,15 @@ impl App {
                                     return Ok(true);
                                 }
                                 _ if self.home_selected == 5 + recent_count => {
-                                    // ActOne
-                                    std::thread::spawn(|| {
-                                        let _ = open::that("https://actone.iyal.ink");
-                                    });
-                                }
-                                _ if self.home_selected == 5 + recent_count + 1 => {
                                     // Wiki
                                     std::thread::spawn(|| {
                                         let _ = open::that("https://github.com/iyal-ink/founttui/wiki");
                                     });
                                 }
-                                _ if self.home_selected == 5 + recent_count + 2 => {
+                                _ if self.home_selected == 5 + recent_count + 1 => {
                                     // GitHub
                                     std::thread::spawn(|| {
                                         let _ = open::that("https://github.com/iyal-ink/founttui");
-                                    });
-                                }
-                                _ if self.home_selected == 5 + recent_count + 3 => {
-                                    // iyal.ink website
-                                    std::thread::spawn(|| {
-                                        let _ = open::that("https://iyal.ink");
                                     });
                                 }
                                 _ => {

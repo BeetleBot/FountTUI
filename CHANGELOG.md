@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.4] - 2026-08-08
+
+### UI & Layout
+- **Home Dashboard Layout**: Refactored home screen dashboard layout for optimal vertical and horizontal alignment across terminal sizes.
+- **ActOne Integration**: Replaced heavy top banner box with a subtle, non-intrusive dim promo line below the logo (`Looking for GUI editor? Press a for actone.iyal.ink`).
+
+### Release Infrastructure
+- **Streamlined Release Assets**: Cleaned up automated GitHub release builds to output only essential installer binaries: MSIX for Windows, `.tar.gz` (with version tag), `.deb`, `.rpm` for Linux, and Universal macOS bundle.
+
 ## [0.11.3] - 2026-08-08
 
 ### Infrastructure & Branding

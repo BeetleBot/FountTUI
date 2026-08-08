@@ -35,26 +35,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            name: Fount-Linux-x64
-            archive: unix
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
-            name: Fount-Linux-Static
-            archive: unix
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            name: Fount-Linux-ARM64
-            archive: unix
           - target: universal-apple-darwin
             os: macos-latest
             name: Fount-macOS-Universal
             archive: unix
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            name: Fount-Windows-x64
-            archive: windows
     runs-on: ${{ matrix.os }}
     env:
       RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-C target-feature=+crt-static' || '' }}
