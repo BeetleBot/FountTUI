@@ -7,7 +7,7 @@
 - **ActOne Integration**: Replaced heavy top banner box with a subtle, non-intrusive dim promo line below the logo (`Looking for GUI editor? Press a for actone.iyal.ink`).
 
 ### Release Infrastructure
-- **Streamlined Release Assets**: Cleaned up automated GitHub release builds to output only essential installer binaries: MSIX for Windows, `.tar.gz` (with version tag), `.deb`, `.rpm` for Linux, and Universal macOS bundle.
+- **Streamlined Release Assets**: Cleaned up automated GitHub release builds to output only essential release packages: MSIX for Windows (`Fount-<version>.msix`), Linux tarball installer (`Fount-Linux-x64-<version>.tar.gz`), Linux `.deb` and `.rpm` packages, and macOS Universal bundle (`Fount-macOS-Universal.tar.gz`).
 
 ## [0.11.3] - 2026-08-08
 
