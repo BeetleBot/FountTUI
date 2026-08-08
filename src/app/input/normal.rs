@@ -167,6 +167,11 @@ impl App {
             KeyCode::F(1) => {
                 self.mode = AppMode::Shortcuts;
             }
+            KeyCode::F(2) => {
+                std::thread::spawn(|| {
+                    let _ = open::that("https://actone.iyal.ink");
+                });
+            }
             KeyCode::Up if shift => {
                 if self.selection_anchor.is_none() {
                     self.selection_anchor = Some((self.cursor_y, self.cursor_x));

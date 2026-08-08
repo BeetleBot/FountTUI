@@ -1,14 +1,31 @@
 <p align="center">
-  <img src="assets/icons/FountTUI_Logo.png" alt="Fount Logo" width="180">
+  <a href="https://iyal.ink" target="_blank" rel="noopener noreferrer">
+    <img src="https://iyal.ink/assets/IyalLogo.svg" alt="iyal.ink" height="38">
+  </a>
+  &nbsp;&nbsp;
+  <img src="https://img.shields.io/badge/%E2%9C%96-collaboration-7aa2f7?style=for-the-badge&logoColor=white&color=1a1b26" alt="x" />
+  &nbsp;&nbsp;
+  <a href="https://fount.iyal.ink">
+    <img src="assets/icons/FountTUI_Logo.png" alt="Fount Logo" height="42">
+  </a>
+</p>
+
+<p align="center">
+  <b>FOUNT</b> • <i>Blockbusters in Terminal</i>
   <br>
-  <b>FOUNT</b>
-  <br>
-  <i>Blockbusters in Terminal</i>
+  <a href="https://iyal.ink"><b>iyal.ink</b></a> Studio Family Project
+</p>
+
+<p align="center">
+  <a href="https://actone.iyal.ink">
+    <img src="https://img.shields.io/badge/Get%20ActOne%20Screenplay-Best%20GUI%20Fountain%20Editor-bb9af7?style=for-the-badge&logo=windows&logoColor=white" alt="ActOne Banner" />
+  </a>
 </p>
 
 # Fount
 
-> 🌐 **Official Website**: [www.iyal.ink/fount](https://www.iyal.ink/fount/)
+> 🌐 **Official Website**: [fount.iyal.ink](https://fount.iyal.ink/) | Product of [iyal.ink](https://iyal.ink)
+> 🎬 **Prefer a GUI Screenwriting App?** Download [ActOne Screenplay](https://actone.iyal.ink) for Windows and Linux!
 
 **Fount** is a minimal, distraction-free Fountain screenplay editor built for writers who live in the terminal. It blends the raw efficiency of Rust with a "Zen Studio" aesthetic, providing a writing experience that feels professional, focused, and deeply personal.
 
@@ -18,7 +35,7 @@
 
 ### Linux
 
-Download the latest `Fount-Linux-x64-<version>.tar.gz` from the [Releases](https://github.com/BeetleBot/FountTUI/releases) page:
+Download the latest `Fount-Linux-x64-<version>.tar.gz` from the [Releases](https://github.com/iyal-ink/FountTUI/releases) page:
 
 ```bash
 tar -xzf Fount-Linux-x64-*.tar.gz
@@ -129,3 +146,26 @@ Fount stands on the shoulders of giants. This project would not have been possib
 
 > [!IMPORTANT]
 > A massive thank you to the creators of these tools. Their commitment to the craft of writing and software design continues to inspire creators worldwide.
+
+---
+
+<br>
+
+<p align="center">
+  <a href="https://iyal.ink">
+    <img src="https://iyal.ink/assets/IyalLogo.svg" alt="iyal.ink" height="42">
+  </a>
+  &nbsp;&nbsp;
+  <img src="https://img.shields.io/badge/%E2%9C%96-part%20of%20the%20family-7aa2f7?style=for-the-badge&logoColor=white&color=1a1b26" alt="x" />
+  &nbsp;&nbsp;
+  <a href="https://fount.iyal.ink">
+    <img src="assets/icons/FountTUI_Logo.png" alt="Fount Logo" height="42">
+  </a>
+</p>
+
+<p align="center">
+  <b>FountTUI is engineered with care by <a href="https://iyal.ink">iyal.ink</a></b><br>
+  <i>Crafting free, open, and focused storytelling tools for independent screenwriters worldwide.</i>
+  <br><br>
+  🌐 <b><a href="https://iyal.ink">iyal.ink</a></b> &nbsp;|&nbsp; 🎬 <b><a href="https://actone.iyal.ink">ActOne Screenplay</a></b> &nbsp;|&nbsp; ⌨️ <b><a href="https://fount.iyal.ink">FountTUI</a></b>
+</p>

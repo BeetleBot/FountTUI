@@ -15,7 +15,7 @@
 
   <Properties>
     <DisplayName>Fount</DisplayName>
-    <PublisherDisplayName>Write Up Film Service Company</PublisherDisplayName>
+    <PublisherDisplayName>iyal.ink</PublisherDisplayName>
     <Description>A terminal-based Fountain screenplay editor</Description>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>

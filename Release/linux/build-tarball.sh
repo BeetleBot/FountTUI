@@ -34,6 +34,7 @@ cp "$PROJECT_ROOT/assets/icons/FountTUI_Logo.png" "$TARBALL_DIR/usr/share/icons/
 
 cp "$PROJECT_ROOT/assets/linux/install.sh" "$TARBALL_DIR/"
 cp "$PROJECT_ROOT/assets/linux/uninstall.sh" "$TARBALL_DIR/"
+cp "$PROJECT_ROOT/assets/linux/readme.txt" "$TARBALL_DIR/"
 chmod +x "$TARBALL_DIR/install.sh" "$TARBALL_DIR/uninstall.sh"
 
 TARBALL_FILE="Fount-Linux-x64-$VERSION.tar.gz"

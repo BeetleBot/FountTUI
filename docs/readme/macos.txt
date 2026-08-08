@@ -20,4 +20,4 @@ SHORTCUTS:
 - Ctrl+L: Character Sidebar
 - / (slash): Open command bar (type /help)
 
-For more information, visit: https://github.com/BeetleBot/Fount
+For more information, visit: https://fount.iyal.ink (by https://iyal.ink)

@@ -2,13 +2,13 @@
 name = "fount"
 version = "0.11.2"
 authors = [
-    "BeetleBot"
+    "iyal.ink"
 ]
 edition = "2024"
 description = "A terminal-based Fountain screenplay editor"
 license = "GPL-3.0-only"
-homepage = "https://github.com/BeetleBot/FountTUI"
-repository = "https://github.com/BeetleBot/FountTUI"
+homepage = "https://fount.iyal.ink"
+repository = "https://github.com/iyal-ink/FountTUI"
 
 [package.metadata]
 readme = "README.md"
@@ -62,8 +62,8 @@ panic = "abort"              # Reduce binary size by avoiding stack unwinding
 strip = true                 # Automatically strip symbols from the binary
 
 [package.metadata.deb]
-maintainer = "BeetleBot"
-copyright = "2024 BeetleBot"
+maintainer = "iyal.ink"
+copyright = "2024 iyal.ink"
 license-file = ["LICENSE", "0"]
 depends = "$auto"
 section = "utils"

@@ -51,6 +51,7 @@ pub fn get_all_shortcuts() -> Vec<Shortcut> {
         sc!("Essential Controls", "/", "Command bar", "Open command entry", Accent),
         sc!("Essential Controls", "Alt+/", "Command history", "Last run command", Dim),
         sc!("Essential Controls", "F1", "Cheat sheet", "Show this help", Info),
+        sc!("Essential Controls", "F2", "ActOne Web", "Open actone.iyal.ink", Success),
         sc!("Essential Controls", "Esc", "Back / Cancel", "Cancel or close", Warning),
         sc!("Essential Controls", "^P", "Settings pane", "Toggle settings menu", Accent),
         sc!("Essential Controls", "^E", "Export pane", "Export & reports menu", Accent),
