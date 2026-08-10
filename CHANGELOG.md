@@ -1,6 +1,14 @@
 # Changelog
 
+## [0.11.5] - 2026-08-10
+
+### Features & Exporters
+- **Final Draft (.fdx) Export**: Added support for exporting screenplays to Final Draft XML format (`.fdx`).
+- **Fade In (.fadein) Export**: Added support for exporting screenplays to Open Screenplay Format (OSF 2.0) packed inside `.fadein` ZIP archives.
+- **Export Pane UI Integration**: Added FDX and FadeIn format selection to the Export Pane and file picker dialog.
+
 ## [0.11.4] - 2026-08-08
+
 
 ### UI & Layout
 - **Home Dashboard Layout**: Refactored home screen dashboard layout for optimal vertical and horizontal alignment across terminal sizes.

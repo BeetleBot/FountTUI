@@ -55,3 +55,21 @@ pub fn export_to_pdf(
     };
     exporter.export_to_file(&screenplay, path)
 }
+
+pub mod fadein;
+pub mod fadein_pack;
+pub mod fdx;
+
+pub fn export_to_fdx(fountain_text: &str, path: &std::path::Path) -> std::io::Result<()> {
+    let screenplay = parse(fountain_text);
+    let fdx_xml = fdx::export(&screenplay);
+    std::fs::write(path, fdx_xml)
+}
+
+pub fn export_to_fadein(fountain_text: &str, path: &std::path::Path) -> std::io::Result<()> {
+    let screenplay = parse(fountain_text);
+    let fadein_xml = fadein::export(&screenplay);
+    let packed = fadein_pack::pack(&fadein_xml)?;
+    std::fs::write(path, packed)
+}
+

@@ -699,6 +699,8 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
         let format_label = match app.config.export_format.as_str() {
             "pdf" => "PDF",
             "fountain" => "Fountain",
+            "fdx" => "Final Draft (.fdx)",
+            "fadein" => "Fade In (.fadein)",
             _ => "PDF",
         };
         let font_label = match app.config.export_font.as_str() {
@@ -736,7 +738,8 @@ pub fn draw_export_modal(f: &mut Frame, app: &App) {
                 ),
                 Span::styled(" [ EXPORT SCREENPLAY ] ", export_style),
             ])));
-        } else if format == "fountain" {
+        } else if matches!(format, "fountain" | "fdx" | "fadein") {
+
             options.push(render_option(1, "Include Sections", if app.config.export_sections { if app.config.use_nerd_fonts { "󰄲 " } else { "[X]" } } else { if app.config.use_nerd_fonts { "󰄱 " } else { "[ ]" } }, app.selected_export_option == 1));
             options.push(render_option(2, "Include Synopses", if app.config.export_synopses { if app.config.use_nerd_fonts { "󰄲 " } else { "[X]" } } else { if app.config.use_nerd_fonts { "󰄱 " } else { "[ ]" } }, app.selected_export_option == 2));
             options.push(render_option(3, "Include Production Tags", if app.config.export_production_tags { if app.config.use_nerd_fonts { "󰄲 " } else { "[X]" } } else { if app.config.use_nerd_fonts { "󰄱 " } else { "[ ]" } }, app.selected_export_option == 3));
